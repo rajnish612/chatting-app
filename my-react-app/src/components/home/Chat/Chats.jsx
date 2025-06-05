@@ -3,10 +3,10 @@ import Chatlist from "./Chatlist";
 import Chatbox from "./Chatbox";
 import Details from "./Details";
 
-const Chats = () => {
+const Chats = ({self}) => {
   return (
     <div className="h-screen bg-white w-screen flex">
-      <Chatlist />
+      <Chatlist self={self} />
       <Chatbox />
       <Details/>
     </div>

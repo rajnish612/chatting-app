@@ -9,6 +9,8 @@ import session, { Cookie } from "express-session";
 import dotenv from "dotenv";
 
 import cors from "cors";
+import sharedsession from "express-socket.io-session";
+
 dotenv.config();
 const app = express();
 const server = http.createServer(app);
@@ -19,20 +21,6 @@ const io = new Server(server, {
     credentials: true,
   },
 });
-
-io.on("connection", (socket) => {
-  console.log("A user connected:", socket.id);
-  socket.on("message", (message) => {
-    console.log("Message received:", message);
-    // You can handle the message here, e.g., broadcast it to other users
-  });
-  socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
-  });
-
-  // You can add more event listeners here for real-time features
-});
-
 connectDB();
 app.use(
   cors({
@@ -45,6 +33,7 @@ app.use(
     extended: true,
   })
 );
+app.use(bodyParser.json());
 app.use(
   session({
     secret: "secret",
@@ -52,11 +41,20 @@ app.use(
     saveUninitialized: false,
     cookie: {
       secure: false,
+      httpOnly: true,
       maxAge: 1000 * 60 * 60 * 24 * 365 * 10,
     },
   })
 );
-app.use(bodyParser.json());
+
+io.on("connection", (socket) => {
+  socket.on("messages", (data) => {
+    console.log(data);
+  });
+  socket.on("disconnect", () => {
+    console.log("User disconnected:", socket.id);
+  });
+});
 
 app.use("/api/auth", Authrouter);
 app.use("/api/users", Homerouter);

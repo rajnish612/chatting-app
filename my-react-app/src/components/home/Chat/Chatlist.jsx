@@ -1,6 +1,8 @@
 import React from "react";
 import { CiSearch } from "react-icons/ci";
-const Chatlist = () => {
+const Chatlist = ({self}) => {
+  console.log(self);
+  
   return (
     <div className="lg:w-125  w-50 sm:hidden md:flex md:w-100 gap-5 rounded-2xl shadow-lg   flex-col  bg-white h-screen p-3">
       <div className="w-full mt-10 flex flex-col gap-2  justify-center items-center">
@@ -14,8 +16,8 @@ const Chatlist = () => {
         style={{ msOverflowStyle: "none", scrollbarWidth: "none" }}
         className="h-full w-full items-center flex flex-col gap-4 overflow-y-scroll "
       >
-        {[1, 2, 3, 4, 5, 6].map((_, index) => (
-          <button className=" w-[90%] focus:shadow-lg h-20 mt-2 !transition-all !border-0 focus:scale-[1.1] focus:rounded-2xl focus:!border-l-4 focus:!border-blue-500    !outline-0 text-black !flex !bg-white justify-start items-center">
+        {self?.followings?.map((username, index) => (
+          <button key={index} className=" w-[90%] focus:shadow-lg h-20 mt-2 !transition-all !border-0 focus:scale-[1.1] focus:rounded-2xl focus:!border-l-4 focus:!border-blue-500    !outline-0 text-black !flex !bg-white justify-start items-center">
             <div className="w-20 h-20  rounded-full overflow-hidden">
               <img
                 src="/images/avatar.png"
@@ -23,7 +25,7 @@ const Chatlist = () => {
               />
             </div>
             <div className="flex flex-col  items-start ">
-              <span> Name</span>
+              <span> {username}</span>
               <span className="text-slate-400 text-sm ">message</span>
             </div>
             <div className="ml-auto flex justify-center items-center gap-2 flex-col">

@@ -1,14 +1,12 @@
 import express from "express";
 import User from "../models/User.js";
 import bcrypt from "bcrypt";
-import session from "express-session";
 
 const router = express.Router();
 
 router.route("/register").post(async (req, res) => {
   try {
     const { email, password, username } = await req.body;
-   
 
     if (!email || !password || !username) {
       return res.status(400).json({ message: "All fields are required" });
@@ -32,11 +30,11 @@ router.route("/register").post(async (req, res) => {
       password: await bcrypt.hash(password, 10),
       username,
     });
-     console.log(user);
+
     res.status(201).json(user);
   } catch (error) {
     console.log(error);
-    
+
     res.status(500).json({ message: error.message });
   }
 });
@@ -54,8 +52,7 @@ router.route("/login").post(async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (isMatch) {
       req.session.user = user.username;
-      console.log(req.session);
-      
+
       return res.status(200).json({ message: "Login successful" });
     } else {
       return res.status(400).json({ message: "Invalid credentials" });

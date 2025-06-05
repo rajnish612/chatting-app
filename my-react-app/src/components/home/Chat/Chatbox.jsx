@@ -9,7 +9,7 @@ const Chatbox = () => {
   return (
     <div
       style={{ msOverflowStyle: "none", scrollbarWidth: "none" }}
-      className="h-full  border-t-1 flex flex-col justify-between border-slate-400 bg-slate-100  lg:w-150 relative  items-center  overflow-y-scroll  text-black"
+      className="h-full  pb-4 border-t-1 flex flex-col justify-between border-slate-400 bg-slate-100  lg:w-150 relative  items-center  overflow-y-scroll  text-black"
     >
       <div className="!bg-white w-full px-5 gap-7   h-20  !transition-all !border-0 focus:scale-[1.1]     !outline-0 text-black flex justify-start items-center">
         <div className="w-20 h-20 rounded-full overflow-hidden">

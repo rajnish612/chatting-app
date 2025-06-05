@@ -10,25 +10,26 @@ import { IoSettingsSharp } from "react-icons/io5";
 import Settings from "./home/Settings";
 import Contact from "./home/Contact";
 import { io } from "socket.io-client";
+import { useCallback } from "react";
 import { FaUserFriends } from "react-icons/fa";
 import Search from "./Search";
 import { useEffect } from "react";
 const DrawerItems = [
   {
     icon: <IoChatboxEllipsesSharp size={20} />,
-    element: <Chats />,
+    element: Chats,
   },
   {
     icon: <IoMdContact size={20} />,
-    element: <Contact />,
+    element: Contact,
   },
   {
     icon: <IoSettingsSharp size={20} />,
-    element: <Settings />,
+    element: Settings,
   },
   {
     icon: <FaUserFriends />,
-    element: <Search />,
+    element: Search,
   },
 ];
 
@@ -37,45 +38,44 @@ const Home = () => {
     withCredentials: true,
     transports: ["websocket"],
   });
+  const [users, setUsers] = React.useState([]);
+  const [self,setSelf]=React.useState("")
+  const [refreshUsers, setRefreshUsers] = React.useState(false);
   const [open, setOpen] = React.useState(false);
   const [idx, setIdx] = React.useState(0);
+  const SelectedComponent = DrawerItems[idx].element;
+
+  function handleClick(e) {
+    console.log(e);
+
+    socket.emit("messages", "hello");
+  }
+  const fetchusers = useCallback(async () => {
+    const res = await fetch(import.meta.env.VITE_API_URL + "/api/users", {
+      method: "GET",
+      credentials: "include",
+    });
+    const data = await res.json();
+    setSelf(data.user)
+    setUsers(data.users);
+  }, []);
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        const res = await fetch(import.meta.env.VITE_API_URL + "/api/users", {
-          credentials: "include",
-        });
-        const data = await res.json();
-        if (data.success) {
-          console.log("User data fetched successfully:", data);
-        } else {
-          console.error("Failed to fetch user data:", data.message);
-        }
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-      }
-    }
-    fetchData();
-  }, []);
-  useEffect(() => {
+    fetchusers();
     socket.on("connect", () => {
       console.log("Connected to socket server:", socket.id);
-      socket.emit("message", "Hello from React Native");
     });
-
     return () => {
       socket.disconnect();
     };
-  }, []);
+  }, [refreshUsers,fetchusers]);
   return (
-    <div className="w-screen h-screen bg-white">
+    <div className="w-screen h-screen  bg-white">
       <SlOptions
         onClick={() => setOpen(true)}
         color="black"
         className="absolute cursor-pointer hover:scale-[1.1] transition-transform top-2 z-[1000]  left-4 "
       />
-
       <Drawer
         PaperProps={{
           sx: {
@@ -108,7 +108,8 @@ const Home = () => {
           </button>
         ))}
       </Drawer>
-      {DrawerItems[idx].element}
+      <SelectedComponent users={users} self={self} setRefreshUsers={setRefreshUsers} />{" "}
+      {/* {DrawerItems[idx].element} */}
     </div>
   );
 };
