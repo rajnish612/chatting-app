@@ -10,10 +10,11 @@ import { IoSettingsSharp } from "react-icons/io5";
 import Settings from "./home/Settings";
 import Contact from "./home/Contact";
 import { io } from "socket.io-client";
-import { useCallback } from "react";
 import { FaUserFriends } from "react-icons/fa";
 import Search from "./Search";
 import { useEffect } from "react";
+import { gql, useQuery } from "@apollo/client";
+import { useState } from "react";
 const DrawerItems = [
   {
     icon: <IoChatboxEllipsesSharp size={20} />,
@@ -32,43 +33,62 @@ const DrawerItems = [
     element: Search,
   },
 ];
-
+const selfQuery = gql`
+  query {
+    self {
+      _id
+      email
+      username
+      followings
+      followers
+    }
+  }
+`;
+const chatsQuery = gql`
+  query {
+    getChats {
+      username
+      unseenCount
+    }
+  }
+`;
 const Home = () => {
+  let [chats, setChats] = useState([{}]);
+  const { loading } = useQuery(selfQuery, {
+    onCompleted: async (data) => {
+      setSelf(data?.self);
+    },
+  });
+  const { getMyChats } = useQuery(chatsQuery, {
+    onCompleted: async (data) => {
+      setChats(data.getChats);
+    },
+    onError: async (err) => {},
+  });
+
   const socket = io(import.meta.env.VITE_API_URL, {
     withCredentials: true,
     transports: ["websocket"],
   });
-  const [users, setUsers] = React.useState([]);
-  const [self,setSelf]=React.useState("")
+  const [selectedUserToChat, setSelectedUserToChat] = useState("");
+  const [self, setSelf] = React.useState("");
+  const [userMessages, setUserMessages] = useState([]);
   const [refreshUsers, setRefreshUsers] = React.useState(false);
   const [open, setOpen] = React.useState(false);
   const [idx, setIdx] = React.useState(0);
   const SelectedComponent = DrawerItems[idx].element;
-
-  function handleClick(e) {
-    console.log(e);
-
-    socket.emit("messages", "hello");
-  }
-  const fetchusers = useCallback(async () => {
-    const res = await fetch(import.meta.env.VITE_API_URL + "/api/users", {
-      method: "GET",
-      credentials: "include",
-    });
-    const data = await res.json();
-    setSelf(data.user)
-    setUsers(data.users);
-  }, []);
-
+  socket.on("receive", (data) => {
+    setUserMessages((prev) => [...prev, data]);
+  });
   useEffect(() => {
-    fetchusers();
-    socket.on("connect", () => {
-      console.log("Connected to socket server:", socket.id);
-    });
+    socket.on("connect", () => {});
+    socket.emit("join", self?.username);
     return () => {
       socket.disconnect();
     };
-  }, [refreshUsers,fetchusers]);
+  }, [refreshUsers, self, socket]);
+
+  if (loading) return <h1>Loading</h1>;
   return (
     <div className="w-screen h-screen  bg-white">
       <SlOptions
@@ -108,7 +128,16 @@ const Home = () => {
           </button>
         ))}
       </Drawer>
-      <SelectedComponent users={users} self={self} setRefreshUsers={setRefreshUsers} />{" "}
+      <SelectedComponent
+        selectedUserToChat={selectedUserToChat}
+        setSelectedUserToChat={setSelectedUserToChat}
+        self={self}
+        setUserMessages={setUserMessages}
+        userMessages={userMessages}
+        socket={socket}
+        chats={chats}
+        setRefreshUsers={setRefreshUsers}
+      />{" "}
       {/* {DrawerItems[idx].element} */}
     </div>
   );
