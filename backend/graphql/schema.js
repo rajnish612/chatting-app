@@ -1,0 +1,29 @@
+const typeDefs = `#graphql
+type User {
+  _id: ID!
+  email: String!
+  username: String!
+  followings: [String]
+  followers: [String]
+   }
+   type Message {
+    sender: String!
+    receiver: String!
+    isSeen: Boolean!
+    content: String!
+   }
+    type Query {
+    self: User
+     getAllMessages: [Message]
+  
+      getAllUsers: [User]
+    }
+
+    type Mutation {
+      login(email: String!, password: String!): String
+      follow(username:String!): User
+        getMessages(sender:String!,receiver:String!):[Message]
+    }
+`;
+
+export default typeDefs;
