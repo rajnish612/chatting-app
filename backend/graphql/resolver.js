@@ -3,10 +3,70 @@ import User from "../models/User.js";
 import bcrypt from "bcrypt";
 const resolver = {
   Query: {
+    getChats: async (parent, args, { req }) => {
+      let selfUsername = req?.session?.user;
+      const chatUsersWithUnseen = await Message.aggregate([
+        {
+          $match: {
+            $or: [{ sender: selfUsername }, { receiver: selfUsername }],
+          },
+        },
+        {
+          $project: {
+            user: {
+              $cond: [
+                { $eq: ["$sender", selfUsername] },
+                "$receiver", // if you are sender, other user is receiver
+                "$sender", // else, other user is sender
+              ],
+            },
+          },
+        },
+        {
+          $group: {
+            _id: "$user",
+          },
+        },
+        {
+          $lookup: {
+            from: "messages", // collection name must match your MongoDB collection
+            let: { otherUser: "$_id" },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ["$sender", selfUsername] },
+                      { $eq: ["$receiver", "$$otherUser"] },
+                      { $eq: ["$isSeen", false] },
+                    ],
+                  },
+                },
+              },
+              { $count: "unseenCount" },
+            ],
+            as: "unseenMessages",
+          },
+        },
+        {
+          $project: {
+            username: "$_id",
+            unseenCount: {
+              $cond: [
+                { $gt: [{ $size: "$unseenMessages" }, 0] },
+                { $arrayElemAt: ["$unseenMessages.unseenCount", 0] },
+                0,
+              ],
+            },
+          },
+        },
+      ]);
+      return chatUsersWithUnseen;
+    },
     self: async (parent, args, { req }) => {
       if (!req?.session?.user) return null;
       let user = await User.findOne({
-        username: req?.session?.user?.username,
+        username: req?.session?.user,
       });
 
       return user;
@@ -33,6 +93,18 @@ const resolver = {
   },
 
   Mutation: {
+    getMessages: async (parent, args, { req }) => {
+      if (!req?.session?.user) return null;
+      const { sender, receiver } = args;
+      if (!sender || !receiver) throw new Error("Messages not available");
+      const messages = await Message.find({
+        $or: [
+          { sender: sender, receiver: receiver },
+          { sender: receiver, receiver: sender },
+        ],
+      });
+      return messages;
+    },
     login: async (parent, args, { req }) => {
       const { email, password } = args;
       if (!email || !password) {
@@ -50,18 +122,7 @@ const resolver = {
 
       return "Login successful";
     },
-    getMessages: async (parent, args, { req }) => {
-      if (!req?.session?.user) return null;
-      const { sender, receiver } = args;
-      if (!sender || !receiver) throw new Error("Messages not available");
-      const messages = await Message.find({
-        $or: [
-          { sender: sender, receiver: receiver },
-          { sender: receiver, receiver: sender },
-        ],
-      });
-      return messages;
-    },
+
     follow: async (parent, args, { req }) => {
       try {
         const { user } = req.session;

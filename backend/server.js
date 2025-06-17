@@ -37,11 +37,11 @@ app.use(
   })
 );
 app.use(
-  bodyParser.urlencoded({
+  express.urlencoded({
     extended: true,
   })
 );
-app.use(bodyParser.json());
+app.use(express.json());
 app.use(
   session({
     secret: "secret",
@@ -60,17 +60,24 @@ io.on("connection", (socket) => {
     socket.join(id);
   });
   socket.on("message", async ({ sender, receiver, content }) => {
-    let newMessage = await new Message({ sender, receiver, content });
+    let newMessage = new Message({ sender, receiver, content,isSeen:false });
     await newMessage.save();
-    io.to(receiver).emit("receive",{ sender, receiver, content });
+    io.to(receiver).emit("receive", { sender, receiver, content });
   });
   socket.on("disconnect", () => {
     console.log("User disconnected:", socket.id);
   });
 });
 await apolloServer.start();
-app.use(express.json())
-app.use("/graphql", expressMiddleware(apolloServer));
+
+app.use(
+  "/graphql",
+  expressMiddleware(apolloServer, {
+    context: async ({ req, res }) => {
+      return { req, res };
+    },
+  })
+);
 app.use("/api/auth", Authrouter);
 app.use("/api/users", Homerouter);
 

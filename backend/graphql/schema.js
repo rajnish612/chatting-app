@@ -6,23 +6,27 @@ type User {
   followings: [String]
   followers: [String]
    }
-   type Message {
-    sender: String!
-    receiver: String!
-    isSeen: Boolean!
-    content: String!
+type chatPreview {
+  username: String!
+  unseenCount: Int!
+}
+type Message {
+  sender: String!
+  receiver: String!
+  isSeen: Boolean!
+  content: String!
    }
-    type Query {
-    self: User
-     getAllMessages: [Message]
-  
-      getAllUsers: [User]
-    }
+type Query {
+  getChats:[chatPreview]
 
-    type Mutation {
-      login(email: String!, password: String!): String
-      follow(username:String!): User
-        getMessages(sender:String!,receiver:String!):[Message]
+  self: User
+  getAllMessages: [Message]
+  getAllUsers: [User]
+   }
+type Mutation {
+    login(email: String!, password: String!): String
+    follow(username:String!): User
+     getMessages(sender:String!,receiver:String!):[Message]
     }
 `;
 
