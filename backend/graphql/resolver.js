@@ -36,8 +36,8 @@ const resolver = {
                 $match: {
                   $expr: {
                     $and: [
-                      { $eq: ["$sender", selfUsername] },
-                      { $eq: ["$receiver", "$$otherUser"] },
+                      { $eq: ["$receiver", selfUsername] },
+                      { $eq: ["$sender", "$$otherUser"] },
                       { $eq: ["$isSeen", false] },
                     ],
                   },
@@ -93,6 +93,15 @@ const resolver = {
   },
 
   Mutation: {
+    SeeMessages: async (parent, args) => {
+      const { sender, receiver } = args;
+      const messages = await Message.updateMany(
+        { sender, receiver },
+        { $set: { isSeen: true } }
+      );
+      const updatedMessages = await Message.find({ sender, receiver });
+      return updatedMessages;
+    },
     getMessages: async (parent, args, { req }) => {
       if (!req?.session?.user) return null;
       const { sender, receiver } = args;

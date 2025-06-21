@@ -60,9 +60,12 @@ io.on("connection", (socket) => {
     socket.join(id);
   });
   socket.on("message", async ({ sender, receiver, content }) => {
-    let newMessage = new Message({ sender, receiver, content,isSeen:false });
+    let newMessage = new Message({ sender, receiver, content, isSeen: false });
     await newMessage.save();
     io.to(receiver).emit("receive", { sender, receiver, content });
+  });
+  socket.on("messageSeenByReceiver", async ({ sender, receiver }) => {
+    io.to(sender).emit("messageSeen", { receiver });
   });
   socket.on("disconnect", () => {
     console.log("User disconnected:", socket.id);

@@ -24,6 +24,7 @@ type Query {
   getAllUsers: [User]
    }
 type Mutation {
+     SeeMessages(sender:String!,receiver:String!):[Message]
     login(email: String!, password: String!): String
     follow(username:String!): User
      getMessages(sender:String!,receiver:String!):[Message]
