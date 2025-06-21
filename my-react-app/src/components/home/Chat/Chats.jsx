@@ -9,8 +9,10 @@ const Chats = ({
   setSelectedUserToChat,
   selectedUserToChat,
   socket,
- setUserMessages,
-  userMessages ,
+  chatsrefetch,
+  setChats,
+  setUserMessages,
+  userMessages,
 }) => {
   return (
     <div className="h-screen bg-white w-screen flex">
@@ -21,6 +23,8 @@ const Chats = ({
         chats={chats}
       />
       <Chatbox
+        chatsrefetch={chatsrefetch}
+        setChats={setChats}
         setUserMessages={setUserMessages}
         userMessages={userMessages}
         socket={socket}

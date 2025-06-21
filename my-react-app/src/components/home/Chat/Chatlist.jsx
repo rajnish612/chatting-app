@@ -46,15 +46,17 @@ const Chatlist = ({ self, setSelectedUserToChat, chats }) => {
               <span className="text-slate-400 text-sm ">message</span>
             </div>
             <div className="ml-auto flex justify-center items-center gap-2 flex-col">
-              <span className=" w-4 h-4 text-xs flex justify-center items-center bg-red-500 rounded-full text-white">
-                {chat.unseenCount !== 0 && chat.unseenCount}
-              </span>
+              {chat.unseenCount !== 0 && (
+                <span className=" w-4 h-4 text-xs flex justify-center items-center bg-red-500 rounded-full text-white">
+                  {chat.unseenCount}
+                </span>
+              )}
               <span className="text-xs text-slate-400">yesterday</span>
             </div>
           </button>
         ))}
 
-        <h1 className="text-black">Messages</h1>
+        {chats.length !== 0 && <h1 className="text-black">Messages</h1>}
         {chats.map((chat, index) => (
           <button
             onClick={() => {
@@ -74,9 +76,11 @@ const Chatlist = ({ self, setSelectedUserToChat, chats }) => {
               <span className="text-slate-400 text-sm ">message</span>
             </div>
             <div className="ml-auto flex justify-center items-center gap-2 flex-col">
-              <span className=" w-4 h-4 text-xs flex justify-center items-center bg-red-500 rounded-full text-white">
-                {chat.unseenCount !== 0 && chat.unseenCount}
-              </span>
+              {chat.unseenCount !== 0 && (
+                <span className=" w-4 h-4 text-xs flex justify-center items-center bg-red-500 rounded-full text-white">
+                  {chat.unseenCount}
+                </span>
+              )}
               <span className="text-xs text-slate-400">yesterday</span>
             </div>
           </button>

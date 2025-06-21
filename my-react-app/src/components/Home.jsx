@@ -53,13 +53,14 @@ const chatsQuery = gql`
   }
 `;
 const Home = () => {
+  
   let [chats, setChats] = useState([{}]);
   const { loading } = useQuery(selfQuery, {
     onCompleted: async (data) => {
       setSelf(data?.self);
     },
   });
-  const { getMyChats } = useQuery(chatsQuery, {
+  const { getMyChats, refetch: chatsrefetch } = useQuery(chatsQuery, {
     onCompleted: async (data) => {
       setChats(data.getChats);
     },
@@ -77,8 +78,12 @@ const Home = () => {
   const [open, setOpen] = React.useState(false);
   const [idx, setIdx] = React.useState(0);
   const SelectedComponent = DrawerItems[idx].element;
-  socket.on("receive", (data) => {
-    setUserMessages((prev) => [...prev, data]);
+
+  socket.on("receive", ({ sender, receiver, content }) => {
+    chatsrefetch().then((data) => {
+      setChats(data.data.getChats);
+    });
+    setUserMessages((prev) => [...prev, { sender, receiver, content }]);
   });
   useEffect(() => {
     socket.on("connect", () => {});
@@ -135,6 +140,8 @@ const Home = () => {
         setUserMessages={setUserMessages}
         userMessages={userMessages}
         socket={socket}
+        setChats={setChats}
+        chatsrefetch={chatsrefetch}
         chats={chats}
         setRefreshUsers={setRefreshUsers}
       />{" "}
