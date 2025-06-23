@@ -87,6 +87,8 @@ const Chatbox = ({
       ...prev,
       { sender: self.username, receiver: selectedUserToChat, content: content },
     ]);
+
+    setContent("");
   }
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -134,114 +136,117 @@ const Chatbox = ({
       socket.off("messageSeen", handleMessageSeen);
     };
   }, [socket, self.username, setUserMessages]);
-  useEffect(() => {
-    const handleScroll = () => {
-      const container = chatContainerRef.current;
-      if (!container) return;
 
-      const isAtBottom =
-        container.scrollHeight - container.scrollTop <=
-        container.clientHeight + 50;
-
-      setShowScrollDownArrow(!isAtBottom);
-    };
-
-    const chatBox = chatContainerRef.current;
-    if (chatBox) {
-      chatBox.addEventListener("scroll", handleScroll);
-    }
-
-    return () => {
-      if (chatBox) chatBox.removeEventListener("scroll", handleScroll);
-    };
-  }, []);
   useEffect(() => {
     scrollToBottom();
   }, [userMessages]);
+  console.log(userMessages);
+  console.log(showScrollDownArrow);
 
   if (!selectedUserToChat) return <h1>Loading</h1>;
   return (
-    <div className="relative h-full w-full">
-      {/* Scroll-to-bottom Arrow */}
+    <div
+      style={{ msOverflowStyle: "none", scrollbarWidth: "none" }}
+      // overflow-y-scroll
+      className="h-full  pb-4 border-t-1 flex flex-col justify-between border-slate-400 bg-slate-100  lg:w-150 relative  items-center    text-black"
+    >
+      <div className="!bg-white w-full px-5 gap-7   h-20  !transition-all !border-0 focus:scale-[1.1]     !outline-0 text-black flex justify-start items-center">
+        <div className="w-20 h-20 rounded-full overflow-hidden">
+          <img
+            src="/images/avatar.png"
+            className="w-full object-contain h-full"
+          />
+        </div>
+        <span>{selectedUserToChat}</span>
+        <FaPhoneAlt color="blue" size={20} style={{ marginLeft: "auto" }} />
+        <FaVideo color="blue" size={24} />
+      </div>
       {showScrollDownArrow && (
-        <button className="fixed bottom-24 right-6 z-[1000] p-3 bg-red-500 text-black">
-          Show ⬇
+        <button
+          className="!bg-red-400 !w-20 absolute bottom-37 right-7 z-10"
+          onClick={scrollToBottom}
+        >
+          Hey
         </button>
       )}
       <div
         ref={chatContainerRef}
+        onScroll={() => {
+          const container = chatContainerRef.current;
+          const isAtBottom =
+            container.scrollHeight - container.scrollTop <=
+            container.clientHeight + 10;
+
+          console.log("At Bottom:", isAtBottom); // ✅ Check this
+          setShowScrollDownArrow(!isAtBottom);
+        }}
         style={{ msOverflowStyle: "none", scrollbarWidth: "none" }}
-        className="h-full  pb-4 border-t-1 flex flex-col justify-between border-slate-400 bg-slate-100  lg:w-150 relative  items-center  overflow-y-scroll  text-black"
+        className=" justify-start h-full w-full  overflow-y-scroll items-center flex flex-col"
       >
-        <div className="!bg-white w-full px-5 gap-7   h-20  !transition-all !border-0 focus:scale-[1.1]     !outline-0 text-black flex justify-start items-center">
-          <div className="w-20 h-20 rounded-full overflow-hidden">
-            <img
-              src="/images/avatar.png"
-              className="w-full object-contain h-full"
-            />
-          </div>
-          <span>{selectedUserToChat}</span>
-          <FaPhoneAlt color="blue" size={20} style={{ marginLeft: "auto" }} />
-          <FaVideo color="blue" size={24} />
-        </div>
-        <div
-          style={{ msOverflowStyle: "none", scrollbarWidth: "none" }}
-          className=" justify-start h-full w-full  overflow-y-scroll items-center flex flex-col"
-        >
-          {userMessages?.map((messages, idx) => {
-            return messages.sender === self?.username ? (
-              <div key={idx} className=" w-full p-5 flex justify-end relative">
-                <span
-                  style={{ wordBreak: "break-word", whiteSpace: "pre-wrap" }}
-                  className="bg-red-600 font-medium p-2 rounded-tl-3xl rounded-tr-3xl text-xs max-w-70 rounded-bl-3xl text-white"
-                >
-                  {messages.content}
-                  {!messages.isSeen && "not seen"}
-                </span>
-                <img
-                  src="/images/avatar.png"
-                  className="w-10 h-10 object-contain  "
-                />
-              </div>
-            ) : (
-              <div className=" w-full p-5 flex justify-start items-end relative">
-                <img
-                  src="/images/avatar.png"
-                  className="w-10 h-10 object-contain  "
-                />
-                <span
-                  style={{ wordBreak: "break-word", whiteSpace: "pre-wrap" }}
-                  className="bg-blue-500 p-2 font-medium rounded-tr-3xl rounded-tl-3xl text-xs max-w-70 rounded-br-3xl text-white"
-                >
-                  {messages.content}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-        <div
-          ref={messagesEndRef}
-          className=" flex-col gap-2 overflow-hidden bg-white  h-fit py-5 rounded-2xl  w-[90%]  flex justify-center items-center  "
-        >
-          <textarea
-            onChange={handleChange}
-            style={{
-              msOverflowStyle: "none",
-              scrollbarWidth: "none",
-              resize: "none",
-            }}
-            className="w-full text-gray-400 outline-0 h-20 px-2"
-            placeholder="enter your message"
-          />{" "}
-          <div className="flex justify-start items-end px-5  gap-2  w-full">
-            <MdOutlineEmojiEmotions size={25} style={{ color: "blue" }} />
-            <MdOutlineKeyboardVoice size={25} style={{ color: "blue" }} />
-            <IoIosSend
-              onClick={() => handleSend()}
-              size={25}
-              style={{ color: "blue", marginLeft: "auto" }}
-            />
-          </div>
+        {userMessages?.map((messages, idx) => {
+          return messages.sender === self?.username ? (
+            <div
+              ref={
+                idx === userMessages.length - 1 || userMessages.length - 2
+                  ? messagesEndRef
+                  : null
+              }
+              key={idx}
+              className=" w-full p-5 flex justify-end relative"
+            >
+              <span
+                style={{ wordBreak: "break-word", whiteSpace: "pre-wrap" }}
+                className="bg-red-600 font-medium p-2 rounded-tl-3xl rounded-tr-3xl text-xs max-w-70 rounded-bl-3xl text-white"
+              >
+                {messages.content}
+                {!messages.isSeen && "not seen"}
+              </span>
+              <img
+                src="/images/avatar.png"
+                className="w-10 h-10 object-contain  "
+              />
+            </div>
+          ) : (
+            <div className=" w-full p-5 flex justify-start items-end relative">
+              <img
+                src="/images/avatar.png"
+                className="w-10 h-10 object-contain  "
+              />
+              <span
+                ref={
+                  idx === userMessages.length - 1 || userMessages.length - 2
+                    ? messagesEndRef
+                    : null
+                }
+                style={{ wordBreak: "break-word", whiteSpace: "pre-wrap" }}
+                className="bg-blue-500 p-2 font-medium rounded-tr-3xl rounded-tl-3xl text-xs max-w-70 rounded-br-3xl text-white"
+              >
+                {messages.content}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className=" flex-col gap-2 overflow-hidden bg-white  h-fit py-5 rounded-2xl  w-[90%]  flex justify-center items-center  ">
+        <textarea
+          onChange={handleChange}
+          style={{
+            msOverflowStyle: "none",
+            scrollbarWidth: "none",
+            resize: "none",
+          }}
+          className="w-full text-gray-400 outline-0 h-20 px-2"
+          placeholder="enter your message"
+        />{" "}
+        <div className="flex justify-start items-end px-5  gap-2  w-full">
+          <MdOutlineEmojiEmotions size={25} style={{ color: "blue" }} />
+          <MdOutlineKeyboardVoice size={25} style={{ color: "blue" }} />
+          <IoIosSend
+            onClick={() => handleSend()}
+            size={25}
+            style={{ color: "blue", marginLeft: "auto" }}
+          />
         </div>
       </div>
     </div>
