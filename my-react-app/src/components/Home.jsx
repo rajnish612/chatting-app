@@ -52,8 +52,14 @@ const chatsQuery = gql`
     }
   }
 `;
+const socket = io(import.meta.env.VITE_API_URL, {
+  withCredentials: true,
+  transports: ["websocket"],
+  reconnection: true,
+  reconnectionAttempts: 10,
+  reconnectionDelay: 1000,
+});
 const Home = () => {
-  
   let [chats, setChats] = useState([{}]);
   const { loading } = useQuery(selfQuery, {
     onCompleted: async (data) => {
@@ -67,10 +73,6 @@ const Home = () => {
     onError: async (err) => {},
   });
 
-  const socket = io(import.meta.env.VITE_API_URL, {
-    withCredentials: true,
-    transports: ["websocket"],
-  });
   const [selectedUserToChat, setSelectedUserToChat] = useState("");
   const [self, setSelf] = React.useState("");
   const [userMessages, setUserMessages] = useState([]);
@@ -79,19 +81,45 @@ const Home = () => {
   const [idx, setIdx] = React.useState(0);
   const SelectedComponent = DrawerItems[idx].element;
 
-  socket.on("receive", ({ sender, receiver, content }) => {
-    chatsrefetch().then((data) => {
-      setChats(data.data.getChats);
-    });
-    setUserMessages((prev) => [...prev, { sender, receiver, content }]);
-  });
+  // socket.on("receive", ({ sender, receiver, content }) => {
+  //   console.log("content", content);
+
+  //   setUserMessages((prev) => {
+  //     const updated = [...prev, { sender, receiver, content }];
+  //     return updated;
+  //   });
+
+  //   chatsrefetch().then((data) => {
+  //     setChats(data.data.getChats);
+  //   });
+  // });
+  useEffect(() => {
+    const handleReceive = ({ sender, receiver, content }) => {
+      console.log("content", content);
+      setUserMessages((prev) => [...prev, { sender, receiver, content }]);
+      chatsrefetch().then((data) => {
+        setChats(data.data.getChats);
+      });
+    };
+
+    socket.on("receive", handleReceive);
+
+    return () => {
+      socket.off("receive", handleReceive); // clean up
+    };
+  }, [chatsrefetch]);
   useEffect(() => {
     socket.on("connect", () => {});
     socket.emit("join", self?.username);
     return () => {
-      socket.disconnect();
+      socket.off("connect", () => {
+        socket.emit("join", self.username);
+      });
     };
-  }, [refreshUsers, self, socket]);
+    // return () => {
+    //   socket.disconnect();
+    // };
+  }, [self?.username]);
 
   if (loading) return <h1>Loading</h1>;
   return (

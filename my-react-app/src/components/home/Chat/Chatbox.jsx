@@ -7,6 +7,7 @@ import { FaPhoneAlt } from "react-icons/fa";
 import { FaVideo } from "react-icons/fa";
 import { IoIosSend } from "react-icons/io";
 import { MdOutlineEmojiEmotions } from "react-icons/md";
+import { useLayoutEffect } from "react";
 import { MdOutlineKeyboardVoice } from "react-icons/md";
 const isSeenQuery = gql`
   mutation SeeMessages($sender: String!, $receiver: String!) {
@@ -136,12 +137,12 @@ const Chatbox = ({
       socket.off("messageSeen", handleMessageSeen);
     };
   }, [socket, self.username, setUserMessages]);
-
-  useEffect(() => {
+  useLayoutEffect(() => {
     scrollToBottom();
   }, [userMessages]);
-  console.log(userMessages);
-  console.log(showScrollDownArrow);
+  // useEffect(() => {
+  //   scrollToBottom();
+  // }, [userMessages]);
 
   if (!selectedUserToChat) return <h1>Loading</h1>;
   return (
@@ -230,6 +231,7 @@ const Chatbox = ({
 
       <div className=" flex-col gap-2 overflow-hidden bg-white  h-fit py-5 rounded-2xl  w-[90%]  flex justify-center items-center  ">
         <textarea
+          value={content}
           onChange={handleChange}
           style={{
             msOverflowStyle: "none",

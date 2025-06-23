@@ -68,7 +68,8 @@ io.on("connection", (socket) => {
     io.to(sender).emit("messageSeen", { receiver });
   });
   socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
+    console.log("disconnected");
+    
   });
 });
 await apolloServer.start();

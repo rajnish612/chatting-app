@@ -1,6 +1,11 @@
 import React from "react";
 import { CiSearch } from "react-icons/ci";
-const Chatlist = ({ self, setSelectedUserToChat, chats }) => {
+const Chatlist = ({
+  self,
+  setSelectedUserToChat,
+  chats,
+  selectedUserToChat,
+}) => {
   const followingsWithUnseen = self?.followings?.map((username) => {
     const chat = chats.find((chat) => chat.username === username);
     return {
@@ -63,7 +68,10 @@ const Chatlist = ({ self, setSelectedUserToChat, chats }) => {
               setSelectedUserToChat(chat.username);
             }}
             key={index}
-            className=" w-[90%] focus:shadow-lg h-20 mt-2 !transition-all !border-0 focus:scale-[1.1] focus:rounded-2xl focus:!border-l-4 focus:!border-blue-500    !outline-0 text-black !flex !bg-white justify-start items-center"
+            className={`w-[90%] ${
+              selectedUserToChat === chat.username &&
+              "!scale-[1.1] !border-blue-500 !border-l-4 shadow-lg"
+            } h-20 mt-2 !transition-all !border-0     focus:!border-l-4 focus:rounded-2xl   !outline-0 text-black !flex !bg-white justify-start items-center`}
           >
             <div className="w-20 h-20  rounded-full overflow-hidden">
               <img
