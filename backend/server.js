@@ -59,6 +59,7 @@ io.on("connection", (socket) => {
   socket.on("join", (id) => {
     socket.join(id);
   });
+
   socket.on("message", async ({ sender, receiver, content }) => {
     let newMessage = new Message({ sender, receiver, content, isSeen: false });
     await newMessage.save();
@@ -67,9 +68,30 @@ io.on("connection", (socket) => {
   socket.on("messageSeenByReceiver", async ({ sender, receiver }) => {
     io.to(sender).emit("messageSeen", { receiver });
   });
+  socket.on("call-user", ({ from, to, offer }) => {
+    console.log(from, to);
+
+    io.to(to).emit("receive-call", {
+      from: from,
+      offer: offer,
+    });
+  });
+
+  socket.on("answer-call", ({ to, answer }) => {
+    io.to(to).emit("call-answered", {
+      from: socket.id,
+      answer,
+    });
+  });
+
+  socket.on("ice-candidate", ({ to, candidate }) => {
+    io.to(to).emit("ice-candidate", {
+      from: socket.id,
+      candidate,
+    });
+  });
   socket.on("disconnect", () => {
     console.log("disconnected");
-    
   });
 });
 await apolloServer.start();
