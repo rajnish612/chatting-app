@@ -14,7 +14,11 @@ import { FaUserFriends } from "react-icons/fa";
 import Search from "./Search";
 import { useEffect } from "react";
 import { gql, useQuery } from "@apollo/client";
+
+import AudioCall from "./AudioCall";
+
 import { useState } from "react";
+import useSocket from "../../hooks/Socket";
 const DrawerItems = [
   {
     icon: <IoChatboxEllipsesSharp size={20} />,
@@ -52,14 +56,9 @@ const chatsQuery = gql`
     }
   }
 `;
-const socket = io(import.meta.env.VITE_API_URL, {
-  withCredentials: true,
-  transports: ["websocket"],
-  reconnection: true,
-  reconnectionAttempts: 10,
-  reconnectionDelay: 1000,
-});
 const Home = () => {
+  const { socket } = useSocket();
+
   let [chats, setChats] = useState([{}]);
   const { loading } = useQuery(selfQuery, {
     onCompleted: async (data) => {
@@ -81,18 +80,6 @@ const Home = () => {
   const [idx, setIdx] = React.useState(0);
   const SelectedComponent = DrawerItems[idx].element;
 
-  // socket.on("receive", ({ sender, receiver, content }) => {
-  //   console.log("content", content);
-
-  //   setUserMessages((prev) => {
-  //     const updated = [...prev, { sender, receiver, content }];
-  //     return updated;
-  //   });
-
-  //   chatsrefetch().then((data) => {
-  //     setChats(data.data.getChats);
-  //   });
-  // });
   useEffect(() => {
     const handleReceive = ({ sender, receiver, content }) => {
       console.log("content", content);
@@ -107,7 +94,7 @@ const Home = () => {
     return () => {
       socket.off("receive", handleReceive); // clean up
     };
-  }, [chatsrefetch]);
+  }, [chatsrefetch, socket]);
   useEffect(() => {
     socket.on("connect", () => {});
     socket.emit("join", self?.username);
@@ -119,8 +106,16 @@ const Home = () => {
     // return () => {
     //   socket.disconnect();
     // };
-  }, [self?.username]);
-
+  }, [self?.username, socket]);
+  useEffect(() => {
+    function receiveCall({ from, offer }) {
+      console.log(from, offer);
+    }
+    socket.on("receive-call", receiveCall);
+    return () => {
+      socket.off("receive-call", receiveCall);
+    };
+  }, [socket]);
   if (loading) return <h1>Loading</h1>;
   return (
     <div className="w-screen h-screen  bg-white">

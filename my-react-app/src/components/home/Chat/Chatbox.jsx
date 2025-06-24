@@ -1,4 +1,4 @@
-import { gql, useMutation } from "@apollo/client";
+import { from, gql, useMutation } from "@apollo/client";
 import React, { useCallback } from "react";
 import { useEffect } from "react";
 import { useState } from "react";
@@ -29,6 +29,10 @@ const getSelectedUserChatsQuery = gql`
     }
   }
 `;
+let peerConnection;
+const config = {
+  iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+};
 const Chatbox = ({
   selectedUserToChat,
   socket,
@@ -120,6 +124,24 @@ const Chatbox = ({
       sender: selectedUserToChat,
     });
   }, [userMessages]);
+  async function handleCall() {
+    try {
+      peerConnection = new RTCPeerConnection(config);
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((track) => {
+        peerConnection.addTrack(track, stream);
+      });
+      const offer = await peerConnection.createOffer();
+      await peerConnection.setLocalDescription(offer);
+      socket.emit("call-user", {
+        to: selectedUserToChat,
+        from: self?.username,
+        offer: offer,
+      });
+    } catch (err) {
+      alert(err.message);
+    }
+  }
   useEffect(() => {
     const handleMessageSeen = ({ receiver }) => {
       setUserMessages((prev) =>
@@ -138,11 +160,10 @@ const Chatbox = ({
     };
   }, [socket, self.username, setUserMessages]);
   useLayoutEffect(() => {
-    scrollToBottom();
+    if (!showScrollDownArrow) {
+      scrollToBottom();
+    }
   }, [userMessages]);
-  // useEffect(() => {
-  //   scrollToBottom();
-  // }, [userMessages]);
 
   if (!selectedUserToChat) return <h1>Loading</h1>;
   return (
@@ -159,7 +180,12 @@ const Chatbox = ({
           />
         </div>
         <span>{selectedUserToChat}</span>
-        <FaPhoneAlt color="blue" size={20} style={{ marginLeft: "auto" }} />
+        <FaPhoneAlt
+          onClick={handleCall}
+          color="blue"
+          size={20}
+          style={{ marginLeft: "auto" }}
+        />
         <FaVideo color="blue" size={24} />
       </div>
       {showScrollDownArrow && (
