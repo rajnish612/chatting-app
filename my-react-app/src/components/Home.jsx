@@ -56,11 +56,16 @@ const chatsQuery = gql`
     }
   }
 `;
+const config = {
+  iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+};
 const Home = () => {
+  const [incomingCall, setIncomingCall] = useState(null);
+  const [showIncomingCallModal, setShowIncomingCallModal] = useState(false);
   const { socket } = useSocket();
-
+  const peerConnection = React.useRef(null);
   let [chats, setChats] = useState([{}]);
-  const { loading } = useQuery(selfQuery, {
+  const { loading, refetch: selfRefetch } = useQuery(selfQuery, {
     onCompleted: async (data) => {
       setSelf(data?.self);
     },
@@ -108,17 +113,89 @@ const Home = () => {
     // };
   }, [self?.username, socket]);
   useEffect(() => {
-    function receiveCall({ from, offer }) {
-      console.log(from, offer);
+    selfRefetch().then((data) => setSelf(data.data.self));
+  });
+  useEffect(() => {
+    async function receiveCall({ from, offer }) {
+      setIncomingCall({ from, offer }); // store incoming call
+      setShowIncomingCallModal(true);
     }
     socket.on("receive-call", receiveCall);
     return () => {
       socket.off("receive-call", receiveCall);
     };
+  }, [socket, self?.username]);
+  const handleAcceptCall = async () => {
+    const { from, offer } = incomingCall;
+    peerConnection.current = new RTCPeerConnection(config);
+
+    peerConnection.current.onicecandidate = (event) => {
+      if (event.candidate) {
+        socket.emit("ice-candidate", {
+          to: from,
+          from: self?.username,
+          candidate: event.candidate,
+        });
+      }
+    };
+
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream.getTracks().forEach((track) => {
+      peerConnection.current.addTrack(track, stream);
+    });
+
+    await peerConnection.current.setRemoteDescription(
+      new RTCSessionDescription(offer)
+    );
+
+    const answer = await peerConnection.current.createAnswer();
+    await peerConnection.current.setLocalDescription(answer);
+
+    socket.emit("answer-call", {
+      to: from,
+      from: self?.username,
+      answer,
+    });
+
+    setShowIncomingCallModal(false);
+    setIncomingCall(null);
+  };
+  useEffect(() => {
+    const handleNewICECandidate = ({ candidate }) => {
+      if (candidate && peerConnection.current) {
+        peerConnection.current.addIceCandidate(new RTCIceCandidate(candidate));
+      }
+    };
+
+    socket.on("ice-candidate", handleNewICECandidate);
+    return () => {
+      socket.off("ice-candidate", handleNewICECandidate);
+    };
   }, [socket]);
+
   if (loading) return <h1>Loading</h1>;
   return (
     <div className="w-screen h-screen  bg-white">
+      {showIncomingCallModal && (
+        <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-white border p-4 shadow-lg z-50 flex gap-3 rounded">
+          <span>{incomingCall?.from} is calling...</span>
+          <button
+            className="bg-green-500 text-white px-3 py-1 rounded"
+            onClick={handleAcceptCall}
+          >
+            Accept
+          </button>
+          <button
+            className="bg-red-500 text-white px-3 py-1 rounded"
+            onClick={() => {
+              setShowIncomingCallModal(false);
+              setIncomingCall(null);
+            }}
+          >
+            Reject
+          </button>
+        </div>
+      )}
       <SlOptions
         onClick={() => setOpen(true)}
         color="black"

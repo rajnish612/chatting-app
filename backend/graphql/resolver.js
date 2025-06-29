@@ -3,6 +3,30 @@ import User from "../models/User.js";
 import bcrypt from "bcrypt";
 const resolver = {
   Query: {
+    searchUsers: async (__, { query }, { req }) => {
+      const users = await User.find({
+        $and: [
+          {
+            $or: [
+              { username: { $regex: query, $options: "i" } },
+              { name: { $regex: query, $options: "i" } },
+            ],
+          },
+          { username: { $ne: req?.session?.user } },
+        ],
+      }).limit(20);
+      return users;
+    },
+    getRandomUsers: async (__, args, { req }) => {
+      if (!req?.session?.user) return null;
+      console.log(req?.session?.user);
+
+      const randomUsers = await User.aggregate([
+        { $match: { username: { $ne: req?.session?.user } } },
+        { $sample: { size: 10 } },
+      ]);
+      return randomUsers;
+    },
     getChats: async (parent, args, { req }) => {
       let selfUsername = req?.session?.user;
       const chatUsersWithUnseen = await Message.aggregate([

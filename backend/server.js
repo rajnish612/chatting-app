@@ -77,16 +77,16 @@ io.on("connection", (socket) => {
     });
   });
 
-  socket.on("answer-call", ({ to, answer }) => {
+  socket.on("answer-call", ({ to, from, answer }) => {
     io.to(to).emit("call-answered", {
-      from: socket.id,
+      from: from,
       answer,
     });
   });
 
-  socket.on("ice-candidate", ({ to, candidate }) => {
+  socket.on("ice-candidate", ({ to, from, candidate }) => {
     io.to(to).emit("ice-candidate", {
-      from: socket.id,
+      from: from,
       candidate,
     });
   });

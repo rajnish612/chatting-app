@@ -18,8 +18,9 @@ type Message {
    }
 type Query {
   getChats:[chatPreview]
-
+getRandomUsers:[User]
   self: User
+  searchUsers(query: String!):[User]
   getAllMessages: [Message]
   getAllUsers: [User]
    }

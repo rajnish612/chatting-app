@@ -29,7 +29,7 @@ const getSelectedUserChatsQuery = gql`
     }
   }
 `;
-let peerConnection;
+
 const config = {
   iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
 };
@@ -42,6 +42,7 @@ const Chatbox = ({
   userMessages,
 }) => {
   const messagesEndRef = React.useRef(null);
+  const peerConnection = React.useRef(null);
   const chatContainerRef = React.useRef(null);
   const [showScrollDownArrow, setShowScrollDownArrow] = useState(false);
   const [getSelectedUserChat] = useMutation(getSelectedUserChatsQuery, {
@@ -126,13 +127,22 @@ const Chatbox = ({
   }, [userMessages]);
   async function handleCall() {
     try {
-      peerConnection = new RTCPeerConnection(config);
+      peerConnection.current = new RTCPeerConnection(config);
+      peerConnection.current.onicecandidate = (event) => {
+        if (event.candidate) {
+          socket.emit("ice-candidate", {
+            to: selectedUserToChat,
+            from: self?.username,
+            candidate: event.candidate,
+          });
+        }
+      };
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       stream.getTracks().forEach((track) => {
-        peerConnection.addTrack(track, stream);
+        peerConnection.current.addTrack(track, stream);
       });
-      const offer = await peerConnection.createOffer();
-      await peerConnection.setLocalDescription(offer);
+      const offer = await peerConnection.current.createOffer();
+      await peerConnection.current.setLocalDescription(offer);
       socket.emit("call-user", {
         to: selectedUserToChat,
         from: self?.username,
@@ -142,6 +152,53 @@ const Chatbox = ({
       alert(err.message);
     }
   }
+  useEffect(() => {
+    const handleNewICECandidate = ({ candidate }) => {
+      if (candidate && peerConnection.current) {
+        peerConnection.current.addIceCandidate(new RTCIceCandidate(candidate));
+      }
+    };
+
+    socket.on("ice-candidate", handleNewICECandidate);
+    return () => {
+      socket.off("ice-candidate", handleNewICECandidate);
+    };
+  }, [socket]);
+  useEffect(() => {
+    const handleAnswer = async ({ from, answer }) => {
+      if (peerConnection.current) {
+        await peerConnection.current.setRemoteDescription(
+          new RTCSessionDescription(answer)
+        );
+      }
+    };
+
+    socket.on("answer-call", handleAnswer);
+
+    return () => {
+      socket.off("answer-call", handleAnswer);
+    };
+  }, [socket]);
+  useEffect(() => {
+    const handleRemoteICE = async ({ candidate }) => {
+      if (candidate && peerConnection.current) {
+        try {
+          await peerConnection.current.addIceCandidate(
+            new RTCIceCandidate(candidate)
+          );
+        } catch (err) {
+          console.error("Failed to add ICE candidate", err);
+        }
+      }
+    };
+
+    socket.on("ice-candidate", handleRemoteICE);
+
+    return () => {
+      socket.off("ice-candidate", handleRemoteICE);
+    };
+  }, [socket]);
+
   useEffect(() => {
     const handleMessageSeen = ({ receiver }) => {
       setUserMessages((prev) =>
