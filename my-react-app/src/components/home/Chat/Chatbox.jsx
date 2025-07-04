@@ -36,16 +36,20 @@ const config = {
 const Chatbox = ({
   selectedUserToChat,
   socket,
+  setUserOnCall,
   setChats,
   self,
   setUserMessages,
   setShowOutgoingCallModal,
   showOutgoingCallModal,
   userMessages,
+  userOnCall,
   onCall,
+  peerConnection,
+  destroyPeerConnection,
 }) => {
   const messagesEndRef = React.useRef(null);
-  const peerConnection = React.useRef(null);
+  // const peerConnection = React.useRef(null);
   const chatContainerRef = React.useRef(null);
   const [showScrollDownArrow, setShowScrollDownArrow] = useState(false);
   const [getSelectedUserChat] = useMutation(getSelectedUserChatsQuery, {
@@ -129,7 +133,14 @@ const Chatbox = ({
     });
   }, [userMessages]);
   async function handleCall() {
+    setUserOnCall(selectedUserToChat);
     try {
+      console.log("current", peerConnection.current);
+
+      if (peerConnection.current) {
+        peerConnection.current.close();
+        peerConnection.current = null;
+      }
       peerConnection.current = new RTCPeerConnection(config);
       peerConnection.current.onicecandidate = (event) => {
         if (event.candidate) {
@@ -210,32 +221,6 @@ const Chatbox = ({
       scrollToBottom();
     }
   }, [userMessages]);
-  const destroyPeerConnection = useCallback(() => {
-    if (peerConnection.current) {
-      // Stop all tracks that were added to the connection
-      peerConnection.current.getSenders().forEach((sender) => {
-        if (sender.track) {
-          sender.track.stop();
-        }
-      });
-
-      // Close the peer connection
-      peerConnection.current.close();
-      peerConnection.current = null;
-    }
-
-    // Optionally emit a socket event to notify the other user
-    socket.emit("call-ended", {
-      from: self?.username,
-      to: selectedUserToChat,
-    });
-  }, [selectedUserToChat, self?.username, socket]);
-  useEffect(() => {
-    if (!onCall || !showOutgoingCallModal) {
-      destroyPeerConnection();
-    }
-  }, [onCall, destroyPeerConnection, showOutgoingCallModal]);
-  console.log("oncall", onCall);
 
   if (!selectedUserToChat) return <h1>Loading</h1>;
   return (
@@ -254,6 +239,8 @@ const Chatbox = ({
         <span>{selectedUserToChat}</span>
         <FaPhoneAlt
           onClick={() => {
+            if (peerConnection.current)
+              return alert("you are already on a call");
             setShowOutgoingCallModal(true);
             handleCall();
           }}

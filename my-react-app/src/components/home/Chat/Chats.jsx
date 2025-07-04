@@ -14,7 +14,11 @@ const Chats = ({
   setChats,
   setUserMessages,
   onCall,
+  destroyPeerConnection,
   userMessages,
+  peerConnection,
+  setUserOnCall,
+  userOnCall,
   showOutgoingCallModal,
 }) => {
   return (
@@ -26,6 +30,10 @@ const Chats = ({
         chats={chats}
       />
       <Chatbox
+        userOnCall={userOnCall}
+        setUserOnCall={setUserOnCall}
+        peerConnection={peerConnection}
+        destroyPeerConnection={destroyPeerConnection}
         showOutgoingCallModal={showOutgoingCallModal}
         onCall={onCall}
         setShowOutgoingCallModal={setShowOutgoingCallModal}

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback } from "react";
 import Drawer from "@mui/material/Drawer";
 import { Box } from "@mui/material";
 import { SlOptions } from "react-icons/sl";
@@ -61,6 +61,7 @@ const config = {
 };
 const Home = () => {
   const [incomingCall, setIncomingCall] = useState(null);
+  const [userOnCall, setUserOnCall] = useState("");
   const [showIncomingCallModal, setShowIncomingCallModal] = useState(false);
   const [showOutgoingCallModal, setShowOutgoingCallModal] = useState(false);
   const { socket } = useSocket();
@@ -119,6 +120,9 @@ const Home = () => {
   });
   useEffect(() => {
     async function receiveCall({ from, offer }) {
+      console.log("receiving from", from);
+
+      setUserOnCall(from);
       setIncomingCall({ from, offer }); // store incoming call
       setShowIncomingCallModal(true);
     }
@@ -172,33 +176,60 @@ const Home = () => {
       socket.off("ice-candidate", handleNewICECandidate);
     };
   }, [socket]);
-  socket.on("call-answered", ({ from, answer }) => {
+  socket.on("call-answered", async ({ from, answer }) => {
     setOnCall(true);
     console.log("from answer", from);
     console.log(" answer", answer);
-  });
-  function destroyPeerConnection() {
+
     if (peerConnection.current) {
-      // Stop all tracks that were added to the connection
-      peerConnection.current.getSenders().forEach((sender) => {
-        if (sender.track) {
-          sender.track.stop();
-        }
+      try {
+        await peerConnection.current.setRemoteDescription(
+          new RTCSessionDescription(answer)
+        );
+      } catch (error) {
+        console.error("Failed to set remote description:", error);
+      }
+    }
+  });
+  const destroyPeerConnection = useCallback(
+    (peerConnection) => {
+      if (peerConnection.current) {
+        peerConnection.current.getSenders().forEach((sender) => {
+          if (sender.track) {
+            sender.track.stop();
+          }
+        });
+
+        // Close the peer connection
+        peerConnection.current.close();
+        peerConnection.current = null;
+      }
+
+      // Optionally emit a socket event to notify the other user
+      socket.emit("call-ended", {
+        from: self?.username,
+        to: userOnCall,
       });
 
-      // Close the peer connection
-      peerConnection.current.close();
-      peerConnection.current = null;
-    }
+      setOnCall(false);
+    },
+    [userOnCall, self?.username, socket]
+  );
+  const callEnded = useCallback(() => {
+    console.log("call ended");
 
-    // Optionally emit a socket event to notify the other user
-    socket.emit("call-ended", {
-      from: self?.username,
-      to: selectedUserToChat,
-    });
+    setIncomingCall(null);
+    setShowOutgoingCallModal(false);
+    setShowIncomingCallModal(false);
+    destroyPeerConnection(peerConnection);
+  }, []);
+  useEffect(() => {
+    socket.on("call-ended", callEnded);
+    return () => {
+      socket.off("call-ended", callEnded);
+    };
+  }, [socket, destroyPeerConnection, callEnded]);
 
-    setOnCall(false);
-  }
   if (loading) return <h1>Loading</h1>;
   return (
     <div className="w-screen h-screen  bg-white">
@@ -217,7 +248,7 @@ const Home = () => {
           <button
             className="bg-red-500 text-white px-3 py-1 rounded"
             onClick={() => {
-              destroyPeerConnection();
+              destroyPeerConnection(peerConnection);
               setShowOutgoingCallModal(false);
             }}
           >
@@ -244,7 +275,7 @@ const Home = () => {
           <button
             className="bg-red-500 text-white px-3 py-1 rounded"
             onClick={() => {
-              destroyPeerConnection();
+              destroyPeerConnection(peerConnection);
               setShowIncomingCallModal(false);
               setIncomingCall(null);
             }}
@@ -292,11 +323,15 @@ const Home = () => {
       </Drawer>
       <SelectedComponent
         onCall={onCall}
+        peerConnection={peerConnection}
+        destroyPeerConnection={destroyPeerConnection}
         showOutgoingCallModal={showOutgoingCallModal}
         setShowOutgoingCallModal={setShowOutgoingCallModal}
         selectedUserToChat={selectedUserToChat}
         setSelectedUserToChat={setSelectedUserToChat}
         self={self}
+        userOnCall={userOnCall}
+        setUserOnCall={setUserOnCall}
         setUserMessages={setUserMessages}
         userMessages={userMessages}
         socket={socket}
