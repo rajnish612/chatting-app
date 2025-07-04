@@ -90,6 +90,11 @@ io.on("connection", (socket) => {
       candidate,
     });
   });
+  socket.on("call-ended", ({ to, from }) => {
+    io.to(to).emit("call-ended", {
+      from: from,
+    });
+  });
   socket.on("disconnect", () => {
     console.log("disconnected");
   });
