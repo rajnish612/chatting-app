@@ -62,6 +62,7 @@ const config = {
 const Home = () => {
   const [incomingCall, setIncomingCall] = useState(null);
   const [showIncomingCallModal, setShowIncomingCallModal] = useState(false);
+  const [showOutgoingCallModal, setShowOutgoingCallModal] = useState(false);
   const { socket } = useSocket();
   const peerConnection = React.useRef(null);
   let [chats, setChats] = useState([{}]);
@@ -79,6 +80,7 @@ const Home = () => {
 
   const [selectedUserToChat, setSelectedUserToChat] = useState("");
   const [self, setSelf] = React.useState("");
+  const [onCall, setOnCall] = React.useState(false);
   const [userMessages, setUserMessages] = useState([]);
   const [refreshUsers, setRefreshUsers] = React.useState(false);
   const [open, setOpen] = React.useState(false);
@@ -156,9 +158,7 @@ const Home = () => {
       from: self?.username,
       answer,
     });
-
-    setShowIncomingCallModal(false);
-    setIncomingCall(null);
+    setOnCall(true);
   };
   useEffect(() => {
     const handleNewICECandidate = ({ candidate }) => {
@@ -172,22 +172,79 @@ const Home = () => {
       socket.off("ice-candidate", handleNewICECandidate);
     };
   }, [socket]);
+  socket.on("call-answered", ({ from, answer }) => {
+    setOnCall(true);
+    console.log("from answer", from);
+    console.log(" answer", answer);
+  });
+  function destroyPeerConnection() {
+    if (peerConnection.current) {
+      // Stop all tracks that were added to the connection
+      peerConnection.current.getSenders().forEach((sender) => {
+        if (sender.track) {
+          sender.track.stop();
+        }
+      });
 
+      // Close the peer connection
+      peerConnection.current.close();
+      peerConnection.current = null;
+    }
+
+    // Optionally emit a socket event to notify the other user
+    socket.emit("call-ended", {
+      from: self?.username,
+      to: selectedUserToChat,
+    });
+
+    setOnCall(false);
+  }
   if (loading) return <h1>Loading</h1>;
   return (
     <div className="w-screen h-screen  bg-white">
-      {showIncomingCallModal && (
+      {showOutgoingCallModal && (
         <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-white border p-4 shadow-lg z-50 flex gap-3 rounded">
           <span>{incomingCall?.from} is calling...</span>
-          <button
-            className="bg-green-500 text-white px-3 py-1 rounded"
-            onClick={handleAcceptCall}
-          >
-            Accept
-          </button>
+          {onCall ? (
+            <h1 className="text-black">OnCall</h1>
+          ) : (
+            <>
+              <button className="bg-green-500 text-white px-3 py-1 rounded">
+                calling....
+              </button>
+            </>
+          )}
           <button
             className="bg-red-500 text-white px-3 py-1 rounded"
             onClick={() => {
+              destroyPeerConnection();
+              setShowOutgoingCallModal(false);
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+      {showIncomingCallModal && (
+        <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-white border p-4 shadow-lg z-50 flex gap-3 rounded">
+          <span>{incomingCall?.from} is calling...</span>
+
+          {onCall ? (
+            <h1 className="text-black">On call</h1>
+          ) : (
+            <>
+              <button
+                className="bg-green-500 text-white px-3 py-1 rounded"
+                onClick={handleAcceptCall}
+              >
+                Accept
+              </button>
+            </>
+          )}
+          <button
+            className="bg-red-500 text-white px-3 py-1 rounded"
+            onClick={() => {
+              destroyPeerConnection();
               setShowIncomingCallModal(false);
               setIncomingCall(null);
             }}
@@ -234,6 +291,9 @@ const Home = () => {
         ))}
       </Drawer>
       <SelectedComponent
+        onCall={onCall}
+        showOutgoingCallModal={showOutgoingCallModal}
+        setShowOutgoingCallModal={setShowOutgoingCallModal}
         selectedUserToChat={selectedUserToChat}
         setSelectedUserToChat={setSelectedUserToChat}
         self={self}

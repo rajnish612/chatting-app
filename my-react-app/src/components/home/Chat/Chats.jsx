@@ -9,10 +9,13 @@ const Chats = ({
   setSelectedUserToChat,
   selectedUserToChat,
   socket,
+  setShowOutgoingCallModal,
   chatsrefetch,
   setChats,
   setUserMessages,
+  onCall,
   userMessages,
+  showOutgoingCallModal,
 }) => {
   return (
     <div className="h-screen bg-white w-screen flex">
@@ -23,6 +26,9 @@ const Chats = ({
         chats={chats}
       />
       <Chatbox
+        showOutgoingCallModal={showOutgoingCallModal}
+        onCall={onCall}
+        setShowOutgoingCallModal={setShowOutgoingCallModal}
         chatsrefetch={chatsrefetch}
         setChats={setChats}
         setUserMessages={setUserMessages}

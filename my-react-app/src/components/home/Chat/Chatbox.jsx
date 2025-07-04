@@ -39,7 +39,10 @@ const Chatbox = ({
   setChats,
   self,
   setUserMessages,
+  setShowOutgoingCallModal,
+  showOutgoingCallModal,
   userMessages,
+  onCall,
 }) => {
   const messagesEndRef = React.useRef(null);
   const peerConnection = React.useRef(null);
@@ -164,21 +167,7 @@ const Chatbox = ({
       socket.off("ice-candidate", handleNewICECandidate);
     };
   }, [socket]);
-  useEffect(() => {
-    const handleAnswer = async ({ from, answer }) => {
-      if (peerConnection.current) {
-        await peerConnection.current.setRemoteDescription(
-          new RTCSessionDescription(answer)
-        );
-      }
-    };
 
-    socket.on("answer-call", handleAnswer);
-
-    return () => {
-      socket.off("answer-call", handleAnswer);
-    };
-  }, [socket]);
   useEffect(() => {
     const handleRemoteICE = async ({ candidate }) => {
       if (candidate && peerConnection.current) {
@@ -221,6 +210,32 @@ const Chatbox = ({
       scrollToBottom();
     }
   }, [userMessages]);
+  const destroyPeerConnection = useCallback(() => {
+    if (peerConnection.current) {
+      // Stop all tracks that were added to the connection
+      peerConnection.current.getSenders().forEach((sender) => {
+        if (sender.track) {
+          sender.track.stop();
+        }
+      });
+
+      // Close the peer connection
+      peerConnection.current.close();
+      peerConnection.current = null;
+    }
+
+    // Optionally emit a socket event to notify the other user
+    socket.emit("call-ended", {
+      from: self?.username,
+      to: selectedUserToChat,
+    });
+  }, [selectedUserToChat, self?.username, socket]);
+  useEffect(() => {
+    if (!onCall || !showOutgoingCallModal) {
+      destroyPeerConnection();
+    }
+  }, [onCall, destroyPeerConnection, showOutgoingCallModal]);
+  console.log("oncall", onCall);
 
   if (!selectedUserToChat) return <h1>Loading</h1>;
   return (
@@ -238,7 +253,10 @@ const Chatbox = ({
         </div>
         <span>{selectedUserToChat}</span>
         <FaPhoneAlt
-          onClick={handleCall}
+          onClick={() => {
+            setShowOutgoingCallModal(true);
+            handleCall();
+          }}
           color="blue"
           size={20}
           style={{ marginLeft: "auto" }}
