@@ -19,6 +19,7 @@ import AudioCall from "./AudioCall";
 
 import { useState } from "react";
 import useSocket from "../../hooks/Socket";
+import FollowersAndFollowings from "./FollowersAndFollowings";
 const DrawerItems = [
   {
     icon: <IoChatboxEllipsesSharp size={20} />,
@@ -35,6 +36,10 @@ const DrawerItems = [
   {
     icon: <FaUserFriends />,
     element: Search,
+  },
+  {
+    icon: <FaUserFriends />,
+    element: FollowersAndFollowings,
   },
 ];
 const selfQuery = gql`
