@@ -5,6 +5,7 @@ const Login = () => {
     email: "",
     password: "",
   });
+
   function handleChange(e) {
     e.preventDefault();
     const { name, value } = e.target;
@@ -16,6 +17,7 @@ const Login = () => {
       };
     });
   }
+
   async function handleSubmit(e) {
     e.preventDefault();
     if (!form.email || !form.password) {
@@ -30,7 +32,7 @@ const Login = () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(form),
-          credentials: "include", 
+          credentials: "include",
         }
       );
       const data = await res.json();
@@ -40,43 +42,351 @@ const Login = () => {
       console.error("Error during login:", err.message);
     }
   }
+
   return (
-    <div className="w-screen flex justify-center items-center gap-8 flex-col overflow-x-hidden h-screen">
-      <span
-        style={{ fontFamily: "arial" }}
-        className="mt-20 flex gap-5 font-bold  text-white-400 text-4xl"
-      >
-        CHAT ME <img className="w-10 h-10" src="/images/chat.png" />
-      </span>
-      <div className="md:w-150 sm:w-100 p-4 w-80 rounded-lg bg-[rgba(0,0,0,0.3)] mr-auto ml-auto gap-10 flex flex-col justify-center items-center ">
-        <div className=" w-[90%]  md:w-[70%]">
-          {" "}
-          <span className="text-2xl font-bold md:text-4xl">Login</span>
+    <>
+      {/* Inline Styles for Animations */}
+      <style jsx>{`
+        @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
+
+        .gradient-bg {
+          background: linear-gradient(
+            -45deg,
+            #f8fafc,
+            #e2e8f0,
+            #f1f5f9,
+            #ffffff,
+            #f0f9ff
+          );
+          background-size: 400% 400%;
+          animation: gradientShift 15s ease infinite;
+        }
+
+        @keyframes gradientShift {
+          0% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+          100% {
+            background-position: 0% 50%;
+          }
+        }
+
+        .particles {
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+          pointer-events: none;
+        }
+
+        .particle {
+          position: absolute;
+          background: rgba(100, 116, 139, 0.1);
+          border-radius: 50%;
+          animation: float 6s ease-in-out infinite;
+        }
+
+        .particle:nth-child(1) {
+          width: 80px;
+          height: 80px;
+          left: 10%;
+          top: 20%;
+          animation-delay: 0s;
+        }
+        .particle:nth-child(2) {
+          width: 120px;
+          height: 120px;
+          right: 10%;
+          top: 40%;
+          animation-delay: 2s;
+        }
+        .particle:nth-child(3) {
+          width: 60px;
+          height: 60px;
+          left: 70%;
+          top: 60%;
+          animation-delay: 4s;
+        }
+        .particle:nth-child(4) {
+          width: 100px;
+          height: 100px;
+          right: 70%;
+          top: 80%;
+          animation-delay: 1s;
+        }
+        .particle:nth-child(5) {
+          width: 40px;
+          height: 40px;
+          left: 50%;
+          top: 30%;
+          animation-delay: 3s;
+        }
+
+        @keyframes float {
+          0%,
+          100% {
+            transform: translateY(0px) rotate(0deg);
+            opacity: 0.5;
+          }
+          50% {
+            transform: translateY(-20px) rotate(180deg);
+            opacity: 0.8;
+          }
+        }
+
+        .glass-card {
+          background: rgba(255, 255, 255, 0.8);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(100, 116, 139, 0.2);
+          box-shadow: 0 25px 45px rgba(0, 0, 0, 0.05);
+        }
+
+        .input-glow {
+          background: rgba(255, 255, 255, 0.95);
+          border: 2px solid rgba(100, 116, 139, 0.2);
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+          transition: all 0.3s ease;
+        }
+
+        .input-glow:focus {
+          background: white;
+          border-color: #3b82f6;
+          box-shadow: 0 0 25px rgba(59, 130, 246, 0.2);
+          transform: translateY(-2px);
+          outline: none;
+        }
+
+        .btn-premium {
+          background: linear-gradient(135deg, #3b82f6, #1d4ed8, #2563eb);
+          background-size: 200% 200%;
+          animation: gradientPulse 3s ease infinite;
+          box-shadow: 0 15px 35px rgba(59, 130, 246, 0.2);
+          transition: all 0.3s ease;
+        }
+
+        .btn-premium:hover {
+          transform: translateY(-3px) scale(1.05);
+          box-shadow: 0 20px 40px rgba(59, 130, 246, 0.3);
+        }
+
+        @keyframes gradientPulse {
+          0%,
+          100% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+        }
+
+        .logo-glow {
+          text-shadow: 0 0 20px rgba(59, 130, 246, 0.3),
+            0 0 40px rgba(59, 130, 246, 0.2), 0 0 60px rgba(59, 130, 246, 0.1);
+          animation: logoFloat 4s ease-in-out infinite;
+        }
+
+        @keyframes logoFloat {
+          0%,
+          100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-10px);
+          }
+        }
+
+        .slide-up {
+          animation: slideUp 0.8s ease-out;
+        }
+
+        @keyframes slideUp {
+          from {
+            opacity: 0;
+            transform: translateY(50px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .fade-in {
+          animation: fadeIn 1s ease-out;
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        .chat-icon-bounce {
+          animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+          0%,
+          20%,
+          50%,
+          80%,
+          100% {
+            transform: translateY(0);
+          }
+          40% {
+            transform: translateY(-10px);
+          }
+          60% {
+            transform: translateY(-5px);
+          }
+        }
+      `}</style>
+
+      <div className="gradient-bg w-screen flex justify-center items-center gap-8 flex-col overflow-x-hidden h-screen relative">
+        {/* Floating Particles */}
+        <div className="particles">
+          <div className="particle"></div>
+          <div className="particle"></div>
+          <div className="particle"></div>
+          <div className="particle"></div>
+          <div className="particle"></div>
         </div>
-        <form className="flex h-70  w-full  justify-center gap-15   items-center flex-col">
-          <input
-            onChange={handleChange}
-            name="email"
-            className="rounded-2xl md:w-[70%] w-[90%] border-amber-200 border-1 p-2"
-            placeholder="enter your email"
-          />
 
-          <input
-            onChange={handleChange}
-            name="password"
-            className="rounded-2xl md:w-[70%] w-[90%] border-amber-200 border-1 p-2"
-            placeholder="enter your password"
-          />
+        {/* Logo Section with Enhanced Styling */}
+        <div className="fade-in mt-20 flex gap-5 font-bold text-gray-800 text-4xl lg:text-6xl md:text-5xl items-center logo-glow">
+          <span style={{ fontFamily: "Inter, sans-serif", fontWeight: "900" }}>
+            CHAT ME
+          </span>
+          <div className="chat-icon-bounce bg-blue-500/10 p-3 rounded-full backdrop-blur-sm border border-blue-200">
+            <img
+              className="w-10 h-10 lg:w-12 lg:h-12 md:w-11 md:h-11 filter grayscale-0"
+              src="/images/chat.png"
+              alt="Chat icon"
+            />
+          </div>
+        </div>
 
-          <input
-          onClick={handleSubmit}
-            className="bg-red-500 px-2  text-white font-bold rounded-2xl md:px-3 py-1  cursor-pointer hover:scale-[1.1] transition-transform "
-            title="register"
-            type="submit"
-          />
-        </form>
+        {/* Enhanced Login Card */}
+        <div className="slide-up glass-card max-w-md w-full mx-4 p-8 rounded-3xl gap-8 flex flex-col justify-center items-center shadow-2xl">
+          {/* Header */}
+          <div className="w-full text-center">
+            <span className="text-3xl lg:text-4xl md:text-4xl font-black text-gray-800 bg-gradient-to-r from-gray-800 to-blue-600 bg-clip-text text-transparent">
+              Welcome Back
+            </span>
+            <p className="text-gray-600 mt-2 font-medium">
+              Sign in to continue your journey
+            </p>
+          </div>
+
+          {/* Enhanced Form */}
+          <form className="flex w-full justify-center gap-6 items-center flex-col">
+            {/* Email Input with Enhanced Styling */}
+            <div className="relative w-full">
+              <input
+                onChange={handleChange}
+                name="email"
+                value={form.email}
+                className="input-glow rounded-2xl w-full px-6 py-4 text-gray-800 font-medium placeholder-gray-500 text-lg focus:placeholder-gray-400"
+                placeholder="Enter your email"
+                type="email"
+                required
+              />
+              <div className="absolute inset-y-0 right-0 flex items-center pr-6">
+                <svg
+                  className="w-5 h-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"
+                  />
+                </svg>
+              </div>
+            </div>
+
+            {/* Password Input with Enhanced Styling */}
+            <div className="relative w-full">
+              <input
+                onChange={handleChange}
+                name="password"
+                value={form.password}
+                className="input-glow rounded-2xl w-full px-6 py-4 text-gray-800 font-medium placeholder-gray-500 text-lg focus:placeholder-gray-400"
+                placeholder="Enter your password"
+                type="password"
+                required
+              />
+              <div className="absolute inset-y-0 right-0 flex items-center pr-6">
+                <svg
+                  className="w-5 h-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                  />
+                </svg>
+              </div>
+            </div>
+
+            {/* Enhanced Submit Button */}
+            <button
+              onClick={handleSubmit}
+              className="btn-premium w-full px-8 py-4 text-white font-bold rounded-2xl text-lg cursor-pointer border-none"
+              title="Sign In"
+              type="submit"
+            >
+              <span className="flex items-center justify-center gap-3">
+                Sign In
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M14 5l7 7m0 0l-7 7m7-7H3"
+                  />
+                </svg>
+              </span>
+            </button>
+          </form>
+
+          {/* Footer Links */}
+          <div className="w-full text-center space-y-3">
+            <p className="text-gray-600 text-sm">
+              Don't have an account?{" "}
+              <span className="text-blue-600 font-semibold cursor-pointer hover:text-blue-700 transition-colors">
+                Sign up
+              </span>
+            </p>
+            <p className="text-gray-500 text-xs cursor-pointer hover:text-gray-700 transition-colors">
+              Forgot your password?
+            </p>
+          </div>
+        </div>
+
+        {/* Decorative Elements */}
+        <div className="absolute top-10 left-10 w-20 h-20 bg-blue-200/30 rounded-full blur-xl"></div>
+        <div className="absolute bottom-10 right-10 w-32 h-32 bg-gray-200/40 rounded-full blur-2xl"></div>
+        <div className="absolute top-1/2 left-5 w-16 h-16 bg-blue-300/20 rounded-full blur-xl"></div>
       </div>
-    </div>
+    </>
   );
 };
 

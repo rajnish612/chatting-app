@@ -38,10 +38,10 @@ const App = () => {
       <ApolloProvider client={client}>
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Navbar />}>
-              <Route path="register" element={<Register />} />
-              <Route path="login" element={<Login />} />
-            </Route>
+            <Route path="/" element={<Register />} />
+            <Route path="/register" element={<Register />} />
+
+            <Route path="/login" element={<Login />} />
             <Route path="home" element={<Home />} />
           </Routes>
         </BrowserRouter>
