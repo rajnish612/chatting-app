@@ -9,6 +9,9 @@ import { IoIosSend } from "react-icons/io";
 import { MdOutlineEmojiEmotions } from "react-icons/md";
 import { useLayoutEffect } from "react";
 import { MdOutlineKeyboardVoice } from "react-icons/md";
+import { IoArrowDown } from "react-icons/io5";
+import { BsCheckAll, BsCheck } from "react-icons/bs";
+
 const isSeenQuery = gql`
   mutation SeeMessages($sender: String!, $receiver: String!) {
     SeeMessages(sender: $sender, receiver: $receiver) {
@@ -33,6 +36,7 @@ const getSelectedUserChatsQuery = gql`
 const config = {
   iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
 };
+
 const Chatbox = ({
   selectedUserToChat,
   socket,
@@ -49,9 +53,10 @@ const Chatbox = ({
   destroyPeerConnection,
 }) => {
   const messagesEndRef = React.useRef(null);
-  // const peerConnection = React.useRef(null);
   const chatContainerRef = React.useRef(null);
   const [showScrollDownArrow, setShowScrollDownArrow] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+
   const [getSelectedUserChat] = useMutation(getSelectedUserChatsQuery, {
     onCompleted: async (data) => {
       setUserMessages(data.getMessages);
@@ -60,6 +65,7 @@ const Chatbox = ({
       console.log("error is", err);
     },
   });
+
   const [seeMessage] = useMutation(isSeenQuery, {
     onCompleted: async (data) => {
       setChats((prev) => {
@@ -76,11 +82,15 @@ const Chatbox = ({
       console.log(err);
     },
   });
+
   let [content, setContent] = useState("");
 
   function handleChange(e) {
     setContent(e.target.value);
+    // Simulate typing indicator
+    setIsTyping(e.target.value.length > 0);
   }
+
   function handleSend() {
     if (!content.trim()) return;
     socket.emit("message", {
@@ -102,7 +112,9 @@ const Chatbox = ({
     ]);
 
     setContent("");
+    setIsTyping(false);
   }
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -123,15 +135,18 @@ const Chatbox = ({
       variables: { sender: selectedUserToChat, receiver: self.username },
     });
   }, [self?.username, selectedUserToChat, seeMessage]);
+
   useEffect(() => {
     isSeenFnc();
   }, [isSeenFnc, userMessages]);
+
   useEffect(() => {
     socket.emit("messageSeenByReceiver", {
       receiver: self?.username,
       sender: selectedUserToChat,
     });
   }, [userMessages]);
+
   async function handleCall() {
     setUserOnCall(selectedUserToChat);
     try {
@@ -166,6 +181,7 @@ const Chatbox = ({
       alert(err.message);
     }
   }
+
   useEffect(() => {
     const handleNewICECandidate = ({ candidate }) => {
       if (candidate && peerConnection.current) {
@@ -216,130 +232,373 @@ const Chatbox = ({
       socket.off("messageSeen", handleMessageSeen);
     };
   }, [socket, self.username, setUserMessages]);
+
   useLayoutEffect(() => {
     if (!showScrollDownArrow) {
       scrollToBottom();
     }
   }, [userMessages]);
 
-  if (!selectedUserToChat) return <h1>Loading</h1>;
-  return (
-    <div
-      style={{ msOverflowStyle: "none", scrollbarWidth: "none" }}
-      // overflow-y-scroll
-      className="h-full  pb-4 border-t-1 flex flex-col justify-between border-slate-400 bg-slate-100  lg:w-150 relative  items-center    text-black"
-    >
-      <div className="!bg-white w-full px-5 gap-7   h-20  !transition-all !border-0 focus:scale-[1.1]     !outline-0 text-black flex justify-start items-center">
-        <div className="w-20 h-20 rounded-full overflow-hidden">
-          <img
-            src="/images/avatar.png"
-            className="w-full object-contain h-full"
-          />
-        </div>
-        <span>{selectedUserToChat}</span>
-        <FaPhoneAlt
-          onClick={() => {
-            if (peerConnection.current)
-              return alert("you are already on a call");
-            setShowOutgoingCallModal(true);
-            handleCall();
-          }}
-          color="blue"
-          size={20}
-          style={{ marginLeft: "auto" }}
-        />
-        <FaVideo color="blue" size={24} />
-      </div>
-      {showScrollDownArrow && (
-        <button
-          className="!bg-red-400 !w-20 absolute bottom-37 right-7 z-10"
-          onClick={scrollToBottom}
-        >
-          Hey
-        </button>
-      )}
-      <div
-        ref={chatContainerRef}
-        onScroll={() => {
-          const container = chatContainerRef.current;
-          const isAtBottom =
-            container.scrollHeight - container.scrollTop <=
-            container.clientHeight + 10;
+  // Handle Enter key press
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
 
-          console.log("At Bottom:", isAtBottom); // ✅ Check this
-          setShowScrollDownArrow(!isAtBottom);
-        }}
-        style={{ msOverflowStyle: "none", scrollbarWidth: "none" }}
-        className=" justify-start h-full w-full  overflow-y-scroll items-center flex flex-col"
-      >
-        {userMessages?.map((messages, idx) => {
-          return messages.sender === self?.username ? (
-            <div
-              ref={
-                idx === userMessages.length - 1 || userMessages.length - 2
-                  ? messagesEndRef
-                  : null
-              }
-              key={idx}
-              className=" w-full p-5 flex justify-end relative"
+  if (!selectedUserToChat) {
+    return (
+      <div className="h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="text-center p-8">
+          <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg
+              className="w-12 h-12 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              <span
-                style={{ wordBreak: "break-word", whiteSpace: "pre-wrap" }}
-                className="bg-red-600 font-medium p-2 rounded-tl-3xl rounded-tr-3xl text-xs max-w-70 rounded-bl-3xl text-white"
-              >
-                {messages.content}
-                {!messages.isSeen && "not seen"}
-              </span>
-              <img
-                src="/images/avatar.png"
-                className="w-10 h-10 object-contain  "
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
               />
-            </div>
-          ) : (
-            <div className=" w-full p-5 flex justify-start items-end relative">
-              <img
-                src="/images/avatar.png"
-                className="w-10 h-10 object-contain  "
-              />
-              <span
-                ref={
-                  idx === userMessages.length - 1 || userMessages.length - 2
-                    ? messagesEndRef
-                    : null
-                }
-                style={{ wordBreak: "break-word", whiteSpace: "pre-wrap" }}
-                className="bg-blue-500 p-2 font-medium rounded-tr-3xl rounded-tl-3xl text-xs max-w-70 rounded-br-3xl text-white"
-              >
-                {messages.content}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className=" flex-col gap-2 overflow-hidden bg-white  h-fit py-5 rounded-2xl  w-[90%]  flex justify-center items-center  ">
-        <textarea
-          value={content}
-          onChange={handleChange}
-          style={{
-            msOverflowStyle: "none",
-            scrollbarWidth: "none",
-            resize: "none",
-          }}
-          className="w-full text-gray-400 outline-0 h-20 px-2"
-          placeholder="enter your message"
-        />{" "}
-        <div className="flex justify-start items-end px-5  gap-2  w-full">
-          <MdOutlineEmojiEmotions size={25} style={{ color: "blue" }} />
-          <MdOutlineKeyboardVoice size={25} style={{ color: "blue" }} />
-          <IoIosSend
-            onClick={() => handleSend()}
-            size={25}
-            style={{ color: "blue", marginLeft: "auto" }}
-          />
+            </svg>
+          </div>
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">
+            Select a conversation
+          </h3>
+          <p className="text-gray-600">Choose someone to start chatting with</p>
         </div>
       </div>
-    </div>
+    );
+  }
+
+  return (
+    <>
+      {/* Inline Styles for Advanced Animations */}
+      <style jsx>{`
+        @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
+
+        .chat-container {
+          background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+          font-family: "Inter", sans-serif;
+        }
+
+        .glass-header {
+          background: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(20px);
+          border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .message-bubble {
+          animation: messageSlideIn 0.3s ease-out;
+          transition: all 0.2s ease;
+        }
+
+        .message-bubble:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        @keyframes messageSlideIn {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .scroll-down-btn {
+          animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+          0%,
+          20%,
+          50%,
+          80%,
+          100% {
+            transform: translateY(0);
+          }
+          40% {
+            transform: translateY(-10px);
+          }
+          60% {
+            transform: translateY(-5px);
+          }
+        }
+
+        .typing-indicator {
+          animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+          0%,
+          100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.5;
+          }
+        }
+
+        .input-container {
+          background: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(0, 0, 0, 0.05);
+          box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .chat-scroll::-webkit-scrollbar {
+          width: 6px;
+        }
+
+        .chat-scroll::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        .chat-scroll::-webkit-scrollbar-thumb {
+          background: rgba(0, 0, 0, 0.1);
+          border-radius: 3px;
+        }
+
+        .chat-scroll::-webkit-scrollbar-thumb:hover {
+          background: rgba(0, 0, 0, 0.2);
+        }
+
+        .action-btn {
+          transition: all 0.2s ease;
+        }
+
+        .action-btn:hover {
+          transform: scale(1.1);
+        }
+
+        .action-btn:active {
+          transform: scale(0.95);
+        }
+      `}</style>
+
+      <div className="chat-container h-full flex flex-col relative">
+        {/* Enhanced Header */}
+        <div className="glass-header px-6 py-4 flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
+                <span className="text-white font-bold text-lg">
+                  {selectedUserToChat?.charAt(0)?.toUpperCase()}
+                </span>
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-800 text-lg">
+                {selectedUserToChat}
+              </h3>
+              <p className="text-sm text-gray-500">
+                {onCall ? "On call" : "Online"}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                if (peerConnection.current) {
+                  alert("You are already on a call");
+                  return;
+                }
+                setShowOutgoingCallModal(true);
+                handleCall();
+              }}
+              className="action-btn p-3 rounded-full bg-blue-500 hover:bg-blue-600 text-white shadow-lg"
+            >
+              <FaPhoneAlt size={16} />
+            </button>
+            <button className="action-btn p-3 rounded-full bg-green-500 hover:bg-green-600 text-white shadow-lg">
+              <FaVideo size={18} />
+            </button>
+          </div>
+        </div>
+
+        {/* Messages Container */}
+        <div className="flex-1 relative overflow-hidden">
+          {/* Scroll Down Button */}
+          {showScrollDownArrow && (
+            <button
+              className="scroll-down-btn absolute bottom-6 right-6 z-10 w-12 h-12 bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300"
+              onClick={scrollToBottom}
+            >
+              <IoArrowDown size={20} />
+            </button>
+          )}
+
+          <div
+            ref={chatContainerRef}
+            onScroll={() => {
+              const container = chatContainerRef.current;
+              const isAtBottom =
+                container.scrollHeight - container.scrollTop <=
+                container.clientHeight + 10;
+              setShowScrollDownArrow(!isAtBottom);
+            }}
+            className="chat-scroll h-full overflow-y-auto px-4 py-6 space-y-4"
+          >
+            {userMessages?.map((message, idx) => {
+              const isOwn = message.sender === self?.username;
+
+              return (
+                <div
+                  key={idx}
+                  ref={
+                    idx === userMessages.length - 1 ||
+                    idx === userMessages.length - 2
+                      ? messagesEndRef
+                      : null
+                  }
+                  className={`flex ${
+                    isOwn ? "justify-end" : "justify-start"
+                  } mb-3`}
+                >
+                  <div
+                    className={`flex items-end gap-2 max-w-xs lg:max-w-md ${
+                      isOwn ? "flex-row-reverse" : "flex-row"
+                    }`}
+                  >
+                    {/* Avatar */}
+                    <div className="w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-white font-semibold text-xs">
+                        {(isOwn ? self?.username : selectedUserToChat)
+                          ?.charAt(0)
+                          ?.toUpperCase()}
+                      </span>
+                    </div>
+
+                    {/* Message Bubble */}
+                    <div
+                      className={`message-bubble px-4 py-3 rounded-2xl shadow-sm ${
+                        isOwn
+                          ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-br-md"
+                          : "bg-white text-gray-800 rounded-bl-md border border-gray-100"
+                      }`}
+                    >
+                      <p
+                        className="text-sm font-medium leading-relaxed"
+                        style={{
+                          wordBreak: "break-word",
+                          whiteSpace: "pre-wrap",
+                        }}
+                      >
+                        {message.content}
+                      </p>
+
+                      {/* Message Status */}
+                      {isOwn && (
+                        <div className="flex items-center justify-end mt-1 gap-1">
+                          <span className="text-xs opacity-75">
+                            {new Date().toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                          {message.isSeen ? (
+                            <BsCheckAll className="text-blue-200" size={14} />
+                          ) : (
+                            <BsCheck className="text-blue-200" size={14} />
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Typing Indicator */}
+            {isTyping && (
+              <div className="flex justify-start mb-3">
+                <div className="flex items-end gap-2">
+                  <div className="w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center">
+                    <span className="text-white font-semibold text-xs">
+                      {selectedUserToChat?.charAt(0)?.toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="typing-indicator bg-white px-4 py-3 rounded-2xl rounded-bl-md border border-gray-100 shadow-sm">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                      <div
+                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                        style={{ animationDelay: "0.1s" }}
+                      ></div>
+                      <div
+                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                        style={{ animationDelay: "0.2s" }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Enhanced Input Container */}
+        <div className="input-container p-4 m-4 rounded-2xl">
+          <div className="flex items-end gap-3">
+            {/* Emoji Button */}
+            <button className="action-btn p-2 text-blue-500 hover:bg-blue-50 rounded-full transition-colors">
+              <MdOutlineEmojiEmotions size={24} />
+            </button>
+
+            {/* Text Input */}
+            <div className="flex-1 min-h-0">
+              <textarea
+                value={content}
+                onChange={handleChange}
+                onKeyPress={handleKeyPress}
+                placeholder="Type your message..."
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 resize-none outline-none focus:border-blue-500 focus:bg-white transition-all duration-200 text-gray-800 placeholder-gray-500"
+                rows="1"
+                style={{
+                  minHeight: "44px",
+                  maxHeight: "120px",
+                  resize: "none",
+                  overflow: "hidden",
+                }}
+                onInput={(e) => {
+                  e.target.style.height = "auto";
+                  e.target.style.height =
+                    Math.min(e.target.scrollHeight, 120) + "px";
+                }}
+              />
+            </div>
+
+            {/* Voice Message Button */}
+            <button className="action-btn p-2 text-blue-500 hover:bg-blue-50 rounded-full transition-colors">
+              <MdOutlineKeyboardVoice size={24} />
+            </button>
+
+            {/* Send Button */}
+            <button
+              onClick={handleSend}
+              disabled={!content.trim()}
+              className={`action-btn p-3 rounded-full shadow-lg transition-all duration-200 ${
+                content.trim()
+                  ? "bg-blue-500 hover:bg-blue-600 text-white"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
+              }`}
+            >
+              <IoIosSend size={20} />
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
   );
 };
 

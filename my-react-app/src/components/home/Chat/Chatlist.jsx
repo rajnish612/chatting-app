@@ -1,11 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 import { CiSearch } from "react-icons/ci";
+
 const Chatlist = ({
   self,
   setSelectedUserToChat,
   chats,
   selectedUserToChat,
 }) => {
+  const [searchTerm, setSearchTerm] = useState("");
+
   const followingsWithUnseen = self?.followings?.map((username) => {
     const chat = chats.find((chat) => chat.username === username);
     return {
@@ -14,87 +17,218 @@ const Chatlist = ({
     };
   });
 
+  // Filter chats based on search term
+  const filteredChats = chats.filter((chat) =>
+    chat?.username?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredFollowings = followingsWithUnseen?.filter((chat) =>
+    chat?.username?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    <div className="lg:w-125  w-50 sm:hidden md:flex md:w-100 gap-5 rounded-2xl shadow-lg   flex-col  bg-white h-screen p-3">
-      <div className="w-full mt-10 flex flex-col gap-2  justify-center items-center">
-        <span className="text-black font-bold text-2xl">Chats</span>
-        <div className="text-black w-[90%] flex items-center gap-2 overflow-hidden h-10  px-2 py-1 rounded-full bg-slate-200">
-          <CiSearch />{" "}
-          <input
-            className="h-full w-full outline-none"
-            type="text"
-            placeholder="search"
-          />
+    <>
+      <style jsx>{`
+        .chat-sidebar {
+          background: #ffffff;
+          border-right: 1px solid #e5e7eb;
+        }
+
+        .chat-item {
+          transition: all 0.2s ease;
+          border-radius: 12px;
+          margin: 4px 8px;
+        }
+
+        .chat-item:hover {
+          background: #f8fafc;
+          transform: translateX(4px);
+        }
+
+        .chat-item.active {
+          background: #3b82f6;
+          color: white;
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .chat-item.active .username {
+          color: white;
+        }
+
+        .chat-item.active .message {
+          color: rgba(255, 255, 255, 0.8);
+        }
+
+        .chat-item.active .time {
+          color: rgba(255, 255, 255, 0.7);
+        }
+
+        .search-box {
+          background: #f1f5f9;
+          border: 2px solid transparent;
+          transition: all 0.3s ease;
+        }
+
+        .search-box:focus-within {
+          background: white;
+          border-color: #3b82f6;
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .scroll-area::-webkit-scrollbar {
+          width: 4px;
+        }
+
+        .scroll-area::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        .scroll-area::-webkit-scrollbar-thumb {
+          background: #d1d5db;
+          border-radius: 2px;
+        }
+
+        .scroll-area::-webkit-scrollbar-thumb:hover {
+          background: #9ca3af;
+        }
+      `}</style>
+
+      <div className="chat-sidebar flex flex-col h-screen w-80 lg:w-96">
+        {/* Header */}
+        <div className="p-6 border-b border-gray-100">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Chats</h1>
+
+          {/* Search */}
+          <div className="search-box rounded-xl px-4 py-3 flex items-center gap-3">
+            <CiSearch className="text-gray-400" size={20} />
+            <input
+              type="text"
+              placeholder="Search conversations"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1 bg-transparent outline-none text-gray-700 placeholder-gray-400"
+            />
+          </div>
+        </div>
+
+        {/* Chat List */}
+        <div className="scroll-area flex-1 overflow-y-auto py-2">
+          {/* Following Section */}
+          {filteredFollowings && filteredFollowings.length > 0 && (
+            <div className="mb-4">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 mb-2">
+                Following
+              </p>
+              {filteredFollowings.map((chat, index) => (
+                <button
+                  key={`following-${index}`}
+                  onClick={() => setSelectedUserToChat(chat.username)}
+                  className={`chat-item w-full p-4 flex items-center text-left ${
+                    selectedUserToChat === chat.username ? "active" : ""
+                  }`}
+                >
+                  {/* Avatar */}
+                  <div className="relative mr-3">
+                    <img
+                      src="/images/avatar.png"
+                      alt="Avatar"
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <h3 className="username font-semibold text-gray-900 truncate">
+                        {chat.username}
+                      </h3>
+                      <span className="time text-xs text-gray-500">2m</span>
+                    </div>
+                    <p className="message text-sm text-gray-600 truncate mt-1">
+                      Say hello...
+                    </p>
+                  </div>
+
+                  {/* Unread badge */}
+                  {chat.unseenCount > 0 && (
+                    <div className="ml-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {chat.unseenCount}
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Recent Chats */}
+          {filteredChats.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 mb-2">
+                Messages
+              </p>
+              {filteredChats.map((chat, index) => (
+                <button
+                  key={`chat-${index}`}
+                  onClick={() => setSelectedUserToChat(chat.username)}
+                  className={`chat-item w-full p-4 flex items-center text-left ${
+                    selectedUserToChat === chat.username ? "active" : ""
+                  }`}
+                >
+                  {/* Avatar */}
+                  <div className="relative mr-3">
+                    <img
+                      src="/images/avatar.png"
+                      alt="Avatar"
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <h3 className="username font-semibold text-gray-900 truncate">
+                        {chat.username}
+                      </h3>
+                      <span className="time text-xs text-gray-500">5m</span>
+                    </div>
+                    <p className="message text-sm text-gray-600 truncate mt-1">
+                      Last message preview...
+                    </p>
+                  </div>
+
+                  {/* Unread badge */}
+                  {chat.unseenCount > 0 && (
+                    <div className="ml-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {chat.unseenCount}
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Empty State */}
+          {filteredChats.length === 0 &&
+            (!filteredFollowings || filteredFollowings.length === 0) && (
+              <div className="flex flex-col items-center justify-center h-64 px-6 text-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                  <CiSearch className="text-gray-400" size={24} />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  {searchTerm ? "No results found" : "No conversations"}
+                </h3>
+                <p className="text-gray-500 text-sm">
+                  {searchTerm
+                    ? "Try a different search term"
+                    : "Start chatting with someone"}
+                </p>
+              </div>
+            )}
         </div>
       </div>
-      <div className="h-0.5 bg-slate-400 w-full" />
-      <div
-        style={{ msOverflowStyle: "none", scrollbarWidth: "none" }}
-        className="h-full w-full items-center flex flex-col gap-4 overflow-y-scroll "
-      >
-        {followingsWithUnseen?.map((chat, index) => (
-          <button
-            onClick={() => {
-              setSelectedUserToChat(chat.username);
-            }}
-            key={index}
-            className=" w-[90%] focus:shadow-lg h-20 mt-2 !transition-all !border-0 focus:scale-[1.1] focus:rounded-2xl focus:!border-l-4 focus:!border-blue-500    !outline-0 text-black !flex !bg-white justify-start items-center"
-          >
-            <div className="w-20 h-20  rounded-full overflow-hidden">
-              <img
-                src="/images/avatar.png"
-                className="w-full object-contain h-full"
-              />
-            </div>
-            <div className="flex flex-col  items-start ">
-              <span> {chat.username}</span>
-              <span className="text-slate-400 text-sm ">message</span>
-            </div>
-            <div className="ml-auto flex justify-center items-center gap-2 flex-col">
-              {chat.unseenCount !== 0 && (
-                <span className=" w-4 h-4 text-xs flex justify-center items-center bg-red-500 rounded-full text-white">
-                  {chat.unseenCount}
-                </span>
-              )}
-              <span className="text-xs text-slate-400">yesterday</span>
-            </div>
-          </button>
-        ))}
-
-        {chats.length !== 0 && <h1 className="text-black">Messages</h1>}
-        {chats.map((chat, index) => (
-          <button
-            onClick={() => {
-              setSelectedUserToChat(chat.username);
-            }}
-            key={index}
-            className={`w-[90%] ${
-              selectedUserToChat === chat.username &&
-              "!scale-[1.1] !border-blue-500 !border-l-4 shadow-lg"
-            } h-20 mt-2 !transition-all !border-0     focus:!border-l-4 focus:rounded-2xl   !outline-0 text-black !flex !bg-white justify-start items-center`}
-          >
-            <div className="w-20 h-20  rounded-full overflow-hidden">
-              <img
-                src="/images/avatar.png"
-                className="w-full object-contain h-full"
-              />
-            </div>
-            <div className="flex flex-col  items-start ">
-              <span> {chat.username}</span>
-              <span className="text-slate-400 text-sm ">message</span>
-            </div>
-            <div className="ml-auto flex justify-center items-center gap-2 flex-col">
-              {chat.unseenCount !== 0 && (
-                <span className=" w-4 h-4 text-xs flex justify-center items-center bg-red-500 rounded-full text-white">
-                  {chat.unseenCount}
-                </span>
-              )}
-              <span className="text-xs text-slate-400">yesterday</span>
-            </div>
-          </button>
-        ))}
-      </div>
-    </div>
+    </>
   );
 };
 
