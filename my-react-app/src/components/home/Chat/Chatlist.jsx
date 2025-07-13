@@ -95,13 +95,13 @@ const Chatlist = ({
         }
       `}</style>
 
-      <div className="chat-sidebar flex flex-col h-screen w-80 lg:w-96">
+      <div className="chat-sidebar flex flex-col h-screen w-full">
         {/* Header */}
-        <div className="p-6 border-b border-gray-100">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Chats</h1>
+        <div className="p-4 md:p-6 border-b border-gray-100">
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-3 md:mb-4">Chats</h1>
 
           {/* Search */}
-          <div className="search-box rounded-xl px-4 py-3 flex items-center gap-3">
+          <div className="search-box rounded-xl px-3 md:px-4 py-2 md:py-3 flex items-center gap-3">
             <CiSearch className="text-gray-400" size={20} />
             <input
               type="text"
@@ -125,7 +125,7 @@ const Chatlist = ({
                 <button
                   key={`following-${index}`}
                   onClick={() => setSelectedUserToChat(chat.username)}
-                  className={`chat-item w-full p-4 flex items-center text-left ${
+                  className={`chat-item w-full p-3 md:p-4 flex items-center text-left ${
                     selectedUserToChat === chat.username ? "active" : ""
                   }`}
                 >
@@ -173,7 +173,7 @@ const Chatlist = ({
                 <button
                   key={`chat-${index}`}
                   onClick={() => setSelectedUserToChat(chat.username)}
-                  className={`chat-item w-full p-4 flex items-center text-left ${
+                  className={`chat-item w-full p-3 md:p-4 flex items-center text-left ${
                     selectedUserToChat === chat.username ? "active" : ""
                   }`}
                 >

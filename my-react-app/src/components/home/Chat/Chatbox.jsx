@@ -11,6 +11,7 @@ import { useLayoutEffect } from "react";
 import { MdOutlineKeyboardVoice } from "react-icons/md";
 import { IoArrowDown } from "react-icons/io5";
 import { BsCheckAll, BsCheck } from "react-icons/bs";
+import { IoArrowBack } from "react-icons/io5";
 
 const isSeenQuery = gql`
   mutation SeeMessages($sender: String!, $receiver: String!) {
@@ -39,6 +40,7 @@ const config = {
 
 const Chatbox = ({
   selectedUserToChat,
+  setSelectedUserToChat,
   socket,
   setUserOnCall,
   setChats,
@@ -399,10 +401,18 @@ const Chatbox = ({
         }
       `}</style>
 
-      <div className="chat-container h-full min-w-150 flex flex-col relative">
+      <div className="chat-container h-full w-full flex flex-col relative">
         {/* Enhanced Header */}
-        <div className="glass-header px-6 py-4 flex items-center justify-between shadow-sm">
+        <div className="glass-header px-4 md:px-6 py-3 md:py-4 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-4">
+            {/* Mobile back button - only show on mobile */}
+            <button
+              onClick={() => setSelectedUserToChat("")}
+              className="md:hidden p-2 rounded-full hover:bg-gray-100 transition-colors"
+            >
+              <IoArrowBack className="text-gray-600" size={20} />
+            </button>
+            
             <div className="relative">
               <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
                 <span className="text-white font-bold text-lg">
