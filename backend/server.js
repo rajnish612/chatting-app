@@ -61,9 +61,23 @@ io.on("connection", (socket) => {
   });
 
   socket.on("message", async ({ sender, receiver, content }) => {
-    let newMessage = new Message({ sender, receiver, content, isSeen: false });
-    await newMessage.save();
-    io.to(receiver).emit("receive", { sender, receiver, content });
+    try {
+      // Validate required fields
+      if (!sender || !receiver || !content) {
+        console.error("Message validation failed: missing required fields", {
+          sender,
+          receiver,
+          content: content ? "provided" : "missing"
+        });
+        return;
+      }
+
+      let newMessage = new Message({ sender, receiver, content, isSeen: false });
+      await newMessage.save();
+      io.to(receiver).emit("receive", { sender, receiver, content });
+    } catch (error) {
+      console.error("Error saving message:", error);
+    }
   });
   socket.on("messageSeenByReceiver", async ({ sender, receiver }) => {
     io.to(sender).emit("messageSeen", { receiver });

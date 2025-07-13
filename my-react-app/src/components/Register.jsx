@@ -1,16 +1,38 @@
 import React from "react";
-import { motion } from "motion/react";
 import { MdOutlineMail } from "react-icons/md";
 import { MdOutlinePassword } from "react-icons/md";
 import { CiUser } from "react-icons/ci";
 import { useCallback } from "react";
+import { gql, useMutation } from "@apollo/client";
+import { useNavigate } from "react-router-dom";
+
+const REGISTER_MUTATION = gql`
+  mutation Register($email: String!, $password: String!, $username: String!) {
+    register(email: $email, password: $password, username: $username)
+  }
+`;
 
 const Register = () => {
+  const navigate = useNavigate();
   const [form, setForm] = React.useState({
     email: "",
     password: "",
     username: "",
     confirmPassword: "",
+  });
+  const [loading, setLoading] = React.useState(false);
+
+  const [registerMutation] = useMutation(REGISTER_MUTATION, {
+    onCompleted: (data) => {
+      console.log("Registration successful:", data);
+      alert("Registration successful! Please login.");
+      navigate("/login");
+    },
+    onError: (err) => {
+      console.error("Registration error:", err);
+      alert("Registration failed: " + err.message);
+      setLoading(false);
+    }
   });
 
   const handleSubmit = useCallback(
@@ -27,25 +49,21 @@ const Register = () => {
         return alert("Passwords do not match");
       }
 
+      setLoading(true);
       try {
-        const res = await fetch(
-          import.meta.env.VITE_API_URL + "/api/auth/register",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(form),
+        await registerMutation({
+          variables: {
+            email: form.email,
+            password: form.password,
+            username: form.username
           }
-        );
-        const data = await res.json();
-        console.log(data);
-      } catch (err) {
-        alert("Error during registration: " + err.message);
-        console.error("Error during registration:", err.message);
+        });
+      } catch (error) {
+        // Error is handled in onError callback
+        setLoading(false);
       }
     },
-    [form]
+    [form, registerMutation]
   );
 
   const handleChange = useCallback(
@@ -457,33 +475,35 @@ const Register = () => {
               </motion.div>
 
               {/* Enhanced Submit Button */}
-              <motion.button
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 1.2, type: "spring", stiffness: 200 }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+              <button
                 onClick={handleSubmit}
-                className="btn-premium w-full px-8 py-4 text-white font-bold rounded-2xl text-lg mt-4"
+                disabled={loading}
+                className={`btn-premium w-full px-8 py-4 text-white font-bold rounded-2xl text-lg mt-4 ${
+                  loading ? "opacity-50 cursor-not-allowed" : ""
+                }`}
                 type="submit"
               >
                 <span className="flex items-center justify-center gap-3">
-                  Create Account
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
-                    />
-                  </svg>
+                  {loading ? "Creating Account..." : "Create Account"}
+                  {loading ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  ) : (
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+                      />
+                    </svg>
+                  )}
                 </span>
-              </motion.button>
+              </button>
             </motion.form>
 
             {/* Footer Links */}
@@ -495,7 +515,10 @@ const Register = () => {
             >
               <p className="text-gray-600 text-sm">
                 Already have an account?{" "}
-                <span className="text-blue-600 font-semibold cursor-pointer hover:text-blue-700 transition-colors">
+                <span 
+                  onClick={() => navigate("/login")}
+                  className="text-blue-600 font-semibold cursor-pointer hover:text-blue-700 transition-colors"
+                >
                   Sign in
                 </span>
               </p>

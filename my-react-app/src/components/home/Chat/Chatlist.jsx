@@ -9,20 +9,22 @@ const Chatlist = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
 
-  const followingsWithUnseen = self?.followings?.map((username) => {
+  const followingsWithUnseen = self?.followings?.map((following) => {
+    // Handle both object and string formats
+    const username = typeof following === 'object' ? following.username : following;
     const chat = chats.find((chat) => chat.username === username);
     return {
       username,
       unseenCount: chat ? chat.unseenCount : 0,
     };
-  });
+  }) || [];
 
   // Filter chats based on search term
-  const filteredChats = chats.filter((chat) =>
+  const filteredChats = (chats || []).filter((chat) =>
     chat?.username?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const filteredFollowings = followingsWithUnseen?.filter((chat) =>
+  const filteredFollowings = followingsWithUnseen.filter((chat) =>
     chat?.username?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 

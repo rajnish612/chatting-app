@@ -1,18 +1,25 @@
-import { gql, useLazyQuery, useQuery } from "@apollo/client";
+import { gql, useLazyQuery, useQuery, useMutation } from "@apollo/client";
 import { Button } from "@mui/material";
 import { useEffect, useState } from "react";
 import { MdSearch } from "react-icons/md";
 import { IoClose } from "react-icons/io5";
 import { FaUserPlus, FaUserCheck, FaUsers } from "react-icons/fa";
-
 const randomUsersQuery = gql`
   query {
     getRandomUsers {
       _id
       email
       username
-      followings
-      followers
+      followings {
+        _id
+        username
+        email
+      }
+      followers {
+        _id
+        username
+        email
+      }
     }
   }
 `;
@@ -23,23 +30,58 @@ const searchUsersQuery = gql`
       _id
       username
       email
-      followers
-      followings
+      followers {
+        _id
+        username
+        email
+      }
+      followings {
+        _id
+        username
+        email
+      }
     }
   }
 `;
 
-const Search = ({ setRefreshUsers, self }) => {
-  const { data, loading: userLoading } = useQuery(randomUsersQuery, {
+const followUserMutation = gql`
+  mutation FollowUser($userId: ID!) {
+    follow(userId: $userId) {
+      _id
+      username
+      email
+      followers {
+        _id
+        username
+        email
+      }
+      followings {
+        _id
+        username
+        email
+      }
+    }
+  }
+`;
+
+const Search = ({ setRefreshUsers, self, setIdx, setSelectedUserToChat }) => {
+  const { data, loading: userLoading, error: userError } = useQuery(randomUsersQuery, {
     fetchPolicy: "network-only",
+    onError: (error) => {
+      console.error("Random users query error:", error);
+    }
   });
 
   const [searchedUsers, setSearchedUsers] = useState([]);
   const [users, setUsers] = useState([]);
-  const [searchUsers, { data: searchData, error, loading: searchLoading }] =
+  const [searchUsers, { loading: searchLoading }] =
     useLazyQuery(searchUsersQuery, {
       onCompleted: async (data) => {
-        setSearchedUsers(data.searchUsers);
+        console.log("Search completed:", data);
+        setSearchedUsers(data.searchUsers || []);
+      },
+      onError: (error) => {
+        console.error("Search users error:", error);
       },
       fetchPolicy: "network-only",
     });
@@ -47,80 +89,95 @@ const Search = ({ setRefreshUsers, self }) => {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
+  const [followUser] = useMutation(followUserMutation, {
+    onCompleted: (data) => {
+      console.log("Follow mutation completed successfully");
+      setRefreshUsers(true);
+    },
+    onError: (error) => {
+      console.error("Follow mutation error:", error);
+      alert("Error following user: " + (error.message || "Unknown error"));
+    }
+  });
+
   const handleSearch = (value) => {
     if (value.trim()) {
       searchUsers({ variables: { query: value } });
     }
   };
 
-  async function handleFollow(username, set) {
-    setRefreshUsers(true);
+  async function handleFollow(userId, set) {
+    console.log("handleFollow called with userId:", userId);
+    console.log("Current self:", self);
+    
+    if (!self?._id) {
+      alert("You must be logged in to follow users");
+      return;
+    }
+    
     setLoading(true);
-    set((prev) => {
-      return prev.map((user) => {
-        if (user.username === username) {
-          return {
-            ...user,
-            followers: user.followers.includes(self?.username)
-              ? user.followers.filter(
-                  (followers) => followers !== self?.username
-                )
-              : [...user.followers, self?.username],
-          };
-        } else {
-          return user;
-        }
-      });
-    });
 
     try {
-      const res = await fetch(
-        import.meta.env.VITE_API_URL + "/api/users/follow",
-        {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ username }),
-        }
-      );
-      const data = await res.json();
-      setRefreshUsers((prev) => !prev);
-      console.log(data);
-    } catch (err) {
-      alert(err.message);
+      console.log("Calling followUser mutation with variables:", { userId });
+      const result = await followUser({
+        variables: { userId }
+      });
+      console.log("Follow mutation result:", result);
+    } catch (error) {
+      console.error('Follow error details:', {
+        message: error.message,
+        graphQLErrors: error.graphQLErrors,
+        networkError: error.networkError
+      });
     } finally {
       setLoading(false);
-      setRefreshUsers(false);
     }
   }
 
   useEffect(() => {
-    setUsers(data?.getRandomUsers);
+    console.log("Random users data:", data);
+    setUsers(data?.getRandomUsers || []);
   }, [data]);
 
   const getFollowButtonText = (user) => {
     if (loading) return "Loading...";
-    if (user.followers.includes(self.username)) return "Following";
-    if (
-      self.followers.includes(user.username) &&
-      !self.followings.includes(user.username)
-    ) {
+    
+    // Check if I'm following this user (check my followings list)
+    const iFollowUser = self?.followings?.some(following => 
+      typeof following === 'object' ? following._id === user._id : following === user._id
+    );
+    
+    if (iFollowUser) return "Following";
+    
+    // Check if this user follows me (for follow back)
+    const userFollowsMe = self?.followers?.some(follower => 
+      typeof follower === 'object' ? follower._id === user._id : follower === user._id
+    );
+    
+    if (userFollowsMe) {
       return "Follow Back";
     }
+    
     return "Follow";
   };
 
   const getFollowButtonIcon = (user) => {
-    if (user.followers.includes(self.username))
-      return <FaUserCheck size={14} />;
-    if (
-      self.followers.includes(user.username) &&
-      !self.followings.includes(user.username)
-    ) {
+    // Check if I'm following this user (check my followings list)
+    const iFollowUser = self?.followings?.some(following => 
+      typeof following === 'object' ? following._id === user._id : following === user._id
+    );
+    
+    if (iFollowUser) return <FaUserCheck size={14} />;
+    
+    // Check if this user follows me (for follow back)
+    const userFollowsMe = self?.followers?.some(follower => 
+      typeof follower === 'object' ? follower._id === user._id : follower === user._id
+    );
+    
+    if (userFollowsMe) {
       return <FaUsers size={14} />;
     }
+    
     return <FaUserPlus size={14} />;
   };
 
@@ -151,15 +208,39 @@ const Search = ({ setRefreshUsers, self }) => {
           </span>
         </div>
       </div>
-
+      <div
+        onClick={() => {
+          setSelectedUserToChat(user.username);
+          setIdx(0);
+        }}
+        className="p-2 hover:scale-[1.1] bg-blue-300 rounded-full"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth="1.5"
+          stroke="white"
+          className="size-6"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z"
+          />
+        </svg>
+      </div>
       {/* Follow Button */}
       <button
-        onClick={() =>
-          onFollow(user.username, isSearchResult ? setSearchedUsers : setUsers)
-        }
+        onClick={() => {
+          console.log("Follow button clicked for user:", user._id);
+          onFollow(user._id, isSearchResult ? setSearchedUsers : setUsers);
+        }}
         disabled={loading}
         className={`follow-btn px-4 py-2 rounded-xl font-medium flex items-center gap-2 transition-all duration-300 ${
-          user.followers.includes(self.username)
+          self?.followings?.some(following => 
+            typeof following === 'object' ? following._id === user._id : following === user._id
+          )
             ? "bg-gray-100 text-gray-600 hover:bg-gray-200"
             : "bg-blue-500 text-white hover:bg-blue-600 hover:scale-105"
         } disabled:opacity-50 disabled:cursor-not-allowed`}
@@ -176,6 +257,50 @@ const Search = ({ setRefreshUsers, self }) => {
         <div className="bg-white rounded-2xl p-8 shadow-lg flex flex-col items-center gap-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
           <p className="text-gray-700 font-medium">Finding awesome people...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (userError) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-red-100">
+        <div className="bg-white rounded-2xl p-8 shadow-lg flex flex-col items-center gap-4 max-w-md">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+            <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div className="text-center">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Failed to load users</h3>
+            <p className="text-gray-600 text-sm mb-2">Error: {userError.message}</p>
+            <p className="text-gray-500 text-xs mb-4">
+              {userError.message.includes("ObjectId") 
+                ? "Database needs cleanup. This can happen with corrupted user data."
+                : "Please make sure you're logged in and try again."
+              }
+            </p>
+            <div className="flex gap-2 justify-center">
+              <button 
+                onClick={() => window.location.reload()} 
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                Retry
+              </button>
+              {userError.message.includes("ObjectId") && (
+                <button 
+                  onClick={() => {
+                    console.log("To fix this error, run the database cleanup script:");
+                    console.log("cd backend && node scripts/cleanUserReferences.js");
+                    alert("Check the console for database cleanup instructions");
+                  }}
+                  className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                >
+                  Show Fix
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     );

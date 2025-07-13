@@ -45,7 +45,7 @@ const Chats = ({
         self={self}
         selectedUserToChat={selectedUserToChat}
       />
-      <Details />
+      <Details selectedUserToChat={selectedUserToChat} />
     </div>
   );
 };

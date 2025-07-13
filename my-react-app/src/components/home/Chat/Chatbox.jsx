@@ -1,4 +1,4 @@
-import { from, gql, useMutation } from "@apollo/client";
+import { gql, useMutation } from "@apollo/client";
 import React, { useCallback } from "react";
 import { useEffect } from "react";
 import { useState } from "react";
@@ -45,12 +45,9 @@ const Chatbox = ({
   self,
   setUserMessages,
   setShowOutgoingCallModal,
-  showOutgoingCallModal,
   userMessages,
-  userOnCall,
   onCall,
   peerConnection,
-  destroyPeerConnection,
 }) => {
   const messagesEndRef = React.useRef(null);
   const chatContainerRef = React.useRef(null);
@@ -67,7 +64,7 @@ const Chatbox = ({
   });
 
   const [seeMessage] = useMutation(isSeenQuery, {
-    onCompleted: async (data) => {
+    onCompleted: async () => {
       setChats((prev) => {
         return prev.map((user) => {
           if (user.username === selectedUserToChat) {
@@ -93,6 +90,17 @@ const Chatbox = ({
 
   function handleSend() {
     if (!content.trim()) return;
+    
+    // Validate that we have the required data
+    if (!self?.username || !selectedUserToChat) {
+      console.error("Cannot send message: missing sender or receiver", {
+        sender: self?.username,
+        receiver: selectedUserToChat
+      });
+      alert("Error: Unable to send message. Please try refreshing the page.");
+      return;
+    }
+    
     socket.emit("message", {
       sender: self.username,
       receiver: selectedUserToChat,
@@ -132,7 +140,7 @@ const Chatbox = ({
 
   const isSeenFnc = useCallback(async () => {
     await seeMessage({
-      variables: { sender: selectedUserToChat, receiver: self.username },
+      variables: { sender: selectedUserToChat, receiver: self?.username },
     });
   }, [self?.username, selectedUserToChat, seeMessage]);
 
@@ -145,7 +153,7 @@ const Chatbox = ({
       receiver: self?.username,
       sender: selectedUserToChat,
     });
-  }, [userMessages]);
+  }, [userMessages, socket, self?.username, selectedUserToChat]);
 
   async function handleCall() {
     setUserOnCall(selectedUserToChat);
@@ -219,7 +227,7 @@ const Chatbox = ({
     const handleMessageSeen = ({ receiver }) => {
       setUserMessages((prev) =>
         prev.map((msg) =>
-          msg.sender === self.username && msg.receiver === receiver
+          msg.sender === self?.username && msg.receiver === receiver
             ? { ...msg, isSeen: true }
             : msg
         )
@@ -231,7 +239,7 @@ const Chatbox = ({
     return () => {
       socket.off("messageSeen", handleMessageSeen);
     };
-  }, [socket, self.username, setUserMessages]);
+  }, [socket, self?.username, setUserMessages]);
 
   useLayoutEffect(() => {
     if (!showScrollDownArrow) {
@@ -249,7 +257,7 @@ const Chatbox = ({
 
   if (!selectedUserToChat) {
     return (
-      <div className="h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="h-full flex items-center min-w-150 justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center p-8">
           <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg
@@ -270,6 +278,13 @@ const Chatbox = ({
             Select a conversation
           </h3>
           <p className="text-gray-600">Choose someone to start chatting with</p>
+          {!self && (
+            <div className="mt-4 p-3 bg-yellow-100 rounded-lg">
+              <p className="text-yellow-800 text-sm">
+                ⚠️ User data not loaded. Please refresh if issues persist.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -384,7 +399,7 @@ const Chatbox = ({
         }
       `}</style>
 
-      <div className="chat-container h-full flex flex-col relative">
+      <div className="chat-container h-full min-w-150 flex flex-col relative">
         {/* Enhanced Header */}
         <div className="glass-header px-6 py-4 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-4">
@@ -586,9 +601,9 @@ const Chatbox = ({
             {/* Send Button */}
             <button
               onClick={handleSend}
-              disabled={!content.trim()}
+              disabled={!content.trim() || !self?.username}
               className={`action-btn p-3 rounded-full shadow-lg transition-all duration-200 ${
-                content.trim()
+                content.trim() && self?.username
                   ? "bg-blue-500 hover:bg-blue-600 text-white"
                   : "bg-gray-300 text-gray-500 cursor-not-allowed"
               }`}

@@ -9,7 +9,6 @@ import Chats from "./home/Chat/Chats";
 import { IoSettingsSharp } from "react-icons/io5";
 import Settings from "./home/Settings";
 import Contact from "./home/Contact";
-import { io } from "socket.io-client";
 import { FaUserFriends } from "react-icons/fa";
 import Search from "./Search";
 import { useEffect } from "react";
@@ -57,8 +56,16 @@ const selfQuery = gql`
       _id
       email
       username
-      followings
-      followers
+      followings {
+        _id
+        username
+        email
+      }
+      followers {
+        _id
+        username
+        email
+      }
     }
   }
 `;
@@ -91,15 +98,15 @@ const Home = () => {
     },
   });
 
-  const { getMyChats, refetch: chatsrefetch } = useQuery(chatsQuery, {
+  const { refetch: chatsrefetch } = useQuery(chatsQuery, {
     onCompleted: async (data) => {
       setChats(data.getChats);
     },
-    onError: async (err) => {},
+    onError: async () => {},
   });
 
   const [selectedUserToChat, setSelectedUserToChat] = useState("");
-  const [self, setSelf] = React.useState("");
+  const [self, setSelf] = React.useState(null);
   const [onCall, setOnCall] = React.useState(false);
   const [userMessages, setUserMessages] = useState([]);
   const [refreshUsers, setRefreshUsers] = React.useState(false);
@@ -134,8 +141,13 @@ const Home = () => {
   }, [self?.username, socket]);
 
   useEffect(() => {
-    selfRefetch().then((data) => setSelf(data.data.self));
-  });
+    if (refreshUsers) {
+      selfRefetch().then((data) => {
+        setSelf(data.data.self);
+        setRefreshUsers(false);
+      });
+    }
+  }, [refreshUsers, selfRefetch]);
 
   useEffect(() => {
     async function receiveCall({ from, offer }) {
@@ -630,6 +642,7 @@ const Home = () => {
             setUserMessages={setUserMessages}
             userMessages={userMessages}
             socket={socket}
+            setIdx={setIdx}
             setChats={setChats}
             chatsrefetch={chatsrefetch}
             chats={chats}

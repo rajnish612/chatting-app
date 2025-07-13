@@ -1,9 +1,31 @@
 import React from "react";
+import { gql, useMutation } from "@apollo/client";
+import { useNavigate } from "react-router-dom";
+
+const LOGIN_MUTATION = gql`
+  mutation Login($email: String!, $password: String!) {
+    login(email: $email, password: $password)
+  }
+`;
 
 const Login = () => {
+  const navigate = useNavigate();
   const [form, setForm] = React.useState({
     email: "",
     password: "",
+  });
+  const [loading, setLoading] = React.useState(false);
+
+  const [loginMutation] = useMutation(LOGIN_MUTATION, {
+    onCompleted: (data) => {
+      console.log("Login successful:", data);
+      navigate("/home");
+    },
+    onError: (err) => {
+      console.error("Login error:", err);
+      alert("Login failed: " + err.message);
+      setLoading(false);
+    }
   });
 
   function handleChange(e) {
@@ -23,23 +45,18 @@ const Login = () => {
     if (!form.email || !form.password) {
       return alert("Please fill all fields");
     }
+    
+    setLoading(true);
     try {
-      const res = await fetch(
-        import.meta.env.VITE_API_URL + "/api/auth/login",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(form),
-          credentials: "include",
+      await loginMutation({
+        variables: {
+          email: form.email,
+          password: form.password
         }
-      );
-      const data = await res.json();
-      console.log(data);
-    } catch (err) {
-      alert("Error during login: " + err.message);
-      console.error("Error during login:", err.message);
+      });
+    } catch (error) {
+      // Error is handled in onError callback
+      setLoading(false);
     }
   }
 
@@ -344,25 +361,32 @@ const Login = () => {
             {/* Enhanced Submit Button */}
             <button
               onClick={handleSubmit}
-              className="btn-premium w-full px-8 py-4 text-white font-bold rounded-2xl text-lg cursor-pointer border-none"
+              disabled={loading}
+              className={`btn-premium w-full px-8 py-4 text-white font-bold rounded-2xl text-lg cursor-pointer border-none ${
+                loading ? "opacity-50 cursor-not-allowed" : ""
+              }`}
               title="Sign In"
               type="submit"
             >
               <span className="flex items-center justify-center gap-3">
-                Sign In
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M14 5l7 7m0 0l-7 7m7-7H3"
-                  />
-                </svg>
+                {loading ? "Signing In..." : "Sign In"}
+                {loading ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                ) : (
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M14 5l7 7m0 0l-7 7m7-7H3"
+                    />
+                  </svg>
+                )}
               </span>
             </button>
           </form>
@@ -371,7 +395,10 @@ const Login = () => {
           <div className="w-full text-center space-y-3">
             <p className="text-gray-600 text-sm">
               Don't have an account?{" "}
-              <span className="text-blue-600 font-semibold cursor-pointer hover:text-blue-700 transition-colors">
+              <span 
+                onClick={() => navigate("/register")}
+                className="text-blue-600 font-semibold cursor-pointer hover:text-blue-700 transition-colors"
+              >
                 Sign up
               </span>
             </p>
