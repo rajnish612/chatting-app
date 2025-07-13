@@ -403,7 +403,7 @@ const Chatbox = ({
 
       <div className="chat-container h-full w-full flex flex-col relative">
         {/* Enhanced Header */}
-        <div className="glass-header px-4 md:px-6 py-3 md:py-4 flex items-center justify-between shadow-sm">
+        <div className="hidden md:flex glass-header px-4 md:px-6 py-3 md:py-4 items-center justify-between shadow-sm">
           <div className="flex items-center gap-4">
             {/* Mobile back button - only show on mobile */}
             <button

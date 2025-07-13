@@ -39,12 +39,12 @@ const Chatlist = ({
         .chat-item {
           transition: all 0.2s ease;
           border-radius: 12px;
-          margin: 4px 8px;
+          margin: 2px 4px;
         }
 
         .chat-item:hover {
           background: #f8fafc;
-          transform: translateX(4px);
+          transform: translateX(2px);
         }
 
         .chat-item.active {
@@ -95,7 +95,7 @@ const Chatlist = ({
         }
       `}</style>
 
-      <div className="chat-sidebar flex flex-col h-screen w-full">
+      <div className="chat-sidebar flex flex-col h-screen w-full overflow-hidden">
         {/* Header */}
         <div className="p-4 md:p-6 border-b border-gray-100">
           <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-3 md:mb-4">Chats</h1>
@@ -114,11 +114,11 @@ const Chatlist = ({
         </div>
 
         {/* Chat List */}
-        <div className="scroll-area flex-1 overflow-y-auto py-2">
+        <div className="scroll-area flex-1 overflow-y-auto py-2 pr-2">
           {/* Following Section */}
           {filteredFollowings && filteredFollowings.length > 0 && (
             <div className="mb-4">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 mb-2">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-6 mb-2">
                 Following
               </p>
               {filteredFollowings.map((chat, index) => (
@@ -140,12 +140,12 @@ const Chatlist = ({
                   </div>
 
                   {/* Content */}
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 mr-2">
                     <div className="flex items-center justify-between">
-                      <h3 className="username font-semibold text-gray-900 truncate">
+                      <h3 className="username font-semibold text-gray-900 truncate pr-2">
                         {chat.username}
                       </h3>
-                      <span className="time text-xs text-gray-500">2m</span>
+                      <span className="time text-xs text-gray-500 flex-shrink-0">2m</span>
                     </div>
                     <p className="message text-sm text-gray-600 truncate mt-1">
                       Say hello...
@@ -154,7 +154,7 @@ const Chatlist = ({
 
                   {/* Unread badge */}
                   {chat.unseenCount > 0 && (
-                    <div className="ml-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    <div className="ml-2 bg-red-500 text-white text-xs rounded-full min-w-5 h-5 px-1 flex items-center justify-center flex-shrink-0">
                       {chat.unseenCount}
                     </div>
                   )}
@@ -166,7 +166,7 @@ const Chatlist = ({
           {/* Recent Chats */}
           {filteredChats.length > 0 && (
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 mb-2">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-6 mb-2">
                 Messages
               </p>
               {filteredChats.map((chat, index) => (
@@ -188,12 +188,12 @@ const Chatlist = ({
                   </div>
 
                   {/* Content */}
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 mr-2">
                     <div className="flex items-center justify-between">
-                      <h3 className="username font-semibold text-gray-900 truncate">
+                      <h3 className="username font-semibold text-gray-900 truncate pr-2">
                         {chat.username}
                       </h3>
-                      <span className="time text-xs text-gray-500">5m</span>
+                      <span className="time text-xs text-gray-500 flex-shrink-0">5m</span>
                     </div>
                     <p className="message text-sm text-gray-600 truncate mt-1">
                       Last message preview...
@@ -202,7 +202,7 @@ const Chatlist = ({
 
                   {/* Unread badge */}
                   {chat.unseenCount > 0 && (
-                    <div className="ml-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    <div className="ml-2 bg-red-500 text-white text-xs rounded-full min-w-5 h-5 px-1 flex items-center justify-center flex-shrink-0">
                       {chat.unseenCount}
                     </div>
                   )}

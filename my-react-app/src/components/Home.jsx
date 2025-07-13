@@ -530,7 +530,7 @@ const Home = () => {
         )}
 
         {/* Enhanced Menu Button */}
-        <div className="absolute top-6 left-6 z-50">
+        <div className="absolute top-4 right-6 z-50">
           <button
             onClick={() => setOpen(true)}
             className="glass-morphism floating-action p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110 group"
