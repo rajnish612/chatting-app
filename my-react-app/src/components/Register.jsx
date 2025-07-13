@@ -5,7 +5,7 @@ import { CiUser } from "react-icons/ci";
 import { useCallback } from "react";
 import { gql, useMutation } from "@apollo/client";
 import { useNavigate } from "react-router-dom";
-
+import { motion } from "motion/react";
 const REGISTER_MUTATION = gql`
   mutation Register($email: String!, $password: String!, $username: String!) {
     register(email: $email, password: $password, username: $username)
@@ -32,7 +32,7 @@ const Register = () => {
       console.error("Registration error:", err);
       alert("Registration failed: " + err.message);
       setLoading(false);
-    }
+    },
   });
 
   const handleSubmit = useCallback(
@@ -55,8 +55,8 @@ const Register = () => {
           variables: {
             email: form.email,
             password: form.password,
-            username: form.username
-          }
+            username: form.username,
+          },
         });
       } catch (error) {
         // Error is handled in onError callback
@@ -515,7 +515,7 @@ const Register = () => {
             >
               <p className="text-gray-600 text-sm">
                 Already have an account?{" "}
-                <span 
+                <span
                   onClick={() => navigate("/login")}
                   className="text-blue-600 font-semibold cursor-pointer hover:text-blue-700 transition-colors"
                 >
