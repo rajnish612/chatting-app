@@ -24,7 +24,7 @@ const apolloServer = new ApolloServer({
 });
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL,
+    origin: [process.env.CLIENT_URL, "http://192.168.1.6:5173", "http://192.168.1.6:5174"],
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -32,7 +32,7 @@ const io = new Server(server, {
 connectDB();
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    origin: [process.env.CLIENT_URL, "http://192.168.1.6:5173", "http://192.168.1.6:5174"],
     credentials: true,
   })
 );
