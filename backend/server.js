@@ -24,7 +24,11 @@ const apolloServer = new ApolloServer({
 });
 const io = new Server(server, {
   cors: {
-    origin: [process.env.CLIENT_URL, "http://192.168.1.6:5173", "http://192.168.1.6:5174"],
+    origin: [
+      process.env.CLIENT_URL,
+      "http://192.168.1.6:5173",
+      "http://192.168.1.6:5174",
+    ],
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -32,7 +36,11 @@ const io = new Server(server, {
 connectDB();
 app.use(
   cors({
-    origin: [process.env.CLIENT_URL, "http://192.168.1.6:5173", "http://192.168.1.6:5174"],
+    origin: [
+      process.env.CLIENT_URL,
+      "http://192.168.1.6:5173",
+      "http://192.168.1.6:5174",
+    ],
     credentials: true,
   })
 );
@@ -67,12 +75,17 @@ io.on("connection", (socket) => {
         console.error("Message validation failed: missing required fields", {
           sender,
           receiver,
-          content: content ? "provided" : "missing"
+          content: content ? "provided" : "missing",
         });
         return;
       }
 
-      let newMessage = new Message({ sender, receiver, content, isSeen: false });
+      let newMessage = new Message({
+        sender,
+        receiver,
+        content,
+        isSeen: false,
+      });
       await newMessage.save();
       io.to(receiver).emit("receive", { sender, receiver, content });
     } catch (error) {
@@ -82,12 +95,13 @@ io.on("connection", (socket) => {
   socket.on("messageSeenByReceiver", async ({ sender, receiver }) => {
     io.to(sender).emit("messageSeen", { receiver });
   });
-  socket.on("call-user", ({ from, to, offer }) => {
-    console.log(from, to);
+  socket.on("call-user", ({ from, to, offer, type }) => {
+    console.log(from, to, type);
 
     io.to(to).emit("receive-call", {
       from: from,
       offer: offer,
+      type: type,
     });
   });
 
