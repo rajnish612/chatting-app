@@ -53,6 +53,7 @@ const Chatbox = ({
 }) => {
   const messagesEndRef = React.useRef(null);
   const chatContainerRef = React.useRef(null);
+
   const [showScrollDownArrow, setShowScrollDownArrow] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
 
@@ -92,17 +93,17 @@ const Chatbox = ({
 
   function handleSend() {
     if (!content.trim()) return;
-    
+
     // Validate that we have the required data
     if (!self?.username || !selectedUserToChat) {
       console.error("Cannot send message: missing sender or receiver", {
         sender: self?.username,
-        receiver: selectedUserToChat
+        receiver: selectedUserToChat,
       });
       alert("Error: Unable to send message. Please try refreshing the page.");
       return;
     }
-    
+
     socket.emit("message", {
       sender: self.username,
       receiver: selectedUserToChat,
@@ -157,11 +158,9 @@ const Chatbox = ({
     });
   }, [userMessages, socket, self?.username, selectedUserToChat]);
 
-  async function handleCall() {
+  async function handleAudioCall() {
     setUserOnCall(selectedUserToChat);
     try {
-      console.log("current", peerConnection.current);
-
       if (peerConnection.current) {
         peerConnection.current.close();
         peerConnection.current = null;
@@ -186,12 +185,48 @@ const Chatbox = ({
         to: selectedUserToChat,
         from: self?.username,
         offer: offer,
+        type: "audio", // Add call type
       });
     } catch (err) {
       alert(err.message);
     }
   }
-
+  async function handleVideoCall() {
+    setUserOnCall(selectedUserToChat);
+    try {
+      if (peerConnection.current) {
+        peerConnection.current.close();
+        peerConnection.current = null;
+      }
+      peerConnection.current = new RTCPeerConnection(config);
+      peerConnection.current.onicecandidate = (event) => {
+        if (event.candidate) {
+          socket.emit("ice-candidate", {
+            to: selectedUserToChat,
+            from: self?.username,
+            candidate: event.candidate,
+          });
+        }
+      };
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: true,
+      });
+      stream.getTracks().forEach((track) => {
+        peerConnection.current.addTrack(track, stream);
+      });
+      const offer = await peerConnection.current.createOffer();
+      await peerConnection.current.setLocalDescription(offer);
+      socket.emit("call-user", {
+        to: selectedUserToChat,
+        from: self?.username,
+        offer: offer,
+        type: "video", // Add call type
+      });
+    } catch (err) {
+      alert(err.message);
+    }
+  }
   useEffect(() => {
     const handleNewICECandidate = ({ candidate }) => {
       if (candidate && peerConnection.current) {
@@ -412,7 +447,7 @@ const Chatbox = ({
             >
               <IoArrowBack className="text-gray-600" size={20} />
             </button>
-            
+
             <div className="relative">
               <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
                 <span className="text-white font-bold text-lg">
@@ -439,13 +474,23 @@ const Chatbox = ({
                   return;
                 }
                 setShowOutgoingCallModal(true);
-                handleCall();
+                handleAudioCall();
               }}
               className="action-btn p-3 rounded-full bg-blue-500 hover:bg-blue-600 text-white shadow-lg"
             >
               <FaPhoneAlt size={16} />
             </button>
-            <button className="action-btn p-3 rounded-full bg-green-500 hover:bg-green-600 text-white shadow-lg">
+            <button
+              onClick={() => {
+                if (peerConnection.current) {
+                  alert("You are already on a call");
+                  return;
+                }
+                setShowOutgoingCallModal(true);
+                handleVideoCall(); // Use video call function
+              }}
+              className="action-btn p-3 rounded-full bg-green-500 hover:bg-green-600 text-white shadow-lg"
+            >
               <FaVideo size={18} />
             </button>
           </div>
