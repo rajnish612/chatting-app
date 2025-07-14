@@ -9,6 +9,7 @@ import Chats from "./home/Chat/Chats";
 import { IoSettingsSharp } from "react-icons/io5";
 import Settings from "./home/Settings";
 import Contact from "./home/Contact";
+import { MdCallEnd } from "react-icons/md";
 import { FaUserFriends } from "react-icons/fa";
 import Search from "./Search";
 import { useEffect } from "react";
@@ -394,6 +395,32 @@ const Home = () => {
       `}</style>
 
       <div className="gradient-bg w-screen h-screen relative overflow-hidden">
+        {/* video call container*/}
+        <div className="absolute flex justify-center items-center z-10 inset-0 bg-black/50 backdrop-blur-2xl ">
+          <div className="rounded-lg bg-black h-[80vh] flex justify-center items-center w-[80vw] relative">
+            <div className="w-full flex absolute -bottom-5  space-x-4 md:space-x-10 justify-center">
+              <div className="h-12 transition-all bg-gradient-to-r hover:scale-[1.1] from-yellow-600 to-yellow-400 hover:bg-green-500 group animate-bounce w-12 flex justify-center items-center md:h-17 md:w-18 xl:w-20 xl:h-20  rounded-2xl ">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="white"
+                  class="size-6 h-[50%]  w-[50%]"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z"
+                  />
+                </svg>
+              </div>
+              <div className="h-12 bg-gradient-to-r from-red-600 hover:scale-[1.1] transition-all to-red-400  w-12 flex justify-center items-center md:h-17 md:w-18 xl:w-20 xl:h-20  rounded-2xl  bg-white">
+                <MdCallEnd className=" h-[50%]  w-[50%]" />
+              </div>
+            </div>
+          </div>
+        </div>
         {/* Beautiful Outgoing Call Modal */}
         {showOutgoingCallModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
