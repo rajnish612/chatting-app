@@ -43,11 +43,14 @@ const Chatbox = ({
   setSelectedUserToChat,
   socket,
   setUserOnCall,
+  setCallType,
   setChats,
   self,
   setUserMessages,
+  setOutGoingVideoCall,
   setShowOutgoingCallModal,
   userMessages,
+  localVideoRef,
   onCall,
   peerConnection,
 }) => {
@@ -159,6 +162,7 @@ const Chatbox = ({
   }, [userMessages, socket, self?.username, selectedUserToChat]);
 
   async function handleAudioCall() {
+    setCallType("audio");
     setUserOnCall(selectedUserToChat);
     try {
       if (peerConnection.current) {
@@ -192,6 +196,8 @@ const Chatbox = ({
     }
   }
   async function handleVideoCall() {
+    setCallType("video");
+
     setUserOnCall(selectedUserToChat);
     try {
       if (peerConnection.current) {
@@ -212,11 +218,15 @@ const Chatbox = ({
         audio: true,
         video: true,
       });
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream;
+      }
       stream.getTracks().forEach((track) => {
         peerConnection.current.addTrack(track, stream);
       });
       const offer = await peerConnection.current.createOffer();
       await peerConnection.current.setLocalDescription(offer);
+
       socket.emit("call-user", {
         to: selectedUserToChat,
         from: self?.username,
@@ -486,7 +496,9 @@ const Chatbox = ({
                   alert("You are already on a call");
                   return;
                 }
-                setShowOutgoingCallModal(true);
+
+                setOutGoingVideoCall((prev) => true);
+
                 handleVideoCall(); // Use video call function
               }}
               className="action-btn p-3 rounded-full bg-green-500 hover:bg-green-600 text-white shadow-lg"

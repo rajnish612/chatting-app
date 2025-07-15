@@ -114,6 +114,7 @@ const Home = () => {
   const [onCall, setOnCall] = React.useState(false);
   const [userMessages, setUserMessages] = useState([]);
   const [refreshUsers, setRefreshUsers] = React.useState(false);
+  const [outGoingVideoCall, setOutGoingVideoCall] = React.useState(false);
   const [open, setOpen] = React.useState(false);
   const [idx, setIdx] = React.useState(0);
   const SelectedComponent = DrawerItems[idx].element;
@@ -155,7 +156,7 @@ const Home = () => {
 
   useEffect(() => {
     async function receiveCall({ from, offer, type }) {
-      console.log("receiving from", from);
+      setCallType(type);
       setUserOnCall(from);
       setIncomingCall({ from, offer, type });
       setShowIncomingCallModal(true);
@@ -246,6 +247,8 @@ const Home = () => {
 
   const destroyPeerConnection = useCallback(
     (peerConnection) => {
+      setCallType("");
+      setOutGoingVideoCall(false);
       if (peerConnection.current) {
         peerConnection.current.getSenders().forEach((sender) => {
           if (sender.track) {
@@ -281,6 +284,7 @@ const Home = () => {
       socket.off("call-ended", callEnded);
     };
   }, [socket, destroyPeerConnection, callEnded]);
+  console.log("outgoingvideoCall", outGoingVideoCall);
 
   if (loading) {
     return (
@@ -292,7 +296,7 @@ const Home = () => {
       </div>
     );
   }
-  console.log("is user on call", callType);
+  console.log("outgoing call type", callType);
 
   return (
     <>
@@ -415,7 +419,7 @@ const Home = () => {
 
       <div className="gradient-bg w-screen h-screen relative overflow-hidden">
         {/* video call container*/}
-        {onCall && callType === "video" && (
+        {callType === "video" && (
           <div className="absolute   flex justify-center items-center z-10 inset-0 bg-black/50 backdrop-blur-2xl ">
             <div className="rounded-lg bg-black h-[80vh] flex justify-center items-center w-[80vw] relative">
               {/* Remote video (full screen) */}
@@ -434,24 +438,28 @@ const Home = () => {
   border-white object-cover"
               />
               <div className="w-full flex absolute -bottom-5  space-x-4 md:space-x-10 justify-center">
-                <div className="h-12 transition-all bg-gradient-to-r hover:scale-[1.1] from-yellow-600 to-yellow-400 hover:bg-green-500 group animate-bounce w-12 flex justify-center items-center md:h-17 md:w-18 xl:w-20 xl:h-20  rounded-2xl ">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke-width="1.5"
-                    stroke="white"
-                    class="size-6 h-[50%]  w-[50%]"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z"
-                    />
-                  </svg>
-                </div>
+                {outGoingVideoCall && (
+                  <div className="h-12 transition-all bg-gradient-to-r hover:scale-[1.1] from-yellow-600 to-yellow-400 hover:bg-green-500 group animate-bounce w-12 flex justify-center items-center md:h-17 md:w-18 xl:w-20 xl:h-20  rounded-2xl ">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke-width="1.5"
+                      stroke="white"
+                      class="size-6 h-[50%]  w-[50%]"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z"
+                      />
+                    </svg>
+                  </div>
+                )}
                 <div
-                  onClick={() => destroyPeerConnection(peerConnection)}
+                  onClick={() => {
+                    destroyPeerConnection(peerConnection);
+                  }}
                   className="h-12 bg-gradient-to-r from-red-600 hover:scale-[1.1] transition-all to-red-400  w-12 flex justify-center items-center md:h-17 md:w-18 xl:w-20 xl:h-20  rounded-2xl  bg-white"
                 >
                   <MdCallEnd className=" h-[50%]  w-[50%]" />
@@ -461,7 +469,7 @@ const Home = () => {
           </div>
         )}
         {/* Beautiful Outgoing Call Modal */}
-        {showOutgoingCallModal && (
+        {showOutgoingCallModal && callType !== "video" && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
             <div className="call-modal rounded-3xl p-8 max-w-md w-full mx-4 text-center">
               <div className="relative mb-6">
@@ -692,7 +700,10 @@ const Home = () => {
         <div className="h-full w-full">
           <SelectedComponent
             onCall={onCall}
+            setCallType={setCallType}
             peerConnection={peerConnection}
+            localVideoRef={localVideoRef}
+            setOutGoingVideoCall={setOutGoingVideoCall}
             destroyPeerConnection={destroyPeerConnection}
             showOutgoingCallModal={showOutgoingCallModal}
             setShowOutgoingCallModal={setShowOutgoingCallModal}

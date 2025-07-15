@@ -7,6 +7,7 @@ import Details from "./Details";
 const Chats = ({
   self,
   chats,
+  setCallType,
   setSelectedUserToChat,
   selectedUserToChat,
   socket,
@@ -17,8 +18,10 @@ const Chats = ({
   onCall,
   destroyPeerConnection,
   userMessages,
+  setOutGoingVideoCall,
   peerConnection,
   setUserOnCall,
+  localVideoRef,
   userOnCall,
   showOutgoingCallModal,
 }) => {
@@ -43,12 +46,12 @@ const Chats = ({
   // Handle touch move - provide visual feedback
   const handleTouchMove = (e) => {
     if (!touchStart) return;
-    
+
     const currentTouch = e.targetTouches[0].clientX;
     const diff = currentTouch - touchStart;
-    
+
     setTouchEnd(currentTouch);
-    
+
     // Handle drawer swipe from left edge
     if (!selectedUserToChat && touchStart < 20 && diff > 0) {
       // Swipe from left edge to open drawer
@@ -68,9 +71,9 @@ const Chats = ({
   // Handle touch end - detect swipe direction
   const handleTouchEnd = () => {
     setIsSwping(false);
-    
+
     if (!touchStart || !touchEnd) return;
-    
+
     const distance = touchStart - touchEnd;
     const diff = touchEnd - touchStart;
     const isRightSwipe = distance < -minSwipeDistance;
@@ -88,7 +91,7 @@ const Chats = ({
     else if (isRightSwipe && selectedUserToChat && !isDrawerOpen) {
       setIsDrawerOpen(true); // Show drawer when going back
     }
-    
+
     setSwipeOffset(0);
   };
 
@@ -111,11 +114,13 @@ const Chats = ({
             chats={chats}
           />
         </div>
-        
+
         {/* Chatbox - flexible middle section */}
         <div className="flex-1 min-w-0 max-w-none xl:max-w-3xl flex-col flex">
           <Chatbox
             userOnCall={userOnCall}
+            localVideoRef={localVideoRef}
+            setCallType={setCallType}
             setUserOnCall={setUserOnCall}
             peerConnection={peerConnection}
             destroyPeerConnection={destroyPeerConnection}
@@ -132,7 +137,7 @@ const Chats = ({
             setSelectedUserToChat={setSelectedUserToChat}
           />
         </div>
-        
+
         {/* Details - desktop only, responsive width */}
         <div className="hidden lg:block lg:w-64 xl:w-72 2xl:w-80 flex-shrink-0">
           <Details selectedUserToChat={selectedUserToChat} />
@@ -143,19 +148,21 @@ const Chats = ({
       <div className="block md:hidden w-full h-full relative">
         {/* Mobile Drawer Overlay */}
         {isDrawerOpen && (
-          <div 
+          <div
             className="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300"
             onClick={() => setIsDrawerOpen(false)}
           />
         )}
 
         {/* Mobile Drawer */}
-        <div 
+        <div
           className={`fixed top-0 left-0 h-full w-80 bg-white z-50 transform transition-transform duration-300 ease-out ${
-            isDrawerOpen ? 'translate-x-0' : '-translate-x-full'
+            isDrawerOpen ? "translate-x-0" : "-translate-x-full"
           }`}
           style={{
-            transform: !isSwping ? undefined : `translateX(${swipeOffset - 320}px)`
+            transform: !isSwping
+              ? undefined
+              : `translateX(${swipeOffset - 320}px)`,
           }}
         >
           <Chatlist
@@ -167,12 +174,12 @@ const Chats = ({
         </div>
 
         {/* Mobile Main Content */}
-        <div 
+        <div
           className="w-full h-full"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
-          style={{ touchAction: 'pan-x' }}
+          style={{ touchAction: "pan-x" }}
         >
           {/* Mobile Chatbox with Header */}
           <div className="flex flex-col h-full">
@@ -184,7 +191,7 @@ const Chats = ({
               >
                 <HiMenu className="w-6 h-6 text-gray-600" />
               </button>
-              
+
               {selectedUserToChat ? (
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
@@ -193,7 +200,9 @@ const Chats = ({
                     </span>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">{selectedUserToChat}</h3>
+                    <h3 className="font-semibold text-gray-900">
+                      {selectedUserToChat}
+                    </h3>
                     <p className="text-sm text-gray-500">Online</p>
                   </div>
                 </div>
@@ -216,6 +225,7 @@ const Chats = ({
                   chatsrefetch={chatsrefetch}
                   setChats={setChats}
                   setUserMessages={setUserMessages}
+                  setOutGoingVideoCall={setOutGoingVideoCall}
                   userMessages={userMessages}
                   socket={socket}
                   self={self}
@@ -225,11 +235,19 @@ const Chats = ({
               ) : (
                 <div className="flex flex-col items-center justify-center h-full px-6 text-center">
                   <div className="w-64 h-64 mb-8">
-                    <svg viewBox="0 0 303 172" className="w-full h-full text-gray-300">
-                      <path fill="currentColor" d="M158.8 126.8c2.8 2.8 6.4 4.2 10.2 4.2s7.4-1.4 10.2-4.2l25.4-25.4c5.6-5.6 5.6-14.8 0-20.4s-14.8-5.6-20.4 0l-9.2 9.2V30.4c0-8-6.4-14.4-14.4-14.4s-14.4 6.4-14.4 14.4v59.6l-9.2-9.2c-5.6-5.6-14.8-5.6-20.4 0s-5.6 14.8 0 20.4l25.4 25.4z"/>
+                    <svg
+                      viewBox="0 0 303 172"
+                      className="w-full h-full text-gray-300"
+                    >
+                      <path
+                        fill="currentColor"
+                        d="M158.8 126.8c2.8 2.8 6.4 4.2 10.2 4.2s7.4-1.4 10.2-4.2l25.4-25.4c5.6-5.6 5.6-14.8 0-20.4s-14.8-5.6-20.4 0l-9.2 9.2V30.4c0-8-6.4-14.4-14.4-14.4s-14.4 6.4-14.4 14.4v59.6l-9.2-9.2c-5.6-5.6-14.8-5.6-20.4 0s-5.6 14.8 0 20.4l25.4 25.4z"
+                      />
                     </svg>
                   </div>
-                  <h2 className="text-2xl font-light text-gray-500 mb-4">WhatsApp Web</h2>
+                  <h2 className="text-2xl font-light text-gray-500 mb-4">
+                    WhatsApp Web
+                  </h2>
                   <p className="text-gray-400 max-w-sm">
                     Send and receive messages without keeping your phone online.
                   </p>
