@@ -54,6 +54,7 @@ const Chatbox = ({
   onCall,
   peerConnection,
 }) => {
+  console.log("setOutGoingVideoCall:", setOutGoingVideoCall);
   const messagesEndRef = React.useRef(null);
   const chatContainerRef = React.useRef(null);
 
@@ -196,6 +197,7 @@ const Chatbox = ({
     }
   }
   async function handleVideoCall() {
+    setOutGoingVideoCall(true);
     setCallType("video");
 
     setUserOnCall(selectedUserToChat);
@@ -496,8 +498,6 @@ const Chatbox = ({
                   alert("You are already on a call");
                   return;
                 }
-
-                setOutGoingVideoCall((prev) => true);
 
                 handleVideoCall(); // Use video call function
               }}

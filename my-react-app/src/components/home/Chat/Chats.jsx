@@ -130,6 +130,7 @@ const Chats = ({
             chatsrefetch={chatsrefetch}
             setChats={setChats}
             setUserMessages={setUserMessages}
+            setOutGoingVideoCall={setOutGoingVideoCall}
             userMessages={userMessages}
             socket={socket}
             self={self}
@@ -216,6 +217,8 @@ const Chats = ({
               {selectedUserToChat ? (
                 <Chatbox
                   userOnCall={userOnCall}
+                  localVideoRef={localVideoRef}
+                  setCallType={setCallType}
                   setUserOnCall={setUserOnCall}
                   peerConnection={peerConnection}
                   destroyPeerConnection={destroyPeerConnection}

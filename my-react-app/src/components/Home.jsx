@@ -438,7 +438,7 @@ const Home = () => {
   border-white object-cover"
               />
               <div className="w-full flex absolute -bottom-5  space-x-4 md:space-x-10 justify-center">
-                {outGoingVideoCall && (
+                {!outGoingVideoCall && (
                   <div className="h-12 transition-all bg-gradient-to-r hover:scale-[1.1] from-yellow-600 to-yellow-400 hover:bg-green-500 group animate-bounce w-12 flex justify-center items-center md:h-17 md:w-18 xl:w-20 xl:h-20  rounded-2xl ">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
