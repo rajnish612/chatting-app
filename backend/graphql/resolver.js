@@ -16,42 +16,47 @@ const resolver = {
             },
             { username: { $ne: req?.session?.user } },
           ],
-        })
-        .limit(20);
-        
+        }).limit(20);
+
         // Manually populate to avoid ObjectId casting errors
         const result = [];
         for (const user of users) {
           const followersData = [];
           const followingsData = [];
-          
+
           if (user.followers && user.followers.length > 0) {
             for (const followerId of user.followers) {
               if (mongoose.Types.ObjectId.isValid(followerId)) {
-                const follower = await User.findById(followerId, "_id username email");
+                const follower = await User.findById(
+                  followerId,
+                  "_id username email"
+                );
                 if (follower) followersData.push(follower);
               }
             }
           }
-          
+
           if (user.followings && user.followings.length > 0) {
             for (const followingId of user.followings) {
               if (mongoose.Types.ObjectId.isValid(followingId)) {
-                const following = await User.findById(followingId, "_id username email");
+                const following = await User.findById(
+                  followingId,
+                  "_id username email"
+                );
                 if (following) followingsData.push(following);
               }
             }
           }
-          
+
           result.push({
             _id: user._id,
             email: user.email,
             username: user.username,
             followers: followersData,
-            followings: followingsData
+            followings: followingsData,
           });
         }
-        
+
         return result;
       } catch (error) {
         console.error("Error in searchUsers:", error);
@@ -65,46 +70,51 @@ const resolver = {
       try {
         // Use find instead of aggregate for easier population
         const randomUsers = await User.find({
-          username: { $ne: req?.session?.user }
-        })
-        .limit(10);
-        
+          username: { $ne: req?.session?.user },
+        }).limit(10);
+
         // Manually populate to avoid ObjectId casting errors
         const result = [];
         for (const user of randomUsers) {
           const followersData = [];
           const followingsData = [];
-          
+
           if (user.followers && user.followers.length > 0) {
             for (const followerId of user.followers) {
               if (mongoose.Types.ObjectId.isValid(followerId)) {
-                const follower = await User.findById(followerId, "_id username email");
+                const follower = await User.findById(
+                  followerId,
+                  "_id username email"
+                );
                 if (follower) followersData.push(follower);
               }
             }
           }
-          
+
           if (user.followings && user.followings.length > 0) {
             for (const followingId of user.followings) {
               if (mongoose.Types.ObjectId.isValid(followingId)) {
-                const following = await User.findById(followingId, "_id username email");
+                const following = await User.findById(
+                  followingId,
+                  "_id username email"
+                );
                 if (following) followingsData.push(following);
               }
             }
           }
-          
+
           result.push({
             _id: user._id,
             email: user.email,
             username: user.username,
             followers: followersData,
-            followings: followingsData
+            followings: followingsData,
           });
         }
-        
+
         // Shuffle the results to make them random
         const shuffled = result.sort(() => 0.5 - Math.random());
-        
+
         console.log("getRandomUsers - returning", shuffled.length, "users");
         return shuffled;
       } catch (error) {
@@ -174,13 +184,17 @@ const resolver = {
     },
     self: async (parent, args, { req }) => {
       if (!req?.session?.user) return null;
-      console.log("Self query - session user:", req?.session?.user, typeof req?.session?.user);
-      
+      console.log(
+        "Self query - session user:",
+        req?.session?.user,
+        typeof req?.session?.user
+      );
+
       try {
         let user = await User.findOne({
           username: req?.session?.user,
         });
-        
+
         if (!user) {
           console.log("User not found for username:", req?.session?.user);
           return null;
@@ -189,34 +203,47 @@ const resolver = {
         // Manually populate to handle any data inconsistencies
         const followersData = [];
         const followingsData = [];
-        
+
         if (user.followers && user.followers.length > 0) {
           for (const followerId of user.followers) {
             if (mongoose.Types.ObjectId.isValid(followerId)) {
-              const follower = await User.findById(followerId, "_id username email");
+              const follower = await User.findById(
+                followerId,
+                "_id username email"
+              );
               if (follower) followersData.push(follower);
             }
           }
         }
-        
+
         if (user.followings && user.followings.length > 0) {
           for (const followingId of user.followings) {
             if (mongoose.Types.ObjectId.isValid(followingId)) {
-              const following = await User.findById(followingId, "_id username email");
+              const following = await User.findById(
+                followingId,
+                "_id username email"
+              );
               if (following) followingsData.push(following);
             }
           }
         }
-        
+
         const result = {
           _id: user._id,
           email: user.email,
           username: user.username,
           followers: followersData,
-          followings: followingsData
+          followings: followingsData,
         };
 
-        console.log("Self query - returning user:", result.username, "followers:", result.followers.length, "followings:", result.followings.length);
+        console.log(
+          "Self query - returning user:",
+          result.username,
+          "followers:",
+          result.followers.length,
+          "followings:",
+          result.followings.length
+        );
         return result;
       } catch (error) {
         console.error("Error in self query:", error);
@@ -226,58 +253,60 @@ const resolver = {
     getAllMessages: async (parent, args, { req }) => {
       if (!req?.session?.user) return null;
       let messages = await Message.find({
-        $or: [
-          { sender: req.session.user },
-          { receiver: req.session.user },
-        ],
+        $or: [{ sender: req.session.user }, { receiver: req.session.user }],
       });
 
       return messages;
     },
     getAllUsers: async (parent, args, { req }) => {
       if (!req?.session?.user) return null;
-      
+
       try {
         const users = await User.find({
           username: { $ne: req?.session?.user },
-        })
-        .select("-password");
-        
+        }).select("-password");
+
         if (!users || users.length === 0) return [];
-        
+
         // Manually populate to avoid ObjectId casting errors
         const result = [];
         for (const user of users) {
           const followersData = [];
           const followingsData = [];
-          
+
           if (user.followers && user.followers.length > 0) {
             for (const followerId of user.followers) {
               if (mongoose.Types.ObjectId.isValid(followerId)) {
-                const follower = await User.findById(followerId, "_id username email");
+                const follower = await User.findById(
+                  followerId,
+                  "_id username email"
+                );
                 if (follower) followersData.push(follower);
               }
             }
           }
-          
+
           if (user.followings && user.followings.length > 0) {
             for (const followingId of user.followings) {
               if (mongoose.Types.ObjectId.isValid(followingId)) {
-                const following = await User.findById(followingId, "_id username email");
+                const following = await User.findById(
+                  followingId,
+                  "_id username email"
+                );
                 if (following) followingsData.push(following);
               }
             }
           }
-          
+
           result.push({
             _id: user._id,
             email: user.email,
             username: user.username,
             followers: followersData,
-            followings: followingsData
+            followings: followingsData,
           });
         }
-        
+
         return result;
       } catch (error) {
         console.error("Error in getAllUsers:", error);
@@ -287,6 +316,25 @@ const resolver = {
   },
 
   Mutation: {
+    blockUser: async (_, args) => {
+      try {
+        const { selfId, username } = args;
+        if ((!selfId, !username)) throw new Error("unable to block");
+        const userToBlock = await User.findOne({
+          username: username,
+        });
+        if (!userToBlock) throw new Error("unable to block");
+        const self = await User.findByIdAndUpdate(selfId, {
+          $addToSet: {
+            blockedUsers: new mongoose.Types.ObjectId(userToBlock._id),
+          },
+        });
+        return "done";
+      } catch (err) {
+        console.log(err);
+        throw new Error("unable to block");
+      }
+    },
     SeeMessages: async (parent, args) => {
       const { sender, receiver } = args;
       const messages = await Message.updateMany(
@@ -337,7 +385,7 @@ const resolver = {
 
       // Check if user already exists
       const existingUser = await User.findOne({
-        $or: [{ email }, { username }]
+        $or: [{ email }, { username }],
       });
       if (existingUser) {
         throw new Error("User already exists with this email or username");
@@ -353,7 +401,7 @@ const resolver = {
         username,
         password: hashedPassword,
         followings: [],
-        followers: []
+        followers: [],
       });
 
       await newUser.save();
@@ -364,46 +412,67 @@ const resolver = {
       try {
         console.log("Follow mutation called with args:", args);
         console.log("Session user:", req?.session?.user);
-        
+
         if (!req?.session?.user) {
           throw new Error("Unauthorized - No session found");
         }
-        
+
         const { userId } = args;
         if (!userId) {
           throw new Error("User ID is required");
         }
-        
-        console.log("Looking for current user with username:", req.session.user);
+
+        console.log(
+          "Looking for current user with username:",
+          req.session.user
+        );
         // Get current user
         let currentUser = await User.findOne({ username: req.session.user });
         if (!currentUser) {
           throw new Error("Current user not found in database");
         }
-        
-        console.log("Current user found:", currentUser.username, "ID:", currentUser._id);
+
+        console.log(
+          "Current user found:",
+          currentUser.username,
+          "ID:",
+          currentUser._id
+        );
         console.log("Target user ID:", userId);
-        
+
         let userToFollow = await User.findById(userId);
         if (!userToFollow) {
           throw new Error("User to follow not found");
         }
-        
-        console.log("Target user found:", userToFollow.username, "ID:", userToFollow._id);
-        console.log("Current followers of target user:", userToFollow.followers);
-        console.log("Current followings of current user:", currentUser.followings);
-        
+
+        console.log(
+          "Target user found:",
+          userToFollow.username,
+          "ID:",
+          userToFollow._id
+        );
+        console.log(
+          "Current followers of target user:",
+          userToFollow.followers
+        );
+        console.log(
+          "Current followings of current user:",
+          currentUser.followings
+        );
+
         // Check if already following - convert ObjectIds to strings for comparison
-        const isAlreadyFollowing = (userToFollow.followers && userToFollow.followers.length > 0) 
-          ? userToFollow.followers.some(followerId => 
-              followerId.toString() === currentUser._id.toString()
-            )
-          : false;
+        const isAlreadyFollowing =
+          userToFollow.followers && userToFollow.followers.length > 0
+            ? userToFollow.followers.some(
+                (followerId) =>
+                  followerId.toString() === currentUser._id.toString()
+              )
+            : false;
         console.log("Is already following?", isAlreadyFollowing);
-        
+
         // Use a session for atomic operations
         const session = await mongoose.startSession();
-        
+
         try {
           await session.withTransaction(async () => {
             if (isAlreadyFollowing) {
@@ -439,49 +508,54 @@ const resolver = {
         } finally {
           await session.endSession();
         }
-        
+
         // Wait a moment for DB to sync and return updated current user
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
         const updatedUser = await User.findById(currentUser._id);
-        
-        
+
         // Manually populate to avoid any casting errors
         const followersData = [];
         const followingsData = [];
-        
+
         if (updatedUser.followers && updatedUser.followers.length > 0) {
           for (const followerId of updatedUser.followers) {
             if (mongoose.Types.ObjectId.isValid(followerId)) {
-              const follower = await User.findById(followerId, "_id username email");
+              const follower = await User.findById(
+                followerId,
+                "_id username email"
+              );
               if (follower) followersData.push(follower);
             }
           }
         }
-        
+
         if (updatedUser.followings && updatedUser.followings.length > 0) {
           for (const followingId of updatedUser.followings) {
             if (mongoose.Types.ObjectId.isValid(followingId)) {
-              const following = await User.findById(followingId, "_id username email");
+              const following = await User.findById(
+                followingId,
+                "_id username email"
+              );
               if (following) followingsData.push(following);
             }
           }
         }
-        
+
         const result = {
           _id: updatedUser._id,
           email: updatedUser.email,
           username: updatedUser.username,
           followers: followersData,
-          followings: followingsData
+          followings: followingsData,
         };
-          
+
         console.log("Returning updated user:", {
           username: result.username,
           followersCount: result.followers.length,
-          followingsCount: result.followings.length
+          followingsCount: result.followings.length,
         });
-        
+
         return result;
       } catch (error) {
         throw new Error(error.message || error);

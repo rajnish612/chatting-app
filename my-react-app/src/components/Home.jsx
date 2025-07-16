@@ -117,6 +117,7 @@ const Home = () => {
   const [outGoingVideoCall, setOutGoingVideoCall] = React.useState(false);
   const [open, setOpen] = React.useState(false);
   const [idx, setIdx] = React.useState(0);
+  const [selectUserToBlock, setUserToBlock] = useState("");
   const SelectedComponent = DrawerItems[idx].element;
 
   useEffect(() => {
@@ -420,7 +421,82 @@ const Home = () => {
       `}</style>
 
       <div className="gradient-bg w-screen h-screen relative overflow-hidden">
-        {/* video call container*/}
+        {selectUserToBlock && (
+          <div className="absolute z-15 bg-black/10 flex justify-center items-center backdrop-blur-xs inset-0">
+            <div className="bg-white rounded-md  flex flex-col justify-evenly items-center h-100 w-70 sm:w-100 px-7">
+              <span className="font-black text-center text-2xl text-black">
+                Are You sure want to block this user
+              </span>
+              <div className="bg-slate-200 h-[50%] w-full rounded-full flex justify-center items-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="black"
+                  class="size-6"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"
+                  />
+                </svg>
+
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="black"
+                  class="size-6"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636"
+                  />
+                </svg>
+              </div>
+              <div className="space-x-3.5 flex">
+                <button className="!bg-black gap-2 !flex !items-center !justify-center !outline-none hover:scale-[1.1] !transition-all !p-2 !w-20 !rounded-lg !shadow-2xl">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="currentColor"
+                    class="size-5"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="m4.5 12.75 6 6 9-13.5"
+                    />
+                  </svg>
+                  Ok
+                </button>
+                <button className="!bg-white flex  !outline-none !justify-center !items-center !shadow-2xl hover:scale-[1.1] !transition-all !p-2 !rounded-lg text-black">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="currentColor"
+                    class="size-6"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M6 18 18 6M6 6l12 12"
+                    />
+                  </svg>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         {callType === "video" && (
           <div className="absolute   flex justify-center items-center z-10 inset-0 bg-black/50 backdrop-blur-2xl ">
             <div className="rounded-lg bg-black h-[80vh] flex justify-center items-center w-[80vw] relative">

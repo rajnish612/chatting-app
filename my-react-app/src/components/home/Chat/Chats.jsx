@@ -141,7 +141,7 @@ const Chats = ({
 
         {/* Details - desktop only, responsive width */}
         <div className="hidden lg:block lg:w-64 xl:w-72 2xl:w-80 flex-shrink-0">
-          <Details selectedUserToChat={selectedUserToChat} />
+          <Details self={self} selectedUserToChat={selectedUserToChat} />
         </div>
       </div>
 

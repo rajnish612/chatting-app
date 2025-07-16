@@ -9,20 +9,23 @@ const Chatlist = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
 
-  const followingsWithUnseen = self?.followings?.map((following) => {
-    // Handle both object and string formats
-    const username = typeof following === 'object' ? following.username : following;
-    const chat = chats.find((chat) => chat.username === username);
-    return {
-      username,
-      unseenCount: chat ? chat.unseenCount : 0,
-    };
-  }) || [];
+  const followingsWithUnseen =
+    self?.followings?.map((following) => {
+      // Handle both object and string formats
+      const username =
+        typeof following === "object" ? following.username : following;
+      const chat = chats.find((chat) => chat.username === username);
+      return {
+        username,
+        unseenCount: chat ? chat.unseenCount : 0,
+      };
+    }) || [];
 
   // Filter chats based on search term
   const filteredChats = (chats || []).filter((chat) =>
     chat?.username?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  console.log(chats);
 
   const filteredFollowings = followingsWithUnseen.filter((chat) =>
     chat?.username?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -98,7 +101,9 @@ const Chatlist = ({
       <div className="chat-sidebar flex flex-col h-screen w-full overflow-hidden">
         {/* Header */}
         <div className="p-4 md:p-6 border-b border-gray-100">
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-3 md:mb-4">Chats</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-3 md:mb-4">
+            Chats
+          </h1>
 
           {/* Search */}
           <div className="search-box rounded-xl px-3 md:px-4 py-2 md:py-3 flex items-center gap-3">
@@ -145,7 +150,9 @@ const Chatlist = ({
                       <h3 className="username font-semibold text-gray-900 truncate pr-2">
                         {chat.username}
                       </h3>
-                      <span className="time text-xs text-gray-500 flex-shrink-0">2m</span>
+                      <span className="time text-xs text-gray-500 flex-shrink-0">
+                        2m
+                      </span>
                     </div>
                     <p className="message text-sm text-gray-600 truncate mt-1">
                       Say hello...
@@ -193,7 +200,9 @@ const Chatlist = ({
                       <h3 className="username font-semibold text-gray-900 truncate pr-2">
                         {chat.username}
                       </h3>
-                      <span className="time text-xs text-gray-500 flex-shrink-0">5m</span>
+                      <span className="time text-xs text-gray-500 flex-shrink-0">
+                        5m
+                      </span>
                     </div>
                     <p className="message text-sm text-gray-600 truncate mt-1">
                       Last message preview...

@@ -1,8 +1,9 @@
+import { gql, useMutation } from "@apollo/client";
 import React, { useState } from "react";
-import { 
-  HiPhone, 
-  HiVideoCamera, 
-  HiMail, 
+import {
+  HiPhone,
+  HiVideoCamera,
+  HiMail,
   HiInformationCircle,
   HiPhotograph,
   HiLink,
@@ -12,12 +13,30 @@ import {
   HiBell,
   HiTrash,
   HiUserAdd,
-  HiUserRemove
+  HiUserRemove,
 } from "react-icons/hi";
+const blockUserQuery = gql`
+  mutation blockUser($selfId: ID!, $username: String!) {
+    blockUser(selfId: $selfId, username: $username)
+  }
+`;
+const Details = ({ selectedUserToChat, self }) => {
+  const [blockUser] = useMutation(blockUserQuery, {
+    onCompleted: (data) => {
+      console.log(data);
+    },
+    onError: (err) => {
+      console.log(err);
+    },
+  });
 
-const Details = ({ selectedUserToChat }) => {
   const [isMuted, setIsMuted] = useState(false);
   const [isNotificationsOn, setIsNotificationsOn] = useState(true);
+  const handleBlockUser = async () => {
+    await blockUser({
+      variables: { username: selectedUserToChat, selfId: self?._id },
+    });
+  };
   if (!selectedUserToChat) {
     return (
       <div className="w-full h-full bg-gray-50 border-l border-gray-200 flex items-center justify-center">
@@ -25,8 +44,12 @@ const Details = ({ selectedUserToChat }) => {
           <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
             <HiInformationCircle className="w-10 h-10 text-gray-400" />
           </div>
-          <h3 className="text-lg font-medium text-gray-600 mb-2">Contact Info</h3>
-          <p className="text-gray-500 text-sm">Select a chat to view contact details</p>
+          <h3 className="text-lg font-medium text-gray-600 mb-2">
+            Contact Info
+          </h3>
+          <p className="text-gray-500 text-sm">
+            Select a chat to view contact details
+          </p>
         </div>
       </div>
     );
@@ -49,9 +72,11 @@ const Details = ({ selectedUserToChat }) => {
           </div>
           <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 border-3 border-white rounded-full"></div>
         </div>
-        <h3 className="text-xl font-semibold text-gray-900 mb-1">{selectedUserToChat}</h3>
+        <h3 className="text-xl font-semibold text-gray-900 mb-1">
+          {selectedUserToChat}
+        </h3>
         <p className="text-sm text-gray-500 mb-4">Last seen recently</p>
-        
+
         {/* Quick Actions */}
         <div className="flex justify-center gap-4">
           <button className="p-3 bg-green-500 hover:bg-green-600 text-white rounded-full transition-colors shadow-lg">
@@ -68,13 +93,17 @@ const Details = ({ selectedUserToChat }) => {
 
       {/* About Section */}
       <div className="p-6 border-b border-gray-100">
-        <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">About</h4>
+        <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
+          About
+        </h4>
         <p className="text-gray-700">Hey there! I am using WhatsApp.</p>
       </div>
 
       {/* Media, Links, Docs */}
       <div className="p-6 border-b border-gray-100">
-        <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Media, Links and Docs</h4>
+        <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
+          Media, Links and Docs
+        </h4>
         <div className="grid grid-cols-3 gap-4">
           <button className="flex flex-col items-center p-3 hover:bg-gray-50 rounded-lg transition-colors">
             <HiPhotograph className="w-6 h-6 text-blue-500 mb-1" />
@@ -96,38 +125,69 @@ const Details = ({ selectedUserToChat }) => {
 
       {/* Settings */}
       <div className="p-6 space-y-4">
-        <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wide">Settings</h4>
-        
+        <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wide">
+          Settings
+        </h4>
+
         {/* Mute Notifications */}
-        <button 
+        <button
           onClick={() => setIsMuted(!isMuted)}
           className="w-full flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors"
         >
           <div className="flex items-center gap-3">
-            {isMuted ? <HiVolumeOff className="w-5 h-5 text-red-500" /> : <HiVolumeUp className="w-5 h-5 text-gray-600" />}
-            <span className="text-gray-700">{isMuted ? 'Unmute' : 'Mute'} notifications</span>
+            {isMuted ? (
+              <HiVolumeOff className="w-5 h-5 text-red-500" />
+            ) : (
+              <HiVolumeUp className="w-5 h-5 text-gray-600" />
+            )}
+            <span className="text-gray-700">
+              {isMuted ? "Unmute" : "Mute"} notifications
+            </span>
           </div>
-          <div className={`w-11 h-6 rounded-full transition-colors ${isMuted ? 'bg-red-500' : 'bg-gray-300'}`}>
-            <div className={`w-5 h-5 rounded-full bg-white shadow transform transition-transform ${isMuted ? 'translate-x-5' : 'translate-x-0.5'} mt-0.5`}></div>
+          <div
+            className={`w-11 h-6 rounded-full transition-colors ${
+              isMuted ? "bg-red-500" : "bg-gray-300"
+            }`}
+          >
+            <div
+              className={`w-5 h-5 rounded-full bg-white shadow transform transition-transform ${
+                isMuted ? "translate-x-5" : "translate-x-0.5"
+              } mt-0.5`}
+            ></div>
           </div>
         </button>
 
         {/* Notifications */}
-        <button 
+        <button
           onClick={() => setIsNotificationsOn(!isNotificationsOn)}
           className="w-full flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors"
         >
           <div className="flex items-center gap-3">
-            <HiBell className={`w-5 h-5 ${isNotificationsOn ? 'text-blue-500' : 'text-gray-400'}`} />
+            <HiBell
+              className={`w-5 h-5 ${
+                isNotificationsOn ? "text-blue-500" : "text-gray-400"
+              }`}
+            />
             <span className="text-gray-700">Notifications</span>
           </div>
-          <div className={`w-11 h-6 rounded-full transition-colors ${isNotificationsOn ? 'bg-blue-500' : 'bg-gray-300'}`}>
-            <div className={`w-5 h-5 rounded-full bg-white shadow transform transition-transform ${isNotificationsOn ? 'translate-x-5' : 'translate-x-0.5'} mt-0.5`}></div>
+          <div
+            className={`w-11 h-6 rounded-full transition-colors ${
+              isNotificationsOn ? "bg-blue-500" : "bg-gray-300"
+            }`}
+          >
+            <div
+              className={`w-5 h-5 rounded-full bg-white shadow transform transition-transform ${
+                isNotificationsOn ? "translate-x-5" : "translate-x-0.5"
+              } mt-0.5`}
+            ></div>
           </div>
         </button>
 
         {/* Block User */}
-        <button className="w-full flex items-center gap-3 p-3 hover:bg-red-50 rounded-lg transition-colors text-red-600">
+        <button
+          onClick={() => handleBlockUser()}
+          className="w-full flex items-center gap-3 p-3 hover:bg-red-50 rounded-lg transition-colors text-red-600"
+        >
           <HiUserRemove className="w-5 h-5" />
           <span>Block {selectedUserToChat}</span>
         </button>
