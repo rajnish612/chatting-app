@@ -5,6 +5,11 @@ import mongoose from "mongoose";
 const resolver = {
   Query: {
     searchUsers: async (__, { query }, { req }) => {
+      const username = req?.session?.user;
+      const self = await User.findOne({
+        username: username,
+      });
+
       try {
         const users = await User.find({
           $and: [
@@ -15,6 +20,7 @@ const resolver = {
               ],
             },
             { username: { $ne: req?.session?.user } },
+            { _id: { $nin: self.blockedUsers } },
           ],
         }).limit(20);
 
@@ -66,14 +72,15 @@ const resolver = {
     getRandomUsers: async (__, args, { req }) => {
       if (!req?.session?.user) return null;
       console.log("getRandomUsers - session user:", req?.session?.user);
-
+      const self = await User.findOne({
+        username: req?.session?.user,
+      });
       try {
-        // Use find instead of aggregate for easier population
         const randomUsers = await User.find({
           username: { $ne: req?.session?.user },
+          _id: { $nin: self.blockedUsers || [] },
         }).limit(10);
 
-        // Manually populate to avoid ObjectId casting errors
         const result = [];
         for (const user of randomUsers) {
           const followersData = [];
@@ -112,7 +119,6 @@ const resolver = {
           });
         }
 
-        // Shuffle the results to make them random
         const shuffled = result.sort(() => 0.5 - Math.random());
 
         console.log("getRandomUsers - returning", shuffled.length, "users");
@@ -124,6 +130,7 @@ const resolver = {
     },
     getChats: async (parent, args, { req }) => {
       let selfUsername = req?.session?.user;
+      const self = await User.findOne({ username: selfUsername });
       const chatUsersWithUnseen = await Message.aggregate([
         {
           $match: {
@@ -165,6 +172,19 @@ const resolver = {
               { $count: "unseenCount" },
             ],
             as: "unseenMessages",
+          },
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "_id",
+            foreignField: "username",
+            as: "userDetails",
+          },
+        },
+        {
+          $match: {
+            "userDetails._id": { $nin: self.blockedUsers || [] },
           },
         },
         {
@@ -320,15 +340,22 @@ const resolver = {
       try {
         const { selfId, username } = args;
         if ((!selfId, !username)) throw new Error("unable to block");
-        const userToBlock = await User.findOne({
-          username: username,
-        });
+        const userToBlock = await User.findOneAndUpdate(
+          {
+            username: username,
+          },
+          { $addToSet: { blockedBy: new mongoose.Types.ObjectId(selfId) } },
+          { $pull: { followers: selfId, followings: selfId } },
+          { new: true }
+        );
         if (!userToBlock) throw new Error("unable to block");
         const self = await User.findByIdAndUpdate(selfId, {
           $addToSet: {
             blockedUsers: new mongoose.Types.ObjectId(userToBlock._id),
           },
+          $pull: { followers: userToBlock._id, followings: userToBlock._id },
         });
+
         return "done";
       } catch (err) {
         console.log(err);
