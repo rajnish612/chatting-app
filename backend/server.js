@@ -14,6 +14,7 @@ import Message from "./models/messages.js";
 import { ApolloServer } from "@apollo/server";
 import typeDefs from "./graphql/schema.js";
 import resolver from "./graphql/resolver.js";
+import { upload } from "./lib/Uploader.js";
 
 dotenv.config();
 const app = express();
@@ -49,6 +50,7 @@ app.use(
     extended: true,
   })
 );
+
 app.use(express.json());
 app.use(
   session({
