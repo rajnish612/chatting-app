@@ -5,6 +5,8 @@ import { CiUser } from "react-icons/ci";
 import { useCallback } from "react";
 import { gql, useMutation } from "@apollo/client";
 import { useNavigate } from "react-router-dom";
+import Modal from "@mui/material/Modal";
+
 import { motion } from "motion/react";
 const REGISTER_MUTATION = gql`
   mutation Register($email: String!, $password: String!, $username: String!) {
@@ -331,6 +333,12 @@ const Register = () => {
 
       <div className="gradient-bg w-screen flex justify-center items-center flex-col gap-6 overflow-x-hidden h-screen relative">
         {/* Floating Particles */}
+        <Modal
+          open={false}
+          // onClose={handleClose}
+          aria-labelledby="modal-modal-title"
+          aria-describedby="modal-modal-description"
+        ></Modal>
         <div className="particles">
           <div className="particle"></div>
           <div className="particle"></div>
