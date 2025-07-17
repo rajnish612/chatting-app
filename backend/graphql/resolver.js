@@ -21,6 +21,7 @@ const resolver = {
             },
             { username: { $ne: req?.session?.user } },
             { _id: { $nin: self.blockedUsers } },
+            { _id: { $nin: self.blockedBy } },
           ],
         }).limit(20);
 
@@ -78,7 +79,7 @@ const resolver = {
       try {
         const randomUsers = await User.find({
           username: { $ne: req?.session?.user },
-          _id: { $nin: self.blockedUsers || [] },
+          _id: { $nin: [...(self.blockedUsers || []), ...(self.blockedBy || [])] },
         }).limit(10);
 
         const result = [];
@@ -131,6 +132,8 @@ const resolver = {
     getChats: async (parent, args, { req }) => {
       let selfUsername = req?.session?.user;
       const self = await User.findOne({ username: selfUsername });
+      console.log("DEBUG - self.blockedUsers:", self.blockedUsers);
+      console.log("DEBUG - self.blockedBy:", self.blockedBy);
       const chatUsersWithUnseen = await Message.aggregate([
         {
           $match: {
@@ -151,6 +154,7 @@ const resolver = {
         {
           $group: {
             _id: "$user",
+            username: { $first: "$user" },
           },
         },
         {
@@ -177,19 +181,24 @@ const resolver = {
         {
           $lookup: {
             from: "users",
-            localField: "_id",
+            localField: "username",
             foreignField: "username",
             as: "userDetails",
           },
         },
         {
           $match: {
-            "userDetails._id": { $nin: self.blockedUsers || [] },
+            $and: [
+              { "userDetails.0": { $exists: true } },
+              { "userDetails._id": { $nin: self.blockedUsers || [] } },
+              { "userDetails._id": { $nin: self.blockedBy || [] } }
+            ]
           },
         },
         {
           $project: {
-            username: "$_id",
+            _id: { $arrayElemAt: ["$userDetails._id", 0] },
+            username: "$username",
             unseenCount: {
               $cond: [
                 { $gt: [{ $size: "$unseenMessages" }, 0] },
@@ -200,6 +209,7 @@ const resolver = {
           },
         },
       ]);
+      console.log("DEBUG - chatUsersWithUnseen:", JSON.stringify(chatUsersWithUnseen, null, 2));
       return chatUsersWithUnseen;
     },
     self: async (parent, args, { req }) => {
