@@ -32,6 +32,7 @@ type Mutation {
   blockUser(selfId:ID!,username:String!):String
   unblockUser(userId: ID!): String
   updatePassword(currentPassword: String!, newPassword: String!): String
+  updateProfile(name: String, bio: String): String
   sendEmailChangeOTP(password: String!, newEmail: String!): String
   verifyEmailChangeOTP(otp: String!): String
   sendPasswordResetOTP(email: String!): String

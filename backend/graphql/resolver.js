@@ -704,6 +704,34 @@ const resolver = {
         throw new Error(err.message || "Unable to update password");
       }
     },
+    updateProfile: async (_, args, { req }) => {
+      if (!req?.session?.user) throw new Error("Unauthorized");
+      
+      try {
+        const { name, bio } = args;
+        
+        const user = await User.findOne({ username: req.session.user });
+        if (!user) throw new Error("User not found");
+
+        // Prepare update object with only provided fields
+        const updateData = {};
+        if (name !== undefined) updateData.name = name;
+        if (bio !== undefined) updateData.bio = bio;
+
+        // If no fields to update
+        if (Object.keys(updateData).length === 0) {
+          throw new Error("At least one field (name or bio) must be provided");
+        }
+
+        // Update user profile
+        await User.findByIdAndUpdate(user._id, updateData);
+
+        return "Profile updated successfully";
+      } catch (err) {
+        console.error("Error in updateProfile:", err);
+        throw new Error(err.message || "Unable to update profile");
+      }
+    },
     sendEmailChangeOTP: async (_, args, { req }) => {
       if (!req?.session?.user) throw new Error("Unauthorized");
       

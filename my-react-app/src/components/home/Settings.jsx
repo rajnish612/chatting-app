@@ -26,6 +26,7 @@ import { IoClose } from "react-icons/io5";
 import BlockedUsers from "./BlockedUsers";
 import ChangePassword from "./ChangePassword";
 import ChangeEmail from "./ChangeEmail";
+import ChangeProfile from "./ChangeProfile";
 import DeactivateAccount from "./DeactivateAccount";
 
 const Settings = ({ self, onLogout }) => {
@@ -564,9 +565,17 @@ const Settings = ({ self, onLogout }) => {
             onLogout={onLogout}
           />
         )}
+        
+        {showModal && modalType === "editProfile" && (
+          <ChangeProfile 
+            onClose={() => setShowModal(false)} 
+            currentName={self?.name}
+            currentBio={self?.bio}
+          />
+        )}
 
         {/* Other modals */}
-        {showModal && !["blockedUsers", "changePassword", "changeEmail", "deactivateAccount"].includes(modalType) && (
+        {showModal && !["blockedUsers", "changePassword", "changeEmail", "deactivateAccount", "editProfile"].includes(modalType) && (
           <div className="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="modal-content bg-white rounded-2xl p-6 max-w-md w-full mx-4">
               <div className="flex items-center justify-between mb-4">

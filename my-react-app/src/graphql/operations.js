@@ -59,6 +59,12 @@ export const UPDATE_PASSWORD = gql`
   }
 `;
 
+export const UPDATE_PROFILE = gql`
+  mutation UpdateProfile($name: String, $bio: String) {
+    updateProfile(name: $name, bio: $bio)
+  }
+`;
+
 export const DEACTIVATE_ACCOUNT = gql`
   mutation DeactivateAccount($password: String!) {
     deactivateAccount(password: $password)
