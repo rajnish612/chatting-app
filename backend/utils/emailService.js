@@ -19,15 +19,22 @@ export const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-// Send OTP email
-export const sendOTPEmail = async (email, otp) => {
+// Send OTP email (generic function for both password reset and email change)
+export const sendOTPEmail = async (email, otp, type = 'password_reset') => {
   try {
     const transporter = createTransporter();
+    
+    const isEmailChange = type === 'email_change';
+    const subject = isEmailChange ? 'Email Change Verification - Chat Me' : 'Password Reset OTP - Chat Me';
+    const title = isEmailChange ? 'Email Change Verification' : 'Password Reset Request';
+    const description = isEmailChange 
+      ? 'You requested to change your email address. Use the OTP below to verify your new email:'
+      : 'You requested to reset your password. Use the OTP below to continue:';
     
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: email,
-      subject: 'Password Reset OTP - Chat Me',
+      subject,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="text-align: center; margin-bottom: 30px;">
@@ -36,9 +43,9 @@ export const sendOTPEmail = async (email, otp) => {
           </div>
           
           <div style="background: #f8fafc; border-radius: 10px; padding: 30px; text-align: center;">
-            <h2 style="color: #374151; margin-bottom: 20px;">Password Reset Request</h2>
+            <h2 style="color: #374151; margin-bottom: 20px;">${title}</h2>
             <p style="color: #6b7280; margin-bottom: 30px;">
-              You requested to reset your password. Use the OTP below to continue:
+              ${description}
             </p>
             
             <div style="background: #ffffff; border: 2px dashed #3b82f6; border-radius: 8px; padding: 20px; margin: 20px 0;">
@@ -63,11 +70,11 @@ export const sendOTPEmail = async (email, otp) => {
     };
 
     const result = await transporter.sendMail(mailOptions);
-    console.log('OTP email sent successfully:', result.messageId);
+    console.log(`${type} OTP email sent successfully:`, result.messageId);
     return true;
   } catch (error) {
-    console.error('Error sending OTP email:', error);
-    throw new Error('Failed to send OTP email');
+    console.error(`Error sending ${type} OTP email:`, error);
+    throw new Error(`Failed to send ${type} OTP email`);
   }
 };
 

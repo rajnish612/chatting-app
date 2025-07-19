@@ -704,7 +704,7 @@ const resolver = {
         throw new Error(err.message || "Unable to update password");
       }
     },
-    updateEmail: async (_, args, { req }) => {
+    sendEmailChangeOTP: async (_, args, { req }) => {
       if (!req?.session?.user) throw new Error("Unauthorized");
       
       try {
@@ -734,25 +734,76 @@ const resolver = {
           throw new Error("Email is already in use by another account");
         }
 
-        const oldEmail = user.email;
+        // Generate OTP
+        const otp = generateOTP();
 
-        // Update email
+        // Delete any existing OTPs for this user's email change
+        await OTP.deleteMany({ 
+          userId: user._id.toString(), 
+          type: 'email_change' 
+        });
+
+        // Save new OTP
+        await OTP.create({
+          email: user.email, // Current email for identification
+          otp,
+          type: 'email_change',
+          newEmail,
+          userId: user._id.toString()
+        });
+
+        // Send OTP to new email
+        await sendOTPEmail(newEmail, otp, 'email_change');
+
+        return "OTP sent to your new email address. Please check your inbox.";
+      } catch (err) {
+        console.error("Error in sendEmailChangeOTP:", err);
+        throw new Error(err.message || "Unable to send OTP");
+      }
+    },
+    verifyEmailChangeOTP: async (_, args, { req }) => {
+      if (!req?.session?.user) throw new Error("Unauthorized");
+      
+      try {
+        const { otp } = args;
+        if (!otp) throw new Error("OTP is required");
+
+        const user = await User.findOne({ username: req.session.user });
+        if (!user) throw new Error("User not found");
+
+        // Find OTP record
+        const otpRecord = await OTP.findOne({
+          userId: user._id.toString(),
+          otp,
+          type: 'email_change'
+        });
+
+        if (!otpRecord) {
+          throw new Error("Invalid or expired OTP");
+        }
+
+        const oldEmail = user.email;
+        const newEmail = otpRecord.newEmail;
+
+        // Update user's email
         await User.findByIdAndUpdate(user._id, {
           email: newEmail
         });
+
+        // Delete the used OTP
+        await OTP.deleteOne({ _id: otpRecord._id });
 
         // Send confirmation email (non-blocking)
         try {
           await sendEmailUpdateConfirmation(oldEmail, newEmail);
         } catch (emailError) {
           console.error("Failed to send confirmation email:", emailError);
-          // Don't fail the entire operation for email issues
         }
 
         return "Email updated successfully";
       } catch (err) {
-        console.error("Error in updateEmail:", err);
-        throw new Error(err.message || "Unable to update email");
+        console.error("Error in verifyEmailChangeOTP:", err);
+        throw new Error(err.message || "Unable to verify OTP");
       }
     },
     sendPasswordResetOTP: async (_, args) => {

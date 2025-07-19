@@ -71,12 +71,6 @@ export const BLOCK_USER = gql`
   }
 `;
 
-export const UPDATE_EMAIL = gql`
-  mutation UpdateEmail($password: String!, $newEmail: String!) {
-    updateEmail(password: $password, newEmail: $newEmail)
-  }
-`;
-
 export const SEND_PASSWORD_RESET_OTP = gql`
   mutation SendPasswordResetOTP($email: String!) {
     sendPasswordResetOTP(email: $email)
@@ -86,5 +80,17 @@ export const SEND_PASSWORD_RESET_OTP = gql`
 export const RESET_PASSWORD_WITH_OTP = gql`
   mutation ResetPasswordWithOTP($email: String!, $otp: String!, $newPassword: String!) {
     resetPasswordWithOTP(email: $email, otp: $otp, newPassword: $newPassword)
+  }
+`;
+
+export const SEND_EMAIL_CHANGE_OTP = gql`
+  mutation SendEmailChangeOTP($password: String!, $newEmail: String!) {
+    sendEmailChangeOTP(password: $password, newEmail: $newEmail)
+  }
+`;
+
+export const VERIFY_EMAIL_CHANGE_OTP = gql`
+  mutation VerifyEmailChangeOTP($otp: String!) {
+    verifyEmailChangeOTP(otp: $otp)
   }
 `;
