@@ -67,6 +67,9 @@ const selfQuery = gql`
         username
         email
       }
+      blockedUsers {
+        _id
+      }
     }
   }
 `;
@@ -287,8 +290,8 @@ const Home = () => {
       socket.off("call-ended", callEnded);
     };
   }, [socket, destroyPeerConnection, callEnded]);
-  console.log("outgoingvideoCall", outGoingVideoCall);
 
+  console.log(self);
   if (loading) {
     return (
       <div className="w-screen h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">

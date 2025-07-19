@@ -333,12 +333,7 @@ const Register = () => {
 
       <div className="gradient-bg w-screen flex justify-center items-center flex-col gap-6 overflow-x-hidden h-screen relative">
         {/* Floating Particles */}
-        <Modal
-          open={false}
-          // onClose={handleClose}
-          aria-labelledby="modal-modal-title"
-          aria-describedby="modal-modal-description"
-        ></Modal>
+
         <div className="particles">
           <div className="particle"></div>
           <div className="particle"></div>

@@ -5,6 +5,7 @@ type User {
   username: String!
   followings: [User]
   followers: [User]
+  blockedUsers: [User]
 }
 type chatPreview {
   username: String!

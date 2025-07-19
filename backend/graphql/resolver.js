@@ -79,7 +79,9 @@ const resolver = {
       try {
         const randomUsers = await User.find({
           username: { $ne: req?.session?.user },
-          _id: { $nin: [...(self.blockedUsers || []), ...(self.blockedBy || [])] },
+          _id: {
+            $nin: [...(self.blockedUsers || []), ...(self.blockedBy || [])],
+          },
         }).limit(10);
 
         const result = [];
@@ -191,8 +193,8 @@ const resolver = {
             $and: [
               { "userDetails.0": { $exists: true } },
               { "userDetails._id": { $nin: self.blockedUsers || [] } },
-              { "userDetails._id": { $nin: self.blockedBy || [] } }
-            ]
+              { "userDetails._id": { $nin: self.blockedBy || [] } },
+            ],
           },
         },
         {
@@ -209,7 +211,10 @@ const resolver = {
           },
         },
       ]);
-      console.log("DEBUG - chatUsersWithUnseen:", JSON.stringify(chatUsersWithUnseen, null, 2));
+      console.log(
+        "DEBUG - chatUsersWithUnseen:",
+        JSON.stringify(chatUsersWithUnseen, null, 2)
+      );
       return chatUsersWithUnseen;
     },
     self: async (parent, args, { req }) => {
@@ -233,6 +238,7 @@ const resolver = {
         // Manually populate to handle any data inconsistencies
         const followersData = [];
         const followingsData = [];
+        const blockedUsersData = [];
 
         if (user.followers && user.followers.length > 0) {
           for (const followerId of user.followers) {
@@ -258,22 +264,27 @@ const resolver = {
           }
         }
 
+        if (user.blockedUsers && user.blockedUsers.length > 0) {
+          for (const blockedUserId of user.blockedUsers) {
+            if (mongoose.Types.ObjectId.isValid(blockedUserId)) {
+              const blockedUser = await User.findById(
+                blockedUserId,
+                "_id username email"
+              );
+              if (blockedUser) blockedUsersData.push(blockedUser);
+            }
+          }
+        }
+
         const result = {
           _id: user._id,
           email: user.email,
           username: user.username,
           followers: followersData,
           followings: followingsData,
+          blockedUsers: blockedUsersData,
         };
 
-        console.log(
-          "Self query - returning user:",
-          result.username,
-          "followers:",
-          result.followers.length,
-          "followings:",
-          result.followings.length
-        );
         return result;
       } catch (error) {
         console.error("Error in self query:", error);
