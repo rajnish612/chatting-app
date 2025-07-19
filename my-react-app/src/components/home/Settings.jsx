@@ -298,7 +298,13 @@ const Settings = ({ self, onLogout }) => {
               hasArrow
               onClick={() => openModal("2fa")}
             />
-
+            <SettingItem
+              icon={<FaTrash />}
+              title="Blocked Users"
+              subtitle="See the users you have blocked"
+              hasArrow
+              onClick={() => openModal("deleteAccount")}
+            />
             <SettingItem
               icon={<FaTrash />}
               title="Delete Account"
