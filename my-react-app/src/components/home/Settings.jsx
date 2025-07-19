@@ -20,8 +20,12 @@ import {
   FaSun,
   FaVolumeUp,
   FaVolumeMute,
+  FaUserSlash,
 } from "react-icons/fa";
 import { IoClose } from "react-icons/io5";
+import BlockedUsers from "./BlockedUsers";
+import ChangePassword from "./ChangePassword";
+import DeactivateAccount from "./DeactivateAccount";
 
 const Settings = ({ self, onLogout }) => {
   const [activeSection, setActiveSection] = useState("profile");
@@ -299,18 +303,18 @@ const Settings = ({ self, onLogout }) => {
               onClick={() => openModal("2fa")}
             />
             <SettingItem
-              icon={<FaTrash />}
+              icon={<FaUserSlash />}
               title="Blocked Users"
               subtitle="See the users you have blocked"
               hasArrow
-              onClick={() => openModal("deleteAccount")}
+              onClick={() => openModal("blockedUsers")}
             />
             <SettingItem
               icon={<FaTrash />}
-              title="Delete Account"
+              title="Deactivate Account"
               subtitle="Permanently delete your account"
               hasArrow
-              onClick={() => openModal("deleteAccount")}
+              onClick={() => openModal("deactivateAccount")}
             />
           </div>
         );
@@ -529,19 +533,39 @@ const Settings = ({ self, onLogout }) => {
           </div>
         </div>
 
-        {/* Modal */}
-        {showModal && (
+        {/* Modals */}
+        {showModal && modalType === "blockedUsers" && (
+          <BlockedUsers onClose={() => setShowModal(false)} />
+        )}
+        
+        {showModal && modalType === "changePassword" && (
+          <ChangePassword onClose={() => setShowModal(false)} />
+        )}
+        
+        {showModal && modalType === "deactivateAccount" && (
+          <DeactivateAccount 
+            onClose={() => setShowModal(false)} 
+            onLogout={onLogout}
+          />
+        )}
+
+        {/* Other modals */}
+        {showModal && !["blockedUsers", "changePassword", "deactivateAccount"].includes(modalType) && (
           <div className="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="modal-content bg-white rounded-2xl p-6 max-w-md w-full mx-4">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xl font-bold text-gray-900">
                   {modalType === "editProfile" && "Edit Profile"}
-                  {modalType === "changePassword" && "Change Password"}
                   {modalType === "changeEmail" && "Change Email"}
                   {modalType === "2fa" && "Two-Factor Authentication"}
-                  {modalType === "deleteAccount" && "Delete Account"}
                   {modalType === "downloadData" && "Download Data"}
                   {modalType === "clearHistory" && "Clear History"}
+                  {modalType === "themeColor" && "Theme Color"}
+                  {modalType === "language" && "Language"}
+                  {modalType === "help" && "Help Center"}
+                  {modalType === "contact" && "Contact Support"}
+                  {modalType === "terms" && "Terms of Service"}
+                  {modalType === "privacy" && "Privacy Policy"}
                 </h3>
                 <button
                   onClick={() => setShowModal(false)}
@@ -552,12 +576,6 @@ const Settings = ({ self, onLogout }) => {
               </div>
 
               <div className="text-gray-600 mb-6">
-                {modalType === "deleteAccount" && (
-                  <p>
-                    This action cannot be undone. Your account and all data will
-                    be permanently deleted.
-                  </p>
-                )}
                 {modalType === "clearHistory" && (
                   <p>
                     This will permanently delete all your chat conversations.
@@ -571,8 +589,14 @@ const Settings = ({ self, onLogout }) => {
                   </p>
                 )}
                 {(modalType === "editProfile" ||
-                  modalType === "changePassword" ||
-                  modalType === "changeEmail") && (
+                  modalType === "changeEmail" ||
+                  modalType === "2fa" ||
+                  modalType === "themeColor" ||
+                  modalType === "language" ||
+                  modalType === "help" ||
+                  modalType === "contact" ||
+                  modalType === "terms" ||
+                  modalType === "privacy") && (
                   <p>
                     Feature coming soon! This functionality will be available in
                     the next update.
@@ -590,19 +614,22 @@ const Settings = ({ self, onLogout }) => {
                 <button
                   onClick={() => setShowModal(false)}
                   className={`flex-1 px-4 py-2 rounded-lg text-white transition-colors ${
-                    modalType === "deleteAccount" ||
                     modalType === "clearHistory"
                       ? "bg-red-500 hover:bg-red-600"
                       : "bg-blue-500 hover:bg-blue-600"
                   }`}
                 >
-                  {modalType === "deleteAccount" && "Delete"}
                   {modalType === "clearHistory" && "Clear"}
                   {modalType === "downloadData" && "Download"}
                   {(modalType === "editProfile" ||
-                    modalType === "changePassword" ||
                     modalType === "changeEmail" ||
-                    modalType === "2fa") &&
+                    modalType === "2fa" ||
+                    modalType === "themeColor" ||
+                    modalType === "language" ||
+                    modalType === "help" ||
+                    modalType === "contact" ||
+                    modalType === "terms" ||
+                    modalType === "privacy") &&
                     "Continue"}
                 </button>
               </div>

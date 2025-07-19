@@ -354,6 +354,32 @@ const resolver = {
         return [];
       }
     },
+    getBlockedUsers: async (parent, args, { req }) => {
+      if (!req?.session?.user) return null;
+      
+      try {
+        const user = await User.findOne({ username: req.session.user });
+        if (!user || !user.blockedUsers || user.blockedUsers.length === 0) {
+          return [];
+        }
+
+        const blockedUsersData = [];
+        for (const blockedUserId of user.blockedUsers) {
+          if (mongoose.Types.ObjectId.isValid(blockedUserId)) {
+            const blockedUser = await User.findById(
+              blockedUserId,
+              "_id username email"
+            );
+            if (blockedUser) blockedUsersData.push(blockedUser);
+          }
+        }
+
+        return blockedUsersData;
+      } catch (error) {
+        console.error("Error in getBlockedUsers:", error);
+        return [];
+      }
+    },
   },
 
   Mutation: {
@@ -381,6 +407,34 @@ const resolver = {
       } catch (err) {
         console.log(err);
         throw new Error("unable to block");
+      }
+    },
+    unblockUser: async (_, args, { req }) => {
+      if (!req?.session?.user) throw new Error("Unauthorized");
+      
+      try {
+        const { userId } = args;
+        if (!userId) throw new Error("User ID is required");
+
+        const currentUser = await User.findOne({ username: req.session.user });
+        if (!currentUser) throw new Error("Current user not found");
+
+        const userToUnblock = await User.findById(userId);
+        if (!userToUnblock) throw new Error("User to unblock not found");
+
+        // Remove from blockedUsers array and blockedBy array
+        await User.findByIdAndUpdate(currentUser._id, {
+          $pull: { blockedUsers: userId }
+        });
+
+        await User.findByIdAndUpdate(userId, {
+          $pull: { blockedBy: currentUser._id }
+        });
+
+        return "User unblocked successfully";
+      } catch (err) {
+        console.error("Error in unblockUser:", err);
+        throw new Error(err.message || "Unable to unblock user");
       }
     },
     SeeMessages: async (parent, args) => {
@@ -607,6 +661,111 @@ const resolver = {
         return result;
       } catch (error) {
         throw new Error(error.message || error);
+      }
+    },
+    updatePassword: async (_, args, { req }) => {
+      if (!req?.session?.user) throw new Error("Unauthorized");
+      
+      try {
+        const { currentPassword, newPassword } = args;
+        if (!currentPassword || !newPassword) {
+          throw new Error("Current password and new password are required");
+        }
+
+        if (newPassword.length < 6) {
+          throw new Error("New password must be at least 6 characters long");
+        }
+
+        const user = await User.findOne({ username: req.session.user });
+        if (!user) throw new Error("User not found");
+
+        // Verify current password
+        const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+        if (!isCurrentPasswordValid) {
+          throw new Error("Current password is incorrect");
+        }
+
+        // Hash new password
+        const saltRounds = 10;
+        const hashedNewPassword = await bcrypt.hash(newPassword, saltRounds);
+
+        // Update password
+        await User.findByIdAndUpdate(user._id, {
+          password: hashedNewPassword
+        });
+
+        return "Password updated successfully";
+      } catch (err) {
+        console.error("Error in updatePassword:", err);
+        throw new Error(err.message || "Unable to update password");
+      }
+    },
+    deactivateAccount: async (_, args, { req }) => {
+      if (!req?.session?.user) throw new Error("Unauthorized");
+      
+      try {
+        const { password } = args;
+        if (!password) throw new Error("Password is required to deactivate account");
+
+        const user = await User.findOne({ username: req.session.user });
+        if (!user) throw new Error("User not found");
+
+        // Verify password
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+          throw new Error("Incorrect password");
+        }
+
+        // Start a session for atomic operations
+        const session = await mongoose.startSession();
+
+        try {
+          await session.withTransaction(async () => {
+            // Remove user from all followers/followings
+            await User.updateMany(
+              { followers: user._id },
+              { $pull: { followers: user._id } },
+              { session }
+            );
+            
+            await User.updateMany(
+              { followings: user._id },
+              { $pull: { followings: user._id } },
+              { session }
+            );
+
+            // Remove user from blocked lists
+            await User.updateMany(
+              { blockedUsers: user._id },
+              { $pull: { blockedUsers: user._id } },
+              { session }
+            );
+
+            await User.updateMany(
+              { blockedBy: user._id },
+              { $pull: { blockedBy: user._id } },
+              { session }
+            );
+
+            // Delete all messages involving this user
+            await Message.deleteMany({
+              $or: [{ sender: user.username }, { receiver: user.username }]
+            }, { session });
+
+            // Delete the user account
+            await User.findByIdAndDelete(user._id, { session });
+          });
+        } finally {
+          await session.endSession();
+        }
+
+        // Clear session
+        req.session.destroy();
+
+        return "Account deactivated successfully";
+      } catch (err) {
+        console.error("Error in deactivateAccount:", err);
+        throw new Error(err.message || "Unable to deactivate account");
       }
     },
   },

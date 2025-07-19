@@ -24,9 +24,13 @@ type Query {
   searchUsers(query: String!): [User]
   getAllMessages: [Message]
   getAllUsers: [User]
+  getBlockedUsers: [User]
 }
 type Mutation {
   blockUser(selfId:ID!,username:String!):String
+  unblockUser(userId: ID!): String
+  updatePassword(currentPassword: String!, newPassword: String!): String
+  deactivateAccount(password: String!): String
   SeeMessages(sender: String!, receiver: String!): [Message]
   login(email: String!, password: String!): String
   register(email: String!, password: String!, username: String!): String

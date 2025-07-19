@@ -6,7 +6,10 @@
       "Bash(npm run dev:*)",
       "Bash(move:*)",
       "Bash(mv:*)",
-      "Bash(rmdir:*)"
+      "Bash(rmdir:*)",
+      "Bash(node:*)",
+      "Bash(npx eslint:*)",
+      "Bash(curl:*)"
     ],
     "deny": []
   }

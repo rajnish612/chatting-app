@@ -14,25 +14,45 @@ import {
   HiTrash,
   HiUserAdd,
   HiUserRemove,
+  HiX,
+  HiExclamation,
 } from "react-icons/hi";
+import { FaSpinner } from "react-icons/fa";
 const blockUserQuery = gql`
   mutation blockUser($selfId: ID!, $username: String!) {
     blockUser(selfId: $selfId, username: $username)
   }
 `;
 const Details = ({ selectedUserToChat, self }) => {
-  const [blockUser] = useMutation(blockUserQuery, {
+  const [blockUser, { loading: blockingUser }] = useMutation(blockUserQuery, {
     onCompleted: (data) => {
       console.log(data);
+      setShowBlockModal(false);
+      setShowSuccessModal(true);
+      // Auto-hide success modal after 3 seconds
+      setTimeout(() => {
+        setShowSuccessModal(false);
+      }, 3000);
     },
     onError: (err) => {
-      console.log(err);
+      console.error("Error blocking user:", err);
+      setShowBlockModal(false);
+      setBlockError(err.message || "Failed to block user. Please try again.");
     },
   });
 
   const [isMuted, setIsMuted] = useState(false);
   const [isNotificationsOn, setIsNotificationsOn] = useState(true);
-  const handleBlockUser = async () => {
+  const [showBlockModal, setShowBlockModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [blockError, setBlockError] = useState("");
+
+  const handleBlockUser = () => {
+    setShowBlockModal(true);
+  };
+
+  const confirmBlockUser = async () => {
+    setBlockError("");
     await blockUser({
       variables: { username: selectedUserToChat, selfId: self?._id },
     });
@@ -185,11 +205,18 @@ const Details = ({ selectedUserToChat, self }) => {
 
         {/* Block User */}
         <button
-          onClick={() => handleBlockUser()}
-          className="w-full flex items-center gap-3 p-3 hover:bg-red-50 rounded-lg transition-colors text-red-600"
+          onClick={handleBlockUser}
+          disabled={blockingUser}
+          className="w-full flex items-center gap-3 p-3 hover:bg-red-50 rounded-lg transition-colors text-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <HiUserRemove className="w-5 h-5" />
-          <span>Block {selectedUserToChat}</span>
+          {blockingUser ? (
+            <FaSpinner className="w-5 h-5 animate-spin" />
+          ) : (
+            <HiUserRemove className="w-5 h-5" />
+          )}
+          <span>
+            {blockingUser ? "Blocking..." : `Block ${selectedUserToChat}`}
+          </span>
         </button>
 
         {/* Delete Chat */}
@@ -198,6 +225,95 @@ const Details = ({ selectedUserToChat, self }) => {
           <span>Delete chat</span>
         </button>
       </div>
+
+      {/* Block User Confirmation Modal */}
+      {showBlockModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <HiExclamation className="w-6 h-6 text-red-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">Block User</h3>
+            </div>
+            
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to block <strong>{selectedUserToChat}</strong>? 
+              They won't be able to message you or see your profile.
+            </p>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowBlockModal(false)}
+                disabled={blockingUser}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmBlockUser}
+                disabled={blockingUser}
+                className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:bg-gray-400 flex items-center justify-center gap-2"
+              >
+                {blockingUser ? (
+                  <>
+                    <FaSpinner className="animate-spin" size={14} />
+                    Blocking...
+                  </>
+                ) : (
+                  'Block User'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full mx-4">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">User Blocked</h3>
+              <p className="text-gray-600 mb-4">
+                <strong>{selectedUserToChat}</strong> has been blocked successfully.
+              </p>
+              <button
+                onClick={() => setShowSuccessModal(false)}
+                className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Error Modal */}
+      {blockError && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full mx-4">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <HiX className="w-8 h-8 text-red-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Error</h3>
+              <p className="text-gray-600 mb-4">{blockError}</p>
+              <button
+                onClick={() => setBlockError("")}
+                className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

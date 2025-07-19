@@ -8,7 +8,7 @@ const UserSchema = new mongoose.Schema({
     public_id: { type: String },
     url: { type: String },
   },
-  description: { type: String },
+  bio: { type: String },
   followings: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
