@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMutation } from '@apollo/client';
 import { UPDATE_PROFILE, SELF_QUERY } from '../../graphql/operations';
 import { FaSpinner, FaUser, FaEdit } from 'react-icons/fa';
@@ -11,6 +11,14 @@ const ChangeProfile = ({ onClose, currentName, currentBio }) => {
   });
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState('');
+
+  // Update form data when props change
+  useEffect(() => {
+    setFormData({
+      name: currentName || '',
+      bio: currentBio || ''
+    });
+  }, [currentName, currentBio]);
 
   const [updateProfile, { loading }] = useMutation(UPDATE_PROFILE, {
     refetchQueries: [{ query: SELF_QUERY }],
@@ -130,7 +138,7 @@ const ChangeProfile = ({ onClose, currentName, currentBio }) => {
                 value={formData.name}
                 onChange={handleInputChange}
                 placeholder="Enter your full name"
-                className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-900 bg-white placeholder-gray-500 ${
                   errors.name ? 'border-red-500' : 'border-gray-300'
                 }`}
               />
@@ -156,7 +164,7 @@ const ChangeProfile = ({ onClose, currentName, currentBio }) => {
                 placeholder="Tell us about yourself..."
                 rows={4}
                 maxLength={200}
-                className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none ${
+                className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none text-gray-900 bg-white placeholder-gray-500 ${
                   errors.bio ? 'border-red-500' : 'border-gray-300'
                 }`}
               />

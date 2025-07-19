@@ -223,7 +223,7 @@ const ChangeEmail = ({ onClose, currentEmail }) => {
                   value={formData.newEmail}
                   onChange={handleInputChange}
                   placeholder="Enter your new email"
-                  className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                  className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-900 bg-white placeholder-gray-500 ${
                     errors.newEmail ? 'border-red-500' : 'border-gray-300'
                   }`}
                 />
@@ -245,7 +245,7 @@ const ChangeEmail = ({ onClose, currentEmail }) => {
                   value={formData.password}
                   onChange={handleInputChange}
                   placeholder="Enter your current password"
-                  className={`w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                  className={`w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-900 bg-white placeholder-gray-500 ${
                     errors.password ? 'border-red-500' : 'border-gray-300'
                   }`}
                 />
@@ -311,7 +311,7 @@ const ChangeEmail = ({ onClose, currentEmail }) => {
                 onChange={handleInputChange}
                 placeholder="Enter 6-digit code"
                 maxLength={6}
-                className={`w-full px-4 py-3 border rounded-lg text-center text-lg font-mono tracking-wider focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                className={`w-full px-4 py-3 border rounded-lg text-center text-lg font-mono tracking-wider focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-900 bg-white placeholder-gray-500 ${
                   errors.otp ? 'border-red-500' : 'border-gray-300'
                 }`}
               />

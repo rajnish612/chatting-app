@@ -282,6 +282,8 @@ const resolver = {
           _id: user._id,
           email: user.email,
           username: user.username,
+          name: user.name,
+          bio: user.bio,
           followers: followersData,
           followings: followingsData,
           blockedUsers: blockedUsersData,

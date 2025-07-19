@@ -236,7 +236,7 @@ const ForgotPassword = ({ onClose }) => {
                 onChange={handleInputChange}
                 placeholder="Enter 6-digit code"
                 maxLength={6}
-                className={`w-full px-4 py-3 border rounded-lg text-center text-lg font-mono tracking-wider focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                className={`w-full px-4 py-3 border rounded-lg text-center text-lg font-mono tracking-wider focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-900 bg-white placeholder-gray-500 ${
                   errors.otp ? 'border-red-500' : 'border-gray-300'
                 }`}
               />
@@ -256,7 +256,7 @@ const ForgotPassword = ({ onClose }) => {
                   value={formData.newPassword}
                   onChange={handleInputChange}
                   placeholder="Enter your new password"
-                  className={`w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                  className={`w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-900 bg-white placeholder-gray-500 ${
                     errors.newPassword ? 'border-red-500' : 'border-gray-300'
                   }`}
                 />
@@ -284,7 +284,7 @@ const ForgotPassword = ({ onClose }) => {
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
                   placeholder="Confirm your new password"
-                  className={`w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                  className={`w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-900 bg-white placeholder-gray-500 ${
                     errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
                   }`}
                 />

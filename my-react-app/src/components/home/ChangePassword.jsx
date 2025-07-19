@@ -118,7 +118,7 @@ const ChangePassword = ({ onClose }) => {
           value={value}
           onChange={handleInputChange}
           placeholder={placeholder}
-          className={`w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+          className={`w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-900 bg-white placeholder-gray-500 ${
             errors[name] ? 'border-red-500' : 'border-gray-300'
           }`}
         />
