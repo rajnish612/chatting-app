@@ -1,7 +1,9 @@
 import Message from "../models/messages.js";
 import User from "../models/User.js";
+import OTP from "../models/OTP.js";
 import bcrypt from "bcrypt";
 import mongoose from "mongoose";
+import { generateOTP, sendOTPEmail, sendEmailUpdateConfirmation } from "../utils/emailService.js";
 const resolver = {
   Query: {
     searchUsers: async (__, { query }, { req }) => {
@@ -700,6 +702,143 @@ const resolver = {
       } catch (err) {
         console.error("Error in updatePassword:", err);
         throw new Error(err.message || "Unable to update password");
+      }
+    },
+    updateEmail: async (_, args, { req }) => {
+      if (!req?.session?.user) throw new Error("Unauthorized");
+      
+      try {
+        const { password, newEmail } = args;
+        if (!password || !newEmail) {
+          throw new Error("Password and new email are required");
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(newEmail)) {
+          throw new Error("Invalid email format");
+        }
+
+        const user = await User.findOne({ username: req.session.user });
+        if (!user) throw new Error("User not found");
+
+        // Verify current password
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+          throw new Error("Current password is incorrect");
+        }
+
+        // Check if new email is already in use
+        const existingUser = await User.findOne({ email: newEmail });
+        if (existingUser && existingUser._id.toString() !== user._id.toString()) {
+          throw new Error("Email is already in use by another account");
+        }
+
+        const oldEmail = user.email;
+
+        // Update email
+        await User.findByIdAndUpdate(user._id, {
+          email: newEmail
+        });
+
+        // Send confirmation email (non-blocking)
+        try {
+          await sendEmailUpdateConfirmation(oldEmail, newEmail);
+        } catch (emailError) {
+          console.error("Failed to send confirmation email:", emailError);
+          // Don't fail the entire operation for email issues
+        }
+
+        return "Email updated successfully";
+      } catch (err) {
+        console.error("Error in updateEmail:", err);
+        throw new Error(err.message || "Unable to update email");
+      }
+    },
+    sendPasswordResetOTP: async (_, args) => {
+      try {
+        const { email } = args;
+        if (!email) throw new Error("Email is required");
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          throw new Error("Invalid email format");
+        }
+
+        // Check if user exists
+        const user = await User.findOne({ email });
+        if (!user) {
+          throw new Error("No account found with this email address");
+        }
+
+        // Generate OTP
+        const otp = generateOTP();
+
+        // Delete any existing OTPs for this email
+        await OTP.deleteMany({ email, type: 'password_reset' });
+
+        // Save new OTP
+        const otpRecord = new OTP({
+          email,
+          otp,
+          type: 'password_reset'
+        });
+        await otpRecord.save();
+
+        // Send OTP email
+        await sendOTPEmail(email, otp);
+
+        return "OTP sent successfully to your email";
+      } catch (err) {
+        console.error("Error in sendPasswordResetOTP:", err);
+        throw new Error(err.message || "Unable to send OTP");
+      }
+    },
+    resetPasswordWithOTP: async (_, args) => {
+      try {
+        const { email, otp, newPassword } = args;
+        if (!email || !otp || !newPassword) {
+          throw new Error("Email, OTP, and new password are required");
+        }
+
+        if (newPassword.length < 6) {
+          throw new Error("New password must be at least 6 characters long");
+        }
+
+        // Find and verify OTP
+        const otpRecord = await OTP.findOne({ 
+          email, 
+          otp, 
+          type: 'password_reset' 
+        });
+
+        if (!otpRecord) {
+          throw new Error("Invalid or expired OTP");
+        }
+
+        // Find user
+        const user = await User.findOne({ email });
+        if (!user) {
+          throw new Error("User not found");
+        }
+
+        // Hash new password
+        const saltRounds = 10;
+        const hashedNewPassword = await bcrypt.hash(newPassword, saltRounds);
+
+        // Update password
+        await User.findByIdAndUpdate(user._id, {
+          password: hashedNewPassword
+        });
+
+        // Delete used OTP
+        await OTP.deleteOne({ _id: otpRecord._id });
+
+        return "Password reset successfully";
+      } catch (err) {
+        console.error("Error in resetPasswordWithOTP:", err);
+        throw new Error(err.message || "Unable to reset password");
       }
     },
     deactivateAccount: async (_, args, { req }) => {

@@ -70,3 +70,21 @@ export const BLOCK_USER = gql`
     blockUser(selfId: $selfId, username: $username)
   }
 `;
+
+export const UPDATE_EMAIL = gql`
+  mutation UpdateEmail($password: String!, $newEmail: String!) {
+    updateEmail(password: $password, newEmail: $newEmail)
+  }
+`;
+
+export const SEND_PASSWORD_RESET_OTP = gql`
+  mutation SendPasswordResetOTP($email: String!) {
+    sendPasswordResetOTP(email: $email)
+  }
+`;
+
+export const RESET_PASSWORD_WITH_OTP = gql`
+  mutation ResetPasswordWithOTP($email: String!, $otp: String!, $newPassword: String!) {
+    resetPasswordWithOTP(email: $email, otp: $otp, newPassword: $newPassword)
+  }
+`;

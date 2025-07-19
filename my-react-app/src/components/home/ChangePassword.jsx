@@ -3,6 +3,7 @@ import { useMutation } from '@apollo/client';
 import { UPDATE_PASSWORD } from '../../graphql/operations';
 import { FaEye, FaEyeSlash, FaSpinner } from 'react-icons/fa';
 import { IoClose } from 'react-icons/io5';
+import ForgotPassword from './ForgotPassword';
 
 const ChangePassword = ({ onClose }) => {
   const [formData, setFormData] = useState({
@@ -17,6 +18,7 @@ const ChangePassword = ({ onClose }) => {
   });
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState('');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   const [updatePassword, { loading }] = useMutation(UPDATE_PASSWORD);
 
@@ -105,7 +107,7 @@ const ChangePassword = ({ onClose }) => {
     }
   };
 
-  const PasswordField = ({ name, label, value, placeholder, show, onToggle }) => (
+  const PasswordField = ({ name, label, value, placeholder, show, onToggle, showForgotLink }) => (
     <div className="space-y-2">
       <label className="block text-sm font-medium text-gray-700">
         {label}
@@ -131,6 +133,15 @@ const ChangePassword = ({ onClose }) => {
       </div>
       {errors[name] && (
         <p className="text-red-500 text-sm">{errors[name]}</p>
+      )}
+      {showForgotLink && (
+        <button
+          type="button"
+          onClick={() => setShowForgotPassword(true)}
+          className="text-blue-500 hover:text-blue-600 text-sm"
+        >
+          Forgot your current password?
+        </button>
       )}
     </div>
   );
@@ -168,6 +179,7 @@ const ChangePassword = ({ onClose }) => {
             placeholder="Enter your current password"
             show={showPasswords.current}
             onToggle={() => togglePasswordVisibility('current')}
+            showForgotLink={true}
           />
 
           <PasswordField
@@ -213,6 +225,11 @@ const ChangePassword = ({ onClose }) => {
           </div>
         </form>
       </div>
+
+      {/* Forgot Password Modal */}
+      {showForgotPassword && (
+        <ForgotPassword onClose={() => setShowForgotPassword(false)} />
+      )}
     </div>
   );
 };
