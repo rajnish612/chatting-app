@@ -23,12 +23,57 @@ const blockUserQuery = gql`
     blockUser(selfId: $selfId, username: $username)
   }
 `;
-const Details = ({ selectedUserToChat, self }) => {
+
+const GET_CHATS = gql`
+  query {
+    getChats {
+      username
+      unseenCount
+    }
+  }
+`;
+
+const SELF_QUERY = gql`
+  query {
+    self {
+      _id
+      email
+      username
+      followings {
+        _id
+        username
+        email
+      }
+      followers {
+        _id
+        username
+        email
+      }
+      blockedUsers {
+        _id
+        username
+        email
+      }
+    }
+  }
+`;
+const Details = ({ selectedUserToChat, self, onUserBlocked }) => {
   const [blockUser, { loading: blockingUser }] = useMutation(blockUserQuery, {
+    refetchQueries: [
+      { query: GET_CHATS },
+      { query: SELF_QUERY }
+    ],
+    awaitRefetchQueries: true,
     onCompleted: (data) => {
       console.log(data);
       setShowBlockModal(false);
       setShowSuccessModal(true);
+      
+      // Notify parent component that user was blocked
+      if (onUserBlocked) {
+        onUserBlocked(selectedUserToChat);
+      }
+      
       // Auto-hide success modal after 3 seconds
       setTimeout(() => {
         setShowSuccessModal(false);

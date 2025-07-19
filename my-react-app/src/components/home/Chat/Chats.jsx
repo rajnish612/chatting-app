@@ -101,6 +101,18 @@ const Chats = ({
     setIsDrawerOpen(false);
   };
 
+  // Handle user blocking - clear selected chat and refresh chat list
+  const handleUserBlocked = (blockedUsername) => {
+    // If the currently selected user was blocked, clear the selection
+    if (selectedUserToChat === blockedUsername) {
+      setSelectedUserToChat("");
+    }
+    // Refresh chat list to remove blocked user's chat
+    if (chatsrefetch) {
+      chatsrefetch();
+    }
+  };
+
   return (
     <div className="h-screen bg-white w-full flex overflow-hidden relative">
       {/* Desktop Layout */}
@@ -141,7 +153,11 @@ const Chats = ({
 
         {/* Details - desktop only, responsive width */}
         <div className="hidden lg:block lg:w-64 xl:w-72 2xl:w-80 flex-shrink-0">
-          <Details self={self} selectedUserToChat={selectedUserToChat} />
+          <Details 
+            self={self} 
+            selectedUserToChat={selectedUserToChat} 
+            onUserBlocked={handleUserBlocked}
+          />
         </div>
       </div>
 
