@@ -57,18 +57,28 @@ const selfQuery = gql`
       _id
       email
       username
+      name
+      bio
       followings {
         _id
         username
         email
+        name
+        bio
       }
       followers {
         _id
         username
         email
+        name
+        bio
       }
       blockedUsers {
         _id
+        username
+        email
+        name
+        bio
       }
     }
   }

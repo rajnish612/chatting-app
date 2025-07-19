@@ -2,6 +2,7 @@ import React from "react";
 import { MdOutlineMail } from "react-icons/md";
 import { MdOutlinePassword } from "react-icons/md";
 import { CiUser } from "react-icons/ci";
+import { FaUserTag, FaQuoteLeft } from "react-icons/fa";
 import { useCallback } from "react";
 import { gql, useMutation } from "@apollo/client";
 import { useNavigate } from "react-router-dom";
@@ -9,8 +10,8 @@ import Modal from "@mui/material/Modal";
 
 import { motion } from "motion/react";
 const REGISTER_MUTATION = gql`
-  mutation Register($email: String!, $password: String!, $username: String!) {
-    register(email: $email, password: $password, username: $username)
+  mutation Register($email: String!, $password: String!, $username: String!, $name: String!, $bio: String) {
+    register(email: $email, password: $password, username: $username, name: $name, bio: $bio)
   }
 `;
 
@@ -20,6 +21,8 @@ const Register = () => {
     email: "",
     password: "",
     username: "",
+    name: "",
+    bio: "",
     confirmPassword: "",
   });
   const [loading, setLoading] = React.useState(false);
@@ -46,7 +49,7 @@ const Register = () => {
         !form.username ||
         !form.confirmPassword
       ) {
-        return alert("Please fill all fields");
+        return alert("Please fill all required fields");
       } else if (form.password !== form.confirmPassword) {
         return alert("Passwords do not match");
       }
@@ -58,6 +61,8 @@ const Register = () => {
             email: form.email,
             password: form.password,
             username: form.username,
+            name: form.name || form.username,
+            bio: form.bio || "",
           },
         });
       } catch (error) {
@@ -439,11 +444,48 @@ const Register = () => {
                 />
               </motion.div>
 
-              {/* Password Input */}
+              {/* Name Input */}
               <motion.div
                 initial={{ x: -50, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ delay: 1.0 }}
+                className="input-container stagger-animation flex w-full items-center gap-4 rounded-2xl px-6 py-4"
+              >
+                <FaUserTag className="text-orange-500 text-xl icon-pulse flex-shrink-0" />
+                <input
+                  onChange={handleChange}
+                  name="name"
+                  value={form.name}
+                  className="text-gray-800 font-medium placeholder-gray-500 text-lg"
+                  placeholder="Enter your full name (optional)"
+                  type="text"
+                />
+              </motion.div>
+
+              {/* Bio Input */}
+              <motion.div
+                initial={{ x: -50, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 1.1 }}
+                className="input-container stagger-animation flex w-full items-start gap-4 rounded-2xl px-6 py-4"
+              >
+                <FaQuoteLeft className="text-indigo-500 text-xl icon-pulse flex-shrink-0 mt-1" />
+                <textarea
+                  onChange={handleChange}
+                  name="bio"
+                  value={form.bio}
+                  className="text-gray-800 font-medium placeholder-gray-500 text-lg resize-none"
+                  placeholder="Tell us about yourself (optional)"
+                  rows="2"
+                  maxLength="200"
+                />
+              </motion.div>
+
+              {/* Password Input */}
+              <motion.div
+                initial={{ x: -50, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 1.2 }}
                 className="input-container stagger-animation flex w-full items-center gap-4 rounded-2xl px-6 py-4"
               >
                 <MdOutlinePassword className="text-purple-500 text-xl icon-pulse flex-shrink-0" />
@@ -462,7 +504,7 @@ const Register = () => {
               <motion.div
                 initial={{ x: -50, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 1.1 }}
+                transition={{ delay: 1.3 }}
                 className="input-container stagger-animation flex w-full items-center gap-4 rounded-2xl px-6 py-4"
               >
                 <MdOutlinePassword className="text-red-500 text-xl icon-pulse flex-shrink-0" />

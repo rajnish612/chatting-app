@@ -147,7 +147,7 @@ const Settings = ({ self, onLogout }) => {
                 <div className="relative">
                   <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
                     <span className="text-white font-bold text-2xl">
-                      {self?.username?.charAt(0)?.toUpperCase() || "U"}
+                      {self?.name?.charAt(0)?.toUpperCase() || self?.username?.charAt(0)?.toUpperCase() || "U"}
                     </span>
                   </div>
                   <button className="absolute -bottom-1 -right-1 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-colors">
@@ -156,12 +156,20 @@ const Settings = ({ self, onLogout }) => {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xl font-bold text-gray-900">
-                    {self?.username || "Username"}
+                    {self?.name || "Full Name"}
                   </h3>
                   <p className="text-gray-500">
+                    @{self?.username || "username"}
+                  </p>
+                  <p className="text-gray-600 text-sm mt-1">
                     {self?.email || "email@example.com"}
                   </p>
-                  <div className="flex gap-4 mt-2">
+                  {self?.bio && (
+                    <p className="text-gray-700 text-sm mt-2 bg-gray-50 rounded-lg p-2">
+                      {self.bio}
+                    </p>
+                  )}
+                  <div className="flex gap-4 mt-3">
                     <span className="text-sm text-gray-400">
                       {self?.followers?.length || 0} followers
                     </span>

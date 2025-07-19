@@ -109,12 +109,15 @@ const BlockedUsers = ({ onClose }) => {
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center">
                         <span className="text-white font-bold text-sm">
-                          {user.username?.charAt(0)?.toUpperCase() || 'U'}
+                          {user.name?.charAt(0)?.toUpperCase() || user.username?.charAt(0)?.toUpperCase() || 'U'}
                         </span>
                       </div>
                       <div>
-                        <h4 className="font-medium text-gray-900">{user.username}</h4>
-                        <p className="text-sm text-gray-500">{user.email}</p>
+                        <h4 className="font-medium text-gray-900">{user.name}</h4>
+                        <p className="text-sm text-gray-500">@{user.username}</p>
+                        {user.bio && (
+                          <p className="text-xs text-gray-400 mt-1 truncate max-w-48">{user.bio}</p>
+                        )}
                       </div>
                     </div>
                     <button
@@ -145,7 +148,7 @@ const BlockedUsers = ({ onClose }) => {
           <div className="bg-white rounded-2xl p-6 max-w-sm w-full mx-4">
             <h3 className="text-lg font-bold text-gray-900 mb-4">Unblock User</h3>
             <p className="text-gray-600 mb-6">
-              Are you sure you want to unblock <strong>{userToUnblock?.username}</strong>? 
+              Are you sure you want to unblock <strong>{userToUnblock?.name}</strong> (@{userToUnblock?.username})? 
               They will be able to contact you and see your profile again.
             </p>
             <div className="flex gap-3">

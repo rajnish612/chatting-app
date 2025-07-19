@@ -3,6 +3,8 @@ type User {
   _id: ID!
   email: String!
   username: String!
+  name: String
+  bio: String
   followings: [User]
   followers: [User]
   blockedUsers: [User]
@@ -33,7 +35,7 @@ type Mutation {
   deactivateAccount(password: String!): String
   SeeMessages(sender: String!, receiver: String!): [Message]
   login(email: String!, password: String!): String
-  register(email: String!, password: String!, username: String!): String
+  register(email: String!, password: String!, username: String!, name: String, bio: String): String
   follow(userId: ID!): User
   getMessages(sender: String!, receiver: String!): [Message]
 }

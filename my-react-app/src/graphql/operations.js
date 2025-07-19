@@ -7,6 +7,8 @@ export const GET_BLOCKED_USERS = gql`
       _id
       username
       email
+      name
+      bio
     }
   }
 `;
@@ -17,20 +19,28 @@ export const SELF_QUERY = gql`
       _id
       email
       username
+      name
+      bio
       followings {
         _id
         username
         email
+        name
+        bio
       }
       followers {
         _id
         username
         email
+        name
+        bio
       }
       blockedUsers {
         _id
         username
         email
+        name
+        bio
       }
     }
   }

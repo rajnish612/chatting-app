@@ -39,20 +39,28 @@ const SELF_QUERY = gql`
       _id
       email
       username
+      name
+      bio
       followings {
         _id
         username
         email
+        name
+        bio
       }
       followers {
         _id
         username
         email
+        name
+        bio
       }
       blockedUsers {
         _id
         username
         email
+        name
+        bio
       }
     }
   }
@@ -93,14 +101,38 @@ const Details = ({ selectedUserToChat, self, onUserBlocked }) => {
   const [blockError, setBlockError] = useState("");
 
   const handleBlockUser = () => {
+    setBlockError("");
     setShowBlockModal(true);
   };
 
   const confirmBlockUser = async () => {
     setBlockError("");
-    await blockUser({
-      variables: { username: selectedUserToChat, selfId: self?._id },
-    });
+    
+    console.log("Debug - self object:", self);
+    console.log("Debug - self._id:", self?._id);
+    console.log("Debug - selectedUserToChat:", selectedUserToChat);
+    
+    if (!selectedUserToChat) {
+      setBlockError("No user selected to block.");
+      return;
+    }
+    
+    if (!self || !self._id) {
+      setBlockError("Session expired. Please refresh the page and try again.");
+      return;
+    }
+    
+    try {
+      await blockUser({
+        variables: { 
+          username: selectedUserToChat, 
+          selfId: self._id 
+        },
+      });
+    } catch (error) {
+      console.error("Block user error:", error);
+      setBlockError("Failed to block user. Please try again.");
+    }
   };
   if (!selectedUserToChat) {
     return (
@@ -287,9 +319,18 @@ const Details = ({ selectedUserToChat, self, onUserBlocked }) => {
               They won't be able to message you or see your profile.
             </p>
             
+            {blockError && (
+              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+                {blockError}
+              </div>
+            )}
+            
             <div className="flex gap-3">
               <button
-                onClick={() => setShowBlockModal(false)}
+                onClick={() => {
+                  setShowBlockModal(false);
+                  setBlockError("");
+                }}
                 disabled={blockingUser}
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
               >
