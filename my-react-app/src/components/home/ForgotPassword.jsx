@@ -1,13 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMutation } from '@apollo/client';
-import { SEND_PASSWORD_RESET_OTP, RESET_PASSWORD_WITH_OTP } from '../../graphql/operations';
-import { FaEye, FaEyeSlash, FaSpinner, FaEnvelope, FaKey, FaCheckCircle } from 'react-icons/fa';
+import { SEND_PASSWORD_CHANGE_OTP, CHANGE_PASSWORD_WITH_OTP } from '../../graphql/operations';
+import { FaEye, FaEyeSlash, FaSpinner, FaShieldAlt } from 'react-icons/fa';
 import { IoClose } from 'react-icons/io5';
 
 const ForgotPassword = ({ onClose }) => {
-  const [step, setStep] = useState(1); // 1: email, 2: otp + password
+  const [step, setStep] = useState(1); // 1: send otp, 2: otp + password
   const [formData, setFormData] = useState({
-    email: '',
     otp: '',
     newPassword: '',
     confirmPassword: ''
@@ -18,10 +17,19 @@ const ForgotPassword = ({ onClose }) => {
   });
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState('');
-  const [timer, setTimer] = useState(0);
+  const [countdown, setCountdown] = useState(0);
 
-  const [sendOTP, { loading: sendingOTP }] = useMutation(SEND_PASSWORD_RESET_OTP);
-  const [resetPassword, { loading: resettingPassword }] = useMutation(RESET_PASSWORD_WITH_OTP);
+  const [sendOTP, { loading: sendingOTP }] = useMutation(SEND_PASSWORD_CHANGE_OTP);
+  const [resetPassword, { loading: resettingPassword }] = useMutation(CHANGE_PASSWORD_WITH_OTP);
+
+  // Countdown timer for resend OTP
+  useEffect(() => {
+    let timer;
+    if (countdown > 0) {
+      timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [countdown]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -45,23 +53,7 @@ const ForgotPassword = ({ onClose }) => {
     }));
   };
 
-  const validateEmailStep = () => {
-    const newErrors = {};
-
-    if (!formData.email) {
-      newErrors.email = 'Email is required';
-    } else {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.email)) {
-        newErrors.email = 'Please enter a valid email address';
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const validateResetStep = () => {
+  const validateStep2 = () => {
     const newErrors = {};
 
     if (!formData.otp) {
@@ -86,36 +78,13 @@ const ForgotPassword = ({ onClose }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSendOTP = async (e) => {
-    e.preventDefault();
-    setSuccessMessage('');
-
-    if (!validateEmailStep()) {
-      return;
-    }
-
+  const handleSendOTP = async () => {
     try {
-      await sendOTP({
-        variables: {
-          email: formData.email
-        }
-      });
-
-      setSuccessMessage('OTP sent successfully! Check your email.');
+      setErrors({});
+      const result = await sendOTP();
+      setSuccessMessage(result.data.sendPasswordChangeOTP);
       setStep(2);
-      setTimer(600); // 10 minutes countdown
-      
-      // Start countdown timer
-      const interval = setInterval(() => {
-        setTimer(prev => {
-          if (prev <= 1) {
-            clearInterval(interval);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-
+      setCountdown(60);
     } catch (error) {
       console.error('Error sending OTP:', error);
       setErrors({
@@ -128,25 +97,24 @@ const ForgotPassword = ({ onClose }) => {
     e.preventDefault();
     setSuccessMessage('');
 
-    if (!validateResetStep()) {
+    if (!validateStep2()) {
       return;
     }
 
     try {
-      await resetPassword({
+      const result = await resetPassword({
         variables: {
-          email: formData.email,
           otp: formData.otp,
           newPassword: formData.newPassword
         }
       });
 
-      setSuccessMessage('Password reset successfully! You can now login with your new password.');
+      setSuccessMessage(result.data.changePasswordWithOTP);
       
-      // Close modal after 3 seconds
+      // Close modal after 2 seconds
       setTimeout(() => {
         onClose();
-      }, 3000);
+      }, 2000);
 
     } catch (error) {
       console.error('Error resetting password:', error);
@@ -157,25 +125,31 @@ const ForgotPassword = ({ onClose }) => {
   };
 
   const handleResendOTP = async () => {
+    if (countdown > 0) return;
+
     try {
-      await sendOTP({
-        variables: {
-          email: formData.email
-        }
-      });
-      setSuccessMessage('New OTP sent to your email!');
-      setTimer(600);
+      setErrors({});
+      const result = await sendOTP();
+      setSuccessMessage(result.data.sendPasswordChangeOTP);
+      setCountdown(60);
     } catch (error) {
+      console.error('Error resending OTP:', error);
       setErrors({
-        submit: error.message || 'Failed to resend OTP.'
+        submit: error.message || 'Failed to resend OTP. Please try again.'
       });
     }
   };
 
-  const formatTime = (seconds) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  const handleBackToStep1 = () => {
+    setStep(1);
+    setFormData({
+      otp: '',
+      newPassword: '',
+      confirmPassword: ''
+    });
+    setErrors({});
+    setSuccessMessage('');
+    setCountdown(0);
   };
 
   return (
@@ -183,7 +157,7 @@ const ForgotPassword = ({ onClose }) => {
       <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-bold text-gray-900">
-            {step === 1 ? 'Forgot Password' : 'Reset Password'}
+            {step === 1 ? 'Reset Password' : 'Verify & Set New Password'}
           </h3>
           <button
             onClick={onClose}
@@ -194,8 +168,7 @@ const ForgotPassword = ({ onClose }) => {
         </div>
 
         {successMessage && (
-          <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg flex items-center gap-2">
-            <FaCheckCircle size={16} />
+          <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg">
             {successMessage}
           </div>
         )}
@@ -207,33 +180,14 @@ const ForgotPassword = ({ onClose }) => {
         )}
 
         {step === 1 ? (
-          <form onSubmit={handleSendOTP} className="space-y-4">
-            <p className="text-gray-600 text-sm mb-4">
-              Enter your email address and we'll send you an OTP to reset your password.
-            </p>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Email Address
-              </label>
-              <div className="relative">
-                <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
-                  <FaEnvelope className="text-gray-400" size={16} />
-                </div>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder="Enter your email"
-                  className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                    errors.email ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                />
+          <div className="space-y-4">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FaShieldAlt className="text-blue-500" size={24} />
               </div>
-              {errors.email && (
-                <p className="text-red-500 text-sm">{errors.email}</p>
-              )}
+              <p className="text-gray-600 mb-4">
+                We'll send a verification code to your current email address to help you reset your password securely.
+              </p>
             </div>
 
             <div className="flex gap-3 pt-4">
@@ -245,63 +199,50 @@ const ForgotPassword = ({ onClose }) => {
                 Cancel
               </button>
               <button
-                type="submit"
+                onClick={handleSendOTP}
                 disabled={sendingOTP}
                 className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {sendingOTP ? (
                   <>
                     <FaSpinner className="animate-spin" size={14} />
-                    Sending...
+                    Sending OTP...
                   </>
                 ) : (
                   'Send OTP'
                 )}
               </button>
             </div>
-          </form>
+          </div>
         ) : (
           <form onSubmit={handleResetPassword} className="space-y-4">
-            <p className="text-gray-600 text-sm mb-4">
-              Enter the OTP sent to <strong>{formData.email}</strong> and create a new password.
-            </p>
-
-            {timer > 0 && (
-              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg text-center">
-                OTP expires in: <strong>{formatTime(timer)}</strong>
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FaShieldAlt className="text-blue-500" size={24} />
               </div>
-            )}
+              <p className="text-gray-600">
+                We've sent a 6-digit verification code to your email address.
+              </p>
+            </div>
 
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
-                OTP Code
+                Verification Code
               </label>
-              <div className="relative">
-                <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
-                  <FaKey className="text-gray-400" size={16} />
-                </div>
-                <input
-                  type="text"
-                  name="otp"
-                  value={formData.otp}
-                  onChange={handleInputChange}
-                  placeholder="Enter 6-digit OTP"
-                  maxLength="6"
-                  className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-center font-mono text-lg ${
-                    errors.otp ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                />
-              </div>
+              <input
+                type="text"
+                name="otp"
+                value={formData.otp}
+                onChange={handleInputChange}
+                placeholder="Enter 6-digit code"
+                maxLength={6}
+                className={`w-full px-4 py-3 border rounded-lg text-center text-lg font-mono tracking-wider focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                  errors.otp ? 'border-red-500' : 'border-gray-300'
+                }`}
+              />
               {errors.otp && (
                 <p className="text-red-500 text-sm">{errors.otp}</p>
               )}
-              <button
-                type="button"
-                onClick={handleResendOTP}
-                className="text-blue-500 hover:text-blue-600 text-sm"
-              >
-                Didn't receive OTP? Resend
-              </button>
             </div>
 
             <div className="space-y-2">
@@ -314,7 +255,7 @@ const ForgotPassword = ({ onClose }) => {
                   name="newPassword"
                   value={formData.newPassword}
                   onChange={handleInputChange}
-                  placeholder="Enter new password"
+                  placeholder="Enter your new password"
                   className={`w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
                     errors.newPassword ? 'border-red-500' : 'border-gray-300'
                   }`}
@@ -342,7 +283,7 @@ const ForgotPassword = ({ onClose }) => {
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
-                  placeholder="Confirm new password"
+                  placeholder="Confirm your new password"
                   className={`w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
                     errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
                   }`}
@@ -360,10 +301,26 @@ const ForgotPassword = ({ onClose }) => {
               )}
             </div>
 
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={handleResendOTP}
+                disabled={countdown > 0 || sendingOTP}
+                className="text-blue-500 hover:text-blue-600 text-sm disabled:text-gray-400 disabled:cursor-not-allowed"
+              >
+                {countdown > 0 
+                  ? `Resend OTP in ${countdown}s` 
+                  : sendingOTP 
+                    ? 'Sending...' 
+                    : 'Resend OTP'
+                }
+              </button>
+            </div>
+
             <div className="flex gap-3 pt-4">
               <button
                 type="button"
-                onClick={() => setStep(1)}
+                onClick={handleBackToStep1}
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 Back

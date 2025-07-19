@@ -9,7 +9,8 @@
       "Bash(rmdir:*)",
       "Bash(node:*)",
       "Bash(npx eslint:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }

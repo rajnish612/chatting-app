@@ -24,12 +24,25 @@ export const sendOTPEmail = async (email, otp, type = 'password_reset') => {
   try {
     const transporter = createTransporter();
     
-    const isEmailChange = type === 'email_change';
-    const subject = isEmailChange ? 'Email Change Verification - Chat Me' : 'Password Reset OTP - Chat Me';
-    const title = isEmailChange ? 'Email Change Verification' : 'Password Reset Request';
-    const description = isEmailChange 
-      ? 'You requested to change your email address. Use the OTP below to verify your new email:'
-      : 'You requested to reset your password. Use the OTP below to continue:';
+    let subject, title, description;
+    
+    switch (type) {
+      case 'email_change':
+        subject = 'Email Change Verification - Chat Me';
+        title = 'Email Change Verification';
+        description = 'You requested to change your email address. Use the OTP below to verify your new email:';
+        break;
+      case 'password_change':
+        subject = 'Password Change Verification - Chat Me';
+        title = 'Password Change Verification';
+        description = 'You requested to change your password. Use the OTP below to continue:';
+        break;
+      default: // password_reset
+        subject = 'Password Reset OTP - Chat Me';
+        title = 'Password Reset Request';
+        description = 'You requested to reset your password. Use the OTP below to continue:';
+        break;
+    }
     
     const mailOptions = {
       from: process.env.EMAIL_USER,

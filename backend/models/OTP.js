@@ -11,7 +11,7 @@ const OTPSchema = new mongoose.Schema({
   },
   type: { 
     type: String, 
-    enum: ['password_reset', 'email_change'], 
+    enum: ['password_reset', 'email_change', 'password_change'], 
     required: true 
   },
   newEmail: {

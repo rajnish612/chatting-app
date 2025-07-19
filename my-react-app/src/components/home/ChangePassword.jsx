@@ -4,7 +4,6 @@ import { UPDATE_PASSWORD } from '../../graphql/operations';
 import { FaEye, FaEyeSlash, FaSpinner } from 'react-icons/fa';
 import { IoClose } from 'react-icons/io5';
 import ForgotPassword from './ForgotPassword';
-
 const ChangePassword = ({ onClose }) => {
   const [formData, setFormData] = useState({
     currentPassword: '',
@@ -230,6 +229,7 @@ const ChangePassword = ({ onClose }) => {
       {showForgotPassword && (
         <ForgotPassword onClose={() => setShowForgotPassword(false)} />
       )}
+
     </div>
   );
 };

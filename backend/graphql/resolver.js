@@ -806,6 +806,83 @@ const resolver = {
         throw new Error(err.message || "Unable to verify OTP");
       }
     },
+    sendPasswordChangeOTP: async (_, args, { req }) => {
+      if (!req?.session?.user) throw new Error("Unauthorized");
+      
+      try {
+        const user = await User.findOne({ username: req.session.user });
+        if (!user) throw new Error("User not found");
+
+        // Generate OTP
+        const otp = generateOTP();
+
+        // Delete any existing OTPs for this user's password change
+        await OTP.deleteMany({ 
+          userId: user._id.toString(), 
+          type: 'password_change' 
+        });
+
+        // Save new OTP
+        await OTP.create({
+          email: user.email,
+          otp,
+          type: 'password_change',
+          userId: user._id.toString()
+        });
+
+        // Send OTP to user's current email
+        await sendOTPEmail(user.email, otp, 'password_change');
+
+        return "OTP sent to your current email address. Please check your inbox.";
+      } catch (err) {
+        console.error("Error in sendPasswordChangeOTP:", err);
+        throw new Error(err.message || "Unable to send OTP");
+      }
+    },
+    changePasswordWithOTP: async (_, args, { req }) => {
+      if (!req?.session?.user) throw new Error("Unauthorized");
+      
+      try {
+        const { otp, newPassword } = args;
+        if (!otp || !newPassword) {
+          throw new Error("OTP and new password are required");
+        }
+
+        if (newPassword.length < 6) {
+          throw new Error("New password must be at least 6 characters long");
+        }
+
+        const user = await User.findOne({ username: req.session.user });
+        if (!user) throw new Error("User not found");
+
+        // Find and verify OTP
+        const otpRecord = await OTP.findOne({
+          userId: user._id.toString(),
+          otp,
+          type: 'password_change'
+        });
+
+        if (!otpRecord) {
+          throw new Error("Invalid or expired OTP");
+        }
+
+        // Hash new password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        // Update password
+        await User.findByIdAndUpdate(user._id, {
+          password: hashedPassword
+        });
+
+        // Delete the used OTP
+        await OTP.deleteOne({ _id: otpRecord._id });
+
+        return "Password changed successfully";
+      } catch (err) {
+        console.error("Error in changePasswordWithOTP:", err);
+        throw new Error(err.message || "Unable to change password");
+      }
+    },
     sendPasswordResetOTP: async (_, args) => {
       try {
         const { email } = args;

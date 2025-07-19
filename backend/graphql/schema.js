@@ -35,7 +35,9 @@ type Mutation {
   sendEmailChangeOTP(password: String!, newEmail: String!): String
   verifyEmailChangeOTP(otp: String!): String
   sendPasswordResetOTP(email: String!): String
+  sendPasswordChangeOTP: String
   resetPasswordWithOTP(email: String!, otp: String!, newPassword: String!): String
+  changePasswordWithOTP(otp: String!, newPassword: String!): String
   deactivateAccount(password: String!): String
   SeeMessages(sender: String!, receiver: String!): [Message]
   login(email: String!, password: String!): String

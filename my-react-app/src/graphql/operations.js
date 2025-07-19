@@ -94,3 +94,15 @@ export const VERIFY_EMAIL_CHANGE_OTP = gql`
     verifyEmailChangeOTP(otp: $otp)
   }
 `;
+
+export const SEND_PASSWORD_CHANGE_OTP = gql`
+  mutation SendPasswordChangeOTP {
+    sendPasswordChangeOTP
+  }
+`;
+
+export const CHANGE_PASSWORD_WITH_OTP = gql`
+  mutation ChangePasswordWithOTP($otp: String!, $newPassword: String!) {
+    changePasswordWithOTP(otp: $otp, newPassword: $newPassword)
+  }
+`;
