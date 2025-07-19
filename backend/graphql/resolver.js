@@ -38,7 +38,7 @@ const resolver = {
               if (mongoose.Types.ObjectId.isValid(followerId)) {
                 const follower = await User.findById(
                   followerId,
-                  "_id username email name bio"
+                  "_id username name bio"
                 );
                 if (follower) followersData.push(follower);
               }
@@ -50,7 +50,7 @@ const resolver = {
               if (mongoose.Types.ObjectId.isValid(followingId)) {
                 const following = await User.findById(
                   followingId,
-                  "_id username email name bio"
+                  "_id username name bio"
                 );
                 if (following) followingsData.push(following);
               }
@@ -59,8 +59,9 @@ const resolver = {
 
           result.push({
             _id: user._id,
-            email: user.email,
             username: user.username,
+            name: user.name,
+            bio: user.bio,
             followers: followersData,
             followings: followingsData,
           });
@@ -96,7 +97,7 @@ const resolver = {
               if (mongoose.Types.ObjectId.isValid(followerId)) {
                 const follower = await User.findById(
                   followerId,
-                  "_id username email name bio"
+                  "_id username name bio"
                 );
                 if (follower) followersData.push(follower);
               }
@@ -108,7 +109,7 @@ const resolver = {
               if (mongoose.Types.ObjectId.isValid(followingId)) {
                 const following = await User.findById(
                   followingId,
-                  "_id username email name bio"
+                  "_id username name bio"
                 );
                 if (following) followingsData.push(following);
               }
@@ -117,8 +118,9 @@ const resolver = {
 
           result.push({
             _id: user._id,
-            email: user.email,
             username: user.username,
+            name: user.name,
+            bio: user.bio,
             followers: followersData,
             followings: followingsData,
           });
@@ -324,7 +326,7 @@ const resolver = {
               if (mongoose.Types.ObjectId.isValid(followerId)) {
                 const follower = await User.findById(
                   followerId,
-                  "_id username email name bio"
+                  "_id username name bio"
                 );
                 if (follower) followersData.push(follower);
               }
@@ -336,7 +338,7 @@ const resolver = {
               if (mongoose.Types.ObjectId.isValid(followingId)) {
                 const following = await User.findById(
                   followingId,
-                  "_id username email name bio"
+                  "_id username name bio"
                 );
                 if (following) followingsData.push(following);
               }

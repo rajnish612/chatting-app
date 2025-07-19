@@ -8,17 +8,20 @@ const randomUsersQuery = gql`
   query {
     getRandomUsers {
       _id
-      email
       username
+      name
+      bio
       followings {
         _id
         username
-        email
+        name
+        bio
       }
       followers {
         _id
         username
-        email
+        name
+        bio
       }
     }
   }
@@ -29,16 +32,19 @@ const searchUsersQuery = gql`
     searchUsers(query: $query) {
       _id
       username
-      email
+      name
+      bio
       followers {
         _id
         username
-        email
+        name
+        bio
       }
       followings {
         _id
         username
-        email
+        name
+        bio
       }
     }
   }
@@ -49,16 +55,19 @@ const followUserMutation = gql`
     follow(userId: $userId) {
       _id
       username
-      email
+      name
+      bio
       followers {
         _id
         username
-        email
+        name
+        bio
       }
       followings {
         _id
         username
-        email
+        name
+        bio
       }
     }
   }
@@ -187,7 +196,7 @@ const Search = ({ setRefreshUsers, self, setIdx, setSelectedUserToChat }) => {
       <div className="relative">
         <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
           <span className="text-white font-bold text-lg">
-            {user.username?.charAt(0)?.toUpperCase()}
+            {user.name?.charAt(0)?.toUpperCase() || user.username?.charAt(0)?.toUpperCase() || 'U'}
           </span>
         </div>
         <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
@@ -196,9 +205,12 @@ const Search = ({ setRefreshUsers, self, setIdx, setSelectedUserToChat }) => {
       {/* User Info */}
       <div className="flex-1 min-w-0">
         <h3 className="font-semibold text-gray-900 text-lg truncate">
-          {user.username}
+          {user.name || user.username}
         </h3>
-        <p className="text-gray-500 text-sm truncate">{user.email}</p>
+        <p className="text-gray-500 text-sm truncate">@{user.username}</p>
+        {user.bio && (
+          <p className="text-gray-600 text-xs truncate mt-1">{user.bio}</p>
+        )}
         <div className="flex items-center gap-4 mt-1">
           <span className="text-xs text-gray-400">
             {user.followers?.length || 0} followers
