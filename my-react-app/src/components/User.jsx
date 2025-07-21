@@ -19,7 +19,7 @@ const USER_QUERY = gql`
     }
   }
 `;
-const User = () => {
+const User = ({}) => {
   const { id } = useParams();
   const { data, error, loading } = useQuery(USER_QUERY, {
     variables: { _id: id },
@@ -28,9 +28,11 @@ const User = () => {
 
   return (
     <div className="flex justify-center w-screen h-screen p-2  items-center">
-      <div className="w-[90%] sm:w-[80%]  md:w-[600px]  lg:w-[600px] xl:w-[700px] py-10 rounded-2xl flex flex-col justify-start  items-center shadow-2xl ring-5 ring-blue-300 ring-offset-2 bg-white">
+      <div className="w-[90%] sm:w-[80%]  md:w-[600px]  lg:w-[600px] xl:w-[700px] py-10 rounded-2xl flex flex-col justify-start  items-center shadow-2xl ring-7 ring-blue-300/35 ring-offset-2  ">
         {loading ? (
-          <div className="p-4 rounded-full border-b-5 animate-spin border-blue-400 text-black h-10 w-10"></div>
+          <div className="h-screen w-screen absolute inset-0 bg-white/10 backdrop-blur-md flex justify-center items-center">
+            <div className="p-4 rounded-full border-b-3 animate-spin border-blue-400 text-black h-10 w-10"></div>
+          </div>
         ) : error ? (
           <>
             <div className="bg-red-500 animate-pulse rounded-full p-2">
@@ -91,7 +93,6 @@ const User = () => {
               <div className="max-h-30 w-[70%] mt-5 scroll-smooth text-center  overflow-y-scroll">
                 <span className="text-slate-400 font-medium">
                   {data?.getUser?.bio}
-                  
                 </span>
               </div>
             </div>
