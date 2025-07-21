@@ -13,6 +13,7 @@ import {
   ApolloProvider,
   HttpLink,
 } from "@apollo/client";
+import User from "./components/User";
 const client = new ApolloClient({
   link: new HttpLink({
     uri: import.meta.env.VITE_API_URL + "/graphql",
@@ -42,7 +43,8 @@ const App = () => {
             <Route path="/register" element={<Register />} />
 
             <Route path="/login" element={<Login />} />
-            <Route path="home" element={<Home />} />
+            <Route path="/home" element={<Home />} />
+            <Route path="/user/:id" element={<User />} />
           </Routes>
         </BrowserRouter>
       </ApolloProvider>

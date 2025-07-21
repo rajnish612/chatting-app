@@ -3,9 +3,25 @@ import User from "../models/User.js";
 import OTP from "../models/OTP.js";
 import bcrypt from "bcrypt";
 import mongoose from "mongoose";
-import { generateOTP, sendOTPEmail, sendEmailUpdateConfirmation } from "../utils/emailService.js";
+import {
+  generateOTP,
+  sendOTPEmail,
+  sendEmailUpdateConfirmation,
+} from "../utils/emailService.js";
 const resolver = {
   Query: {
+    getUser: async (_, args) => {
+      try {
+        const { _id } = args;
+        if (!_id) throw new Error("unable to fetch");
+        const user = await User.findById(_id).populate("followers followings");
+        if (!user) throw new Error("user not found");
+        return user;
+      } catch (err) {
+        console.log(err);
+        throw new Error("user not found");
+      }
+    },
     searchUsers: async (__, { query }, { req }) => {
       const username = req?.session?.user;
       const self = await User.findOne({
@@ -362,7 +378,7 @@ const resolver = {
     },
     getBlockedUsers: async (parent, args, { req }) => {
       if (!req?.session?.user) return null;
-      
+
       try {
         const user = await User.findOne({ username: req.session.user });
         if (!user || !user.blockedUsers || user.blockedUsers.length === 0) {
@@ -417,7 +433,7 @@ const resolver = {
     },
     unblockUser: async (_, args, { req }) => {
       if (!req?.session?.user) throw new Error("Unauthorized");
-      
+
       try {
         const { userId } = args;
         if (!userId) throw new Error("User ID is required");
@@ -430,11 +446,11 @@ const resolver = {
 
         // Remove from blockedUsers array and blockedBy array
         await User.findByIdAndUpdate(currentUser._id, {
-          $pull: { blockedUsers: userId }
+          $pull: { blockedUsers: userId },
         });
 
         await User.findByIdAndUpdate(userId, {
-          $pull: { blockedBy: currentUser._id }
+          $pull: { blockedBy: currentUser._id },
         });
 
         return "User unblocked successfully";
@@ -673,7 +689,7 @@ const resolver = {
     },
     updatePassword: async (_, args, { req }) => {
       if (!req?.session?.user) throw new Error("Unauthorized");
-      
+
       try {
         const { currentPassword, newPassword } = args;
         if (!currentPassword || !newPassword) {
@@ -688,7 +704,10 @@ const resolver = {
         if (!user) throw new Error("User not found");
 
         // Verify current password
-        const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+        const isCurrentPasswordValid = await bcrypt.compare(
+          currentPassword,
+          user.password
+        );
         if (!isCurrentPasswordValid) {
           throw new Error("Current password is incorrect");
         }
@@ -699,7 +718,7 @@ const resolver = {
 
         // Update password
         await User.findByIdAndUpdate(user._id, {
-          password: hashedNewPassword
+          password: hashedNewPassword,
         });
 
         return "Password updated successfully";
@@ -710,10 +729,10 @@ const resolver = {
     },
     updateProfile: async (_, args, { req }) => {
       if (!req?.session?.user) throw new Error("Unauthorized");
-      
+
       try {
         const { name, bio } = args;
-        
+
         const user = await User.findOne({ username: req.session.user });
         if (!user) throw new Error("User not found");
 
@@ -738,7 +757,7 @@ const resolver = {
     },
     sendEmailChangeOTP: async (_, args, { req }) => {
       if (!req?.session?.user) throw new Error("Unauthorized");
-      
+
       try {
         const { password, newEmail } = args;
         if (!password || !newEmail) {
@@ -762,7 +781,10 @@ const resolver = {
 
         // Check if new email is already in use
         const existingUser = await User.findOne({ email: newEmail });
-        if (existingUser && existingUser._id.toString() !== user._id.toString()) {
+        if (
+          existingUser &&
+          existingUser._id.toString() !== user._id.toString()
+        ) {
           throw new Error("Email is already in use by another account");
         }
 
@@ -770,22 +792,22 @@ const resolver = {
         const otp = generateOTP();
 
         // Delete any existing OTPs for this user's email change
-        await OTP.deleteMany({ 
-          userId: user._id.toString(), 
-          type: 'email_change' 
+        await OTP.deleteMany({
+          userId: user._id.toString(),
+          type: "email_change",
         });
 
         // Save new OTP
         await OTP.create({
           email: user.email, // Current email for identification
           otp,
-          type: 'email_change',
+          type: "email_change",
           newEmail,
-          userId: user._id.toString()
+          userId: user._id.toString(),
         });
 
         // Send OTP to new email
-        await sendOTPEmail(newEmail, otp, 'email_change');
+        await sendOTPEmail(newEmail, otp, "email_change");
 
         return "OTP sent to your new email address. Please check your inbox.";
       } catch (err) {
@@ -795,7 +817,7 @@ const resolver = {
     },
     verifyEmailChangeOTP: async (_, args, { req }) => {
       if (!req?.session?.user) throw new Error("Unauthorized");
-      
+
       try {
         const { otp } = args;
         if (!otp) throw new Error("OTP is required");
@@ -807,7 +829,7 @@ const resolver = {
         const otpRecord = await OTP.findOne({
           userId: user._id.toString(),
           otp,
-          type: 'email_change'
+          type: "email_change",
         });
 
         if (!otpRecord) {
@@ -819,7 +841,7 @@ const resolver = {
 
         // Update user's email
         await User.findByIdAndUpdate(user._id, {
-          email: newEmail
+          email: newEmail,
         });
 
         // Delete the used OTP
@@ -840,7 +862,7 @@ const resolver = {
     },
     sendPasswordChangeOTP: async (_, args, { req }) => {
       if (!req?.session?.user) throw new Error("Unauthorized");
-      
+
       try {
         const user = await User.findOne({ username: req.session.user });
         if (!user) throw new Error("User not found");
@@ -849,21 +871,21 @@ const resolver = {
         const otp = generateOTP();
 
         // Delete any existing OTPs for this user's password change
-        await OTP.deleteMany({ 
-          userId: user._id.toString(), 
-          type: 'password_change' 
+        await OTP.deleteMany({
+          userId: user._id.toString(),
+          type: "password_change",
         });
 
         // Save new OTP
         await OTP.create({
           email: user.email,
           otp,
-          type: 'password_change',
-          userId: user._id.toString()
+          type: "password_change",
+          userId: user._id.toString(),
         });
 
         // Send OTP to user's current email
-        await sendOTPEmail(user.email, otp, 'password_change');
+        await sendOTPEmail(user.email, otp, "password_change");
 
         return "OTP sent to your current email address. Please check your inbox.";
       } catch (err) {
@@ -873,7 +895,7 @@ const resolver = {
     },
     changePasswordWithOTP: async (_, args, { req }) => {
       if (!req?.session?.user) throw new Error("Unauthorized");
-      
+
       try {
         const { otp, newPassword } = args;
         if (!otp || !newPassword) {
@@ -891,7 +913,7 @@ const resolver = {
         const otpRecord = await OTP.findOne({
           userId: user._id.toString(),
           otp,
-          type: 'password_change'
+          type: "password_change",
         });
 
         if (!otpRecord) {
@@ -903,7 +925,7 @@ const resolver = {
 
         // Update password
         await User.findByIdAndUpdate(user._id, {
-          password: hashedPassword
+          password: hashedPassword,
         });
 
         // Delete the used OTP
@@ -936,13 +958,13 @@ const resolver = {
         const otp = generateOTP();
 
         // Delete any existing OTPs for this email
-        await OTP.deleteMany({ email, type: 'password_reset' });
+        await OTP.deleteMany({ email, type: "password_reset" });
 
         // Save new OTP
         const otpRecord = new OTP({
           email,
           otp,
-          type: 'password_reset'
+          type: "password_reset",
         });
         await otpRecord.save();
 
@@ -967,10 +989,10 @@ const resolver = {
         }
 
         // Find and verify OTP
-        const otpRecord = await OTP.findOne({ 
-          email, 
-          otp, 
-          type: 'password_reset' 
+        const otpRecord = await OTP.findOne({
+          email,
+          otp,
+          type: "password_reset",
         });
 
         if (!otpRecord) {
@@ -989,7 +1011,7 @@ const resolver = {
 
         // Update password
         await User.findByIdAndUpdate(user._id, {
-          password: hashedNewPassword
+          password: hashedNewPassword,
         });
 
         // Delete used OTP
@@ -1003,10 +1025,11 @@ const resolver = {
     },
     deactivateAccount: async (_, args, { req }) => {
       if (!req?.session?.user) throw new Error("Unauthorized");
-      
+
       try {
         const { password } = args;
-        if (!password) throw new Error("Password is required to deactivate account");
+        if (!password)
+          throw new Error("Password is required to deactivate account");
 
         const user = await User.findOne({ username: req.session.user });
         if (!user) throw new Error("User not found");
@@ -1028,7 +1051,7 @@ const resolver = {
               { $pull: { followers: user._id } },
               { session }
             );
-            
+
             await User.updateMany(
               { followings: user._id },
               { $pull: { followings: user._id } },
@@ -1049,9 +1072,12 @@ const resolver = {
             );
 
             // Delete all messages involving this user
-            await Message.deleteMany({
-              $or: [{ sender: user.username }, { receiver: user.username }]
-            }, { session });
+            await Message.deleteMany(
+              {
+                $or: [{ sender: user.username }, { receiver: user.username }],
+              },
+              { session }
+            );
 
             // Delete the user account
             await User.findByIdAndDelete(user._id, { session });

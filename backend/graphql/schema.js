@@ -23,6 +23,7 @@ type Query {
   getChats: [chatPreview]
   getRandomUsers: [User]
   self: User
+  getUser(_id: ID!): User
   searchUsers(query: String!): [User]
   getAllMessages: [Message]
   getAllUsers: [User]
