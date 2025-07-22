@@ -12,9 +12,11 @@ const resolver = {
   Query: {
     getUser: async (_, args) => {
       try {
-        const { _id } = args;
-        if (!_id) throw new Error("unable to fetch");
-        const user = await User.findById(_id).populate("followers followings");
+        const { username } = args;
+        if (!username) throw new Error("unable to fetch");
+        const user = await User.findOne({ username: username }).populate(
+          "followers followings"
+        );
         if (!user) throw new Error("user not found");
         return user;
       } catch (err) {
