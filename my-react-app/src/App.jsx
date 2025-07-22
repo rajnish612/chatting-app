@@ -44,7 +44,7 @@ const App = () => {
 
             <Route path="/login" element={<Login />} />
             <Route path="/home" element={<Home />} />
-            <Route path="/user/:id" element={<User />} />
+            <Route path="/user/:username" element={<User />} />
           </Routes>
         </BrowserRouter>
       </ApolloProvider>

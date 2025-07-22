@@ -16,6 +16,7 @@
     "@mui/material": "^7.2.0",
     "@mui/styled-engine-sc": "^7.2.0",
     "@tailwindcss/vite": "^4.1.7",
+    "emoji-picker-react": "^4.13.2",
     "graphql": "^16.11.0",
     "motion": "^12.23.3",
     "react": "^19.1.0",

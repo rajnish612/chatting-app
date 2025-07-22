@@ -2,6 +2,7 @@ import { gql, useMutation } from "@apollo/client";
 import React, { useCallback } from "react";
 import { useEffect } from "react";
 import { useState } from "react";
+import EmojiPicker from "emoji-picker-react";
 
 import { FaPhoneAlt } from "react-icons/fa";
 import { FaVideo } from "react-icons/fa";
@@ -12,6 +13,7 @@ import { MdOutlineKeyboardVoice } from "react-icons/md";
 import { IoArrowDown } from "react-icons/io5";
 import { BsCheckAll, BsCheck } from "react-icons/bs";
 import { IoArrowBack } from "react-icons/io5";
+import { useNavigate } from "react-router-dom";
 
 const isSeenQuery = gql`
   mutation SeeMessages($sender: String!, $receiver: String!) {
@@ -57,7 +59,7 @@ const Chatbox = ({
   console.log("setOutGoingVideoCall:", setOutGoingVideoCall);
   const messagesEndRef = React.useRef(null);
   const chatContainerRef = React.useRef(null);
-
+  const [emojiOpen, setEmojiOpen] = React.useState(false);
   const [showScrollDownArrow, setShowScrollDownArrow] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
 
@@ -88,7 +90,7 @@ const Chatbox = ({
   });
 
   let [content, setContent] = useState("");
-
+  const navigate = useNavigate();
   function handleChange(e) {
     setContent(e.target.value);
     // Simulate typing indicator
@@ -180,6 +182,7 @@ const Chatbox = ({
           });
         }
       };
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       stream.getTracks().forEach((track) => {
         peerConnection.current.addTrack(track, stream);
@@ -451,7 +454,12 @@ const Chatbox = ({
       <div className="chat-container h-full w-full flex flex-col relative">
         {/* Enhanced Header */}
         <div className="hidden md:flex glass-header px-4 md:px-6 py-3 md:py-4 items-center justify-between shadow-sm">
-          <div className="flex items-center gap-4">
+          <div
+            onClick={() =>
+              navigate(`/user/${selectedUserToChat}`, { state: { self: self } })
+            }
+            className="flex  hover:scale-[1.1] cursor-pointer transition-transform items-center gap-4"
+          >
             {/* Mobile back button - only show on mobile */}
             <button
               onClick={() => setSelectedUserToChat("")}
@@ -633,13 +641,28 @@ const Chatbox = ({
         <div className="input-container p-4 m-4 rounded-2xl">
           <div className="flex items-end gap-3">
             {/* Emoji Button */}
-            <button className="action-btn p-2 text-blue-500 hover:bg-blue-50 rounded-full transition-colors">
-              <MdOutlineEmojiEmotions size={24} />
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setEmojiOpen((prev) => !prev)}
+                className="action-btn p-2 text-blue-500  hover:bg-blue-50 rounded-full transition-colors"
+              >
+                <MdOutlineEmojiEmotions size={24} />
+              </button>
+              <div className="absolute bottom-full left-0">
+                {" "}
+                <EmojiPicker
+                  onEmojiClick={(emoji) =>
+                    setContent((prev) => (prev += emoji.emoji))
+                  }
+                  open={emojiOpen}
+                />
+              </div>
+            </div>
 
             {/* Text Input */}
             <div className="flex-1 min-h-0">
               <textarea
+                onFocus={() => setEmojiOpen(false)}
                 value={content}
                 onChange={handleChange}
                 onKeyPress={handleKeyPress}

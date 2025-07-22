@@ -1,11 +1,11 @@
 import { gql, useQuery } from "@apollo/client";
 import { errorCodes } from "@apollo/client/invariantErrorCodes";
 import React from "react";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 
 const USER_QUERY = gql`
-  query GetUser($_id: ID!) {
-    getUser(_id: $_id) {
+  query GetUser($username: String!) {
+    getUser(username: $username) {
       _id
       username
       name
@@ -19,12 +19,14 @@ const USER_QUERY = gql`
     }
   }
 `;
-const User = ({}) => {
-  const { id } = useParams();
+const User = () => {
+  const location = useLocation();
+  const { self } = location?.state;
+  const { username } = useParams();
   const { data, error, loading } = useQuery(USER_QUERY, {
-    variables: { _id: id },
+    variables: { username: username },
   });
-  console.log(error);
+  console.log(data?.getUser?.followings?.length);
 
   return (
     <div className="flex justify-center w-screen h-screen p-2  items-center">
@@ -125,17 +127,37 @@ const User = ({}) => {
             <div className="flex h-20 space-x-5 mt-10">
               <div className="h-10 flex rounded-lg justify-center items-center px-2 outline-1 outline-blue-400">
                 <span className="text-black">
-                  Followers: {data?.getUser?.followings?.length}
+                  Followers: {data?.getUser?.followers?.length}
                 </span>
               </div>
               <div className="h-10 flex  rounded-lg justify-center items-center px-2 outline-1 outline-blue-400">
                 <span className="text-black">
-                  Followings: {data?.getUser?.followers?.length}
+                  Followings: {data?.getUser?.followings?.length}
                 </span>
               </div>
             </div>
             <button className="!bg-gradient-to-r !p-2  !outline-none !transition-transform hover:scale-[1.1] !rounded-lg !from-blue-500 !to-blue-300">
-              <span>Follow</span>
+              {(self?._id !== data?.getUser?._id &&
+                self?.followings?.some(
+                  (following) => following?._id === data?.getUser?._id
+                ) &&
+                data?.getUser?.followings?.some(
+                  (following) => following?._id === self?._id
+                )) ||
+              !data?.getUser?.followings?.some(
+                (following) => following?._id === self?._id
+              ) ? (
+                <span>Following</span>
+              ) : !self?.followings?.some(
+                  (following) => following?._id === data?.getUser?._id
+                ) &&
+                data?.getUser?.followings?.some(
+                  (following) => following?._id === self?._id
+                ) ? (
+                <span>Follow back</span>
+              ) : (
+                <span>Follow</span>
+              )}
             </button>
           </>
         )}
