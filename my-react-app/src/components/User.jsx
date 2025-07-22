@@ -144,9 +144,12 @@ const User = () => {
                 data?.getUser?.followings?.some(
                   (following) => following?._id === self?._id
                 )) ||
-              !data?.getUser?.followings?.some(
-                (following) => following?._id === self?._id
-              ) ? (
+              (self?.followings?.some(
+                (following) => following?._id === data?.getUser?._id
+              ) &&
+                !data?.getUser?.followings?.some(
+                  (following) => following?._id === self?._id
+                )) ? (
                 <span>Following</span>
               ) : !self?.followings?.some(
                   (following) => following?._id === data?.getUser?._id
