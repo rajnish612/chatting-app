@@ -1,7 +1,7 @@
 import { gql, useQuery } from "@apollo/client";
 import { errorCodes } from "@apollo/client/invariantErrorCodes";
-import React from "react";
-import { useLocation, useParams } from "react-router-dom";
+import React, { useEffect } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 const USER_QUERY = gql`
   query GetUser($username: String!) {
@@ -20,13 +20,18 @@ const USER_QUERY = gql`
   }
 `;
 const User = () => {
+  const navigate = useNavigate();
   const location = useLocation();
   const { self } = location?.state;
   const { username } = useParams();
   const { data, error, loading } = useQuery(USER_QUERY, {
     variables: { username: username },
   });
-  console.log(data?.getUser?.followings?.length);
+  useEffect(() => {
+    if (!self?._id) {
+      navigate("/login", { replace: true });
+    }
+  }, [self?._id, navigate]);
 
   return (
     <div className="flex justify-center w-screen h-screen p-2  items-center">
