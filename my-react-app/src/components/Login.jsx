@@ -66,99 +66,15 @@ const Login = () => {
       <style jsx>{`
         @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
 
-        .gradient-bg {
-          background: linear-gradient(
-            -45deg,
-            #f8fafc,
-            #e2e8f0,
-            #f1f5f9,
-            #ffffff,
-            #f0f9ff
-          );
-          background-size: 400% 400%;
-          animation: gradientShift 15s ease infinite;
+        .simple-bg {
+          background: #f8fafc;
         }
 
-        @keyframes gradientShift {
-          0% {
-            background-position: 0% 50%;
-          }
-          50% {
-            background-position: 100% 50%;
-          }
-          100% {
-            background-position: 0% 50%;
-          }
-        }
 
-        .particles {
-          position: absolute;
-          width: 100%;
-          height: 100%;
-          overflow: hidden;
-          pointer-events: none;
-        }
-
-        .particle {
-          position: absolute;
-          background: rgba(100, 116, 139, 0.1);
-          border-radius: 50%;
-          animation: float 6s ease-in-out infinite;
-        }
-
-        .particle:nth-child(1) {
-          width: 80px;
-          height: 80px;
-          left: 10%;
-          top: 20%;
-          animation-delay: 0s;
-        }
-        .particle:nth-child(2) {
-          width: 120px;
-          height: 120px;
-          right: 10%;
-          top: 40%;
-          animation-delay: 2s;
-        }
-        .particle:nth-child(3) {
-          width: 60px;
-          height: 60px;
-          left: 70%;
-          top: 60%;
-          animation-delay: 4s;
-        }
-        .particle:nth-child(4) {
-          width: 100px;
-          height: 100px;
-          right: 70%;
-          top: 80%;
-          animation-delay: 1s;
-        }
-        .particle:nth-child(5) {
-          width: 40px;
-          height: 40px;
-          left: 50%;
-          top: 30%;
-          animation-delay: 3s;
-        }
-
-        @keyframes float {
-          0%,
-          100% {
-            transform: translateY(0px) rotate(0deg);
-            opacity: 0.5;
-          }
-          50% {
-            transform: translateY(-20px) rotate(180deg);
-            opacity: 0.8;
-          }
-        }
-
-        .glass-card {
-          background: rgba(255, 255, 255, 0.8);
-          backdrop-filter: blur(20px);
-          border: 1px solid rgba(100, 116, 139, 0.2);
-          box-shadow: 0 25px 45px rgba(0, 0, 0, 0.05);
+        .simple-card {
+          background: white;
+          border: 1px solid #e2e8f0;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .input-glow {
@@ -264,15 +180,7 @@ const Login = () => {
         }
       `}</style>
 
-      <div className="gradient-bg w-screen flex justify-center items-center gap-8 flex-col overflow-x-hidden h-screen relative">
-        {/* Floating Particles */}
-        <div className="particles">
-          <div className="particle"></div>
-          <div className="particle"></div>
-          <div className="particle"></div>
-          <div className="particle"></div>
-          <div className="particle"></div>
-        </div>
+      <div className="simple-bg w-screen flex justify-center items-center gap-8 flex-col overflow-x-hidden h-screen relative p-4">
 
         {/* Logo Section with Enhanced Styling */}
         <div className="fade-in mt-20 flex gap-5 font-bold text-gray-800 text-4xl lg:text-6xl md:text-5xl items-center logo-glow">
@@ -289,7 +197,7 @@ const Login = () => {
         </div>
 
         {/* Enhanced Login Card */}
-        <div className="slide-up glass-card max-w-md w-full mx-4 p-8 rounded-3xl gap-8 flex flex-col justify-center items-center shadow-2xl">
+        <div className="slide-up simple-card max-w-md w-full mx-4 p-8 rounded-xl gap-8 flex flex-col justify-center items-center">
           {/* Header */}
           <div className="w-full text-center">
             <span className="text-3xl lg:text-4xl md:text-4xl font-black text-gray-800 bg-gradient-to-r from-gray-800 to-blue-600 bg-clip-text text-transparent">
@@ -408,10 +316,6 @@ const Login = () => {
           </div>
         </div>
 
-        {/* Decorative Elements */}
-        <div className="absolute top-10 left-10 w-20 h-20 bg-blue-200/30 rounded-full blur-xl"></div>
-        <div className="absolute bottom-10 right-10 w-32 h-32 bg-gray-200/40 rounded-full blur-2xl"></div>
-        <div className="absolute top-1/2 left-5 w-16 h-16 bg-blue-300/20 rounded-full blur-xl"></div>
       </div>
     </>
   );
