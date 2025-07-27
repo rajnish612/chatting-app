@@ -25,12 +25,7 @@ const DrawerItems = [
     label: "Chats",
     color: "from-blue-500 to-blue-600",
   },
-  {
-    icon: <IoMdContact size={20} />,
-    element: Contact,
-    label: "Contacts",
-    color: "from-green-500 to-green-600",
-  },
+
   {
     icon: <IoSettingsSharp size={20} />,
     element: Settings,

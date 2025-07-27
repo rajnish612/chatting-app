@@ -79,7 +79,9 @@ const FollowersAndFollowings = ({ self, setRefreshUsers }) => {
         ))}
       </div>
       <div className="h-150 rounded-lg px-4 py-2 shadow-md bg-white overflow-y-scroll ">
-        {selectedIdx === 0 ? (
+        {self?.followers?.length === 0 ? (
+          <span className="text-black">You have currently 0 followers</span>
+        ) : selectedIdx === 0 ? (
           self?.followers?.map((user) => {
             return (
               <div className="w-full flex items-center p-2 space-x-3 md:px-7 px-4 shadow-md bg-white rounded-lg">
