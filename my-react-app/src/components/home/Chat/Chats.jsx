@@ -5,6 +5,7 @@ import Chatlist from "./Chatlist";
 import Chatbox from "./Chatbox";
 import DocumentBox from "./DocumentBox";
 import Details from "./Details";
+import AudioBox from "./AudioBox";
 
 const Chats = ({
   self,
@@ -29,6 +30,7 @@ const Chats = ({
 }) => {
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
+  const [isAudioMode, setAudioMode] = useState(null);
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [isSwping, setIsSwping] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -120,39 +122,45 @@ const Chats = ({
   // Fetch unseen document counts
   const fetchUnseenDocumentCounts = async () => {
     if (!self?.username) return;
-    
+
     try {
-      const response = await fetch(`http://localhost:3000/api/documents/unseen-counts/${self.username}`, {
-        credentials: 'include'
-      });
-      
+      const response = await fetch(
+        `http://localhost:3000/api/documents/unseen-counts/${self.username}`,
+        {
+          credentials: "include",
+        }
+      );
+
       if (response.ok) {
         const counts = await response.json();
         setUnseenDocumentCounts(counts);
       }
     } catch (error) {
-      console.error('Error fetching unseen document counts:', error);
+      console.error("Error fetching unseen document counts:", error);
     }
   };
 
   // Mark documents as seen when entering document mode
   const markDocumentsAsSeen = async (sender, receiver) => {
     try {
-      await fetch(`http://localhost:3000/api/documents/seen/conversation/${sender}/${receiver}`, {
-        method: 'PATCH',
-        credentials: 'include'
-      });
-      
+      await fetch(
+        `http://localhost:3000/api/documents/seen/conversation/${sender}/${receiver}`,
+        {
+          method: "PATCH",
+          credentials: "include",
+        }
+      );
+
       // Update local counts
-      setUnseenDocumentCounts(prev => ({
+      setUnseenDocumentCounts((prev) => ({
         ...prev,
-        [sender]: 0
+        [sender]: 0,
       }));
-      
+
       // Emit socket event
       socket.emit("documentSeenByReceiver", { sender, receiver });
     } catch (error) {
-      console.error('Error marking documents as seen:', error);
+      console.error("Error marking documents as seen:", error);
     }
   };
 
@@ -165,17 +173,17 @@ const Chats = ({
   useEffect(() => {
     const handleReceiveDocument = ({ sender, receiver, document }) => {
       if (receiver === self?.username) {
-        setUnseenDocumentCounts(prev => ({
+        setUnseenDocumentCounts((prev) => ({
           ...prev,
-          [sender]: (prev[sender] || 0) + 1
+          [sender]: (prev[sender] || 0) + 1,
         }));
       }
     };
 
     const handleDocumentSeen = ({ receiver }) => {
-      setUnseenDocumentCounts(prev => ({
+      setUnseenDocumentCounts((prev) => ({
         ...prev,
-        [receiver]: 0
+        [receiver]: 0,
       }));
     };
 
@@ -223,8 +231,11 @@ const Chats = ({
               self={self}
               onBack={() => setIsDocumentMode(false)}
             />
+          ) : isAudioMode ? (
+            <AudioBox  onBack={() => setAudioMode(null)} />
           ) : (
             <Chatbox
+              setAudioMode={setAudioMode}
               userOnCall={userOnCall}
               localVideoRef={localVideoRef}
               setCallType={setCallType}
@@ -244,16 +255,18 @@ const Chats = ({
               selectedUserToChat={selectedUserToChat}
               setSelectedUserToChat={setSelectedUserToChat}
               onDocumentClick={handleDocumentModeToggle}
-              unseenDocumentCount={unseenDocumentCounts[selectedUserToChat] || 0}
+              unseenDocumentCount={
+                unseenDocumentCounts[selectedUserToChat] || 0
+              }
             />
           )}
         </div>
 
         {/* Details - desktop only, responsive width */}
         <div className="hidden lg:block lg:w-64 xl:w-72 2xl:w-80 flex-shrink-0">
-          <Details 
-            self={self} 
-            selectedUserToChat={selectedUserToChat} 
+          <Details
+            self={self}
+            selectedUserToChat={selectedUserToChat}
             onUserBlocked={handleUserBlocked}
           />
         </div>
@@ -323,7 +336,7 @@ const Chats = ({
                       <p className="text-sm text-gray-500">Online</p>
                     </div>
                   </div>
-                  
+
                   {/* Mobile Action Buttons */}
                   <div className="flex items-center gap-2">
                     <button
@@ -334,7 +347,9 @@ const Chats = ({
                       <IoDocumentText size={16} />
                       {unseenDocumentCounts[selectedUserToChat] > 0 && (
                         <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-bold border border-white">
-                          {unseenDocumentCounts[selectedUserToChat] > 9 ? '9+' : unseenDocumentCounts[selectedUserToChat]}
+                          {unseenDocumentCounts[selectedUserToChat] > 9
+                            ? "9+"
+                            : unseenDocumentCounts[selectedUserToChat]}
                         </span>
                       )}
                     </button>
@@ -356,8 +371,11 @@ const Chats = ({
                     self={self}
                     onBack={() => setIsDocumentMode(false)}
                   />
+                ) : isAudioMode ? (
+                  <AudioBox onBack={() => setAudioMode(null)} />
                 ) : (
                   <Chatbox
+                    setAudioMode={setAudioMode}
                     userOnCall={userOnCall}
                     localVideoRef={localVideoRef}
                     setCallType={setCallType}
@@ -377,7 +395,9 @@ const Chats = ({
                     selectedUserToChat={selectedUserToChat}
                     setSelectedUserToChat={setSelectedUserToChat}
                     onDocumentClick={handleDocumentModeToggle}
-                    unseenDocumentCount={unseenDocumentCounts[selectedUserToChat] || 0}
+                    unseenDocumentCount={
+                      unseenDocumentCounts[selectedUserToChat] || 0
+                    }
                   />
                 )
               ) : (

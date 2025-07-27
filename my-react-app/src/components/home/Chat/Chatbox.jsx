@@ -57,6 +57,7 @@ const Chatbox = ({
   onCall,
   peerConnection,
   onDocumentClick,
+  setAudioMode,
   unseenDocumentCount = 0,
 }) => {
   console.log("setOutGoingVideoCall:", setOutGoingVideoCall);
@@ -490,7 +491,10 @@ const Chatbox = ({
           </div>
 
           <div className="flex items-center gap-3">
-            <button className="!bg-purple-500 hover:!bg-purple-600 !shadow-lg !p-3 action-btn !rounded-full">
+            <button
+              onClick={() => setAudioMode(true)}
+              className="!bg-purple-500 hover:!bg-purple-600 !shadow-lg !p-3 action-btn !rounded-full"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
