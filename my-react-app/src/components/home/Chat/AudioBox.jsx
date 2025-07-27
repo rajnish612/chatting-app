@@ -23,6 +23,7 @@ const AudioBox = ({ onBack, selectedUserToChat, self, socket }) => {
 
   const [recording, setRecording] = React.useState(false);
   const [audioMessages, setAudioMessages] = React.useState([]);
+  const [isLoading, setIsLoading] = React.useState(false);
   const [getAudioMessages] = useMutation(getAudioMessagesQuery);
   const [audioURL, setAudioURL] = React.useState("");
   const [audioLevel, setAudioLevel] = React.useState(0);
@@ -309,6 +310,7 @@ const AudioBox = ({ onBack, selectedUserToChat, self, socket }) => {
       if (!selectedUserToChat || !self.username) return;
       
       try {
+        setIsLoading(true);
         const { data } = await getAudioMessages({
           variables: {
             sender: self.username,
@@ -318,6 +320,8 @@ const AudioBox = ({ onBack, selectedUserToChat, self, socket }) => {
         setAudioMessages(data.getAudioMessages || []);
       } catch (error) {
         console.error('Error fetching audio messages:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -408,7 +412,19 @@ const AudioBox = ({ onBack, selectedUserToChat, self, socket }) => {
       <div className="w-full overflow-y-scroll h-full mt-22 py-2 px-4">
         {/* Audio messages will be displayed here */}
         <div className="flex flex-col space-y-3">
-          {audioMessages && audioMessages.length > 0 ? (
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center h-full text-center py-16">
+              <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mb-6">
+                <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin"></div>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                Loading audio messages...
+              </h3>
+              <p className="text-gray-500 mb-6">
+                Please wait while we fetch your voice messages
+              </p>
+            </div>
+          ) : audioMessages && audioMessages.length > 0 ? (
             audioMessages.map((message, index) => (
                 <div
                   key={message._id || index}

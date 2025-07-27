@@ -173,13 +173,16 @@ const Chats = ({
         }
       );
 
-      // Update local counts
+      // Update local counts - clear unseen count for this sender
       setUnseenDocumentCounts((prev) => ({
         ...prev,
         [sender]: 0,
       }));
 
-      // Emit socket event
+      // Refresh the counts from server to ensure consistency
+      fetchUnseenDocumentCounts();
+
+      // Emit socket event to notify sender that receiver has seen the documents
       socket.emit("documentSeenByReceiver", { sender, receiver });
     } catch (error) {
       console.error("Error marking documents as seen:", error);
@@ -197,13 +200,16 @@ const Chats = ({
         }
       );
 
-      // Update local counts
+      // Update local counts - clear unseen count for this sender
       setUnseenAudioCounts((prev) => ({
         ...prev,
         [sender]: 0,
       }));
 
-      // Emit socket event
+      // Refresh the counts from server to ensure consistency
+      fetchUnseenAudioCounts();
+
+      // Emit socket event to notify sender that receiver has seen the audio messages
       socket.emit("audioMessageSeenByReceiver", { sender, receiver });
     } catch (error) {
       console.error("Error marking audio messages as seen:", error);

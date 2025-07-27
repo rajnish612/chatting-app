@@ -135,10 +135,11 @@ router.patch('/seen/conversation/:sender/:receiver', async (req, res) => {
   try {
     const { sender, receiver } = req.params;
 
+    // Mark documents as seen where sender sent to receiver
     await Document.updateMany(
       { 
-        sender: receiver, 
-        receiver: sender, 
+        sender: sender, 
+        receiver: receiver, 
         isSeen: false 
       },
       { isSeen: true }

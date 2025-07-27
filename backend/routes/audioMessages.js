@@ -8,10 +8,11 @@ router.patch('/seen/conversation/:sender/:receiver', async (req, res) => {
   try {
     const { sender, receiver } = req.params;
 
+    // Mark audio messages as seen where sender sent to receiver
     await AudioMessage.updateMany(
       { 
-        sender: receiver, 
-        receiver: sender, 
+        sender: sender, 
+        receiver: receiver, 
         isSeen: false 
       },
       { isSeen: true }

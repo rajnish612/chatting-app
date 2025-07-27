@@ -160,81 +160,132 @@ const resolver = {
       const self = await User.findOne({ username: selfUsername });
       console.log("DEBUG - self.blockedUsers:", self.blockedUsers);
       console.log("DEBUG - self.blockedBy:", self.blockedBy);
-      const chatUsersWithUnseen = await Message.aggregate([
-        {
-          $match: {
-            $or: [{ sender: selfUsername }, { receiver: selfUsername }],
-          },
-        },
-        {
-          $project: {
-            user: {
-              $cond: [
-                { $eq: ["$sender", selfUsername] },
-                "$receiver", // if you are sender, other user is receiver
-                "$sender", // else, other user is sender
-              ],
+      
+      // Get all users from messages, documents, and audio messages
+      const allChatUsers = await Promise.all([
+        // From regular messages
+        Message.aggregate([
+          {
+            $match: {
+              $or: [{ sender: selfUsername }, { receiver: selfUsername }],
             },
           },
-        },
-        {
-          $group: {
-            _id: "$user",
-            username: { $first: "$user" },
-          },
-        },
-        {
-          $lookup: {
-            from: "messages", // collection name must match your MongoDB collection
-            let: { otherUser: "$_id" },
-            pipeline: [
-              {
-                $match: {
-                  $expr: {
-                    $and: [
-                      { $eq: ["$receiver", selfUsername] },
-                      { $eq: ["$sender", "$$otherUser"] },
-                      { $eq: ["$isSeen", false] },
-                    ],
-                  },
-                },
+          {
+            $project: {
+              user: {
+                $cond: [
+                  { $eq: ["$sender", selfUsername] },
+                  "$receiver",
+                  "$sender",
+                ],
               },
-              { $count: "unseenCount" },
-            ],
-            as: "unseenMessages",
-          },
-        },
-        {
-          $lookup: {
-            from: "users",
-            localField: "username",
-            foreignField: "username",
-            as: "userDetails",
-          },
-        },
-        {
-          $match: {
-            $and: [
-              { "userDetails.0": { $exists: true } },
-              { "userDetails._id": { $nin: self.blockedUsers || [] } },
-              { "userDetails._id": { $nin: self.blockedBy || [] } },
-            ],
-          },
-        },
-        {
-          $project: {
-            _id: { $arrayElemAt: ["$userDetails._id", 0] },
-            username: "$username",
-            unseenCount: {
-              $cond: [
-                { $gt: [{ $size: "$unseenMessages" }, 0] },
-                { $arrayElemAt: ["$unseenMessages.unseenCount", 0] },
-                0,
-              ],
             },
           },
-        },
+          {
+            $group: {
+              _id: "$user",
+              username: { $first: "$user" },
+            },
+          },
+        ]),
+        // From documents
+        Document.aggregate([
+          {
+            $match: {
+              $or: [{ sender: selfUsername }, { receiver: selfUsername }],
+            },
+          },
+          {
+            $project: {
+              user: {
+                $cond: [
+                  { $eq: ["$sender", selfUsername] },
+                  "$receiver",
+                  "$sender",
+                ],
+              },
+            },
+          },
+          {
+            $group: {
+              _id: "$user",
+              username: { $first: "$user" },
+            },
+          },
+        ]),
+        // From audio messages
+        AudioMessage.aggregate([
+          {
+            $match: {
+              $or: [{ sender: selfUsername }, { receiver: selfUsername }],
+            },
+          },
+          {
+            $project: {
+              user: {
+                $cond: [
+                  { $eq: ["$sender", selfUsername] },
+                  "$receiver",
+                  "$sender",
+                ],
+              },
+            },
+          },
+          {
+            $group: {
+              _id: "$user",
+              username: { $first: "$user" },
+            },
+          },
+        ]),
       ]);
+
+      // Combine and deduplicate users
+      const uniqueUsers = new Map();
+      allChatUsers.flat().forEach(user => {
+        if (user.username) {
+          uniqueUsers.set(user.username, user);
+        }
+      });
+
+      // Convert back to array for further processing
+      const combinedUsers = Array.from(uniqueUsers.values());
+
+      // Now get unseen message counts for each user
+      const chatUsersWithUnseen = [];
+      for (const user of combinedUsers) {
+        // Get unseen text message count
+        const unseenMessages = await Message.aggregate([
+          {
+            $match: {
+              receiver: selfUsername,
+              sender: user.username,
+              isSeen: false,
+            },
+          },
+          { $count: "unseenCount" },
+        ]);
+
+        // Get user details and check if blocked
+        const userDetails = await User.findOne({ username: user.username });
+        if (!userDetails) continue;
+
+        // Check if user is blocked
+        const isBlocked = self.blockedUsers?.some(blockedId => 
+          blockedId.toString() === userDetails._id.toString()
+        ) || self.blockedBy?.some(blockedById => 
+          blockedById.toString() === userDetails._id.toString()
+        );
+
+        if (isBlocked) continue;
+
+        chatUsersWithUnseen.push({
+          _id: userDetails._id,
+          username: user.username,
+          unseenCount: unseenMessages.length > 0 ? unseenMessages[0].unseenCount : 0,
+        });
+      }
+
       console.log(
         "DEBUG - chatUsersWithUnseen:",
         JSON.stringify(chatUsersWithUnseen, null, 2)

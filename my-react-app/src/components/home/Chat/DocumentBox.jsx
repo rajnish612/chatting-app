@@ -32,6 +32,7 @@ const DocumentBox = ({
   const [documents, setDocuments] = useState([]);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [description, setDescription] = useState("");
   const fileInputRef = useRef(null);
   const documentsEndRef = useRef(null);
@@ -39,14 +40,17 @@ const DocumentBox = ({
   const [getDocuments] = useMutation(getDocumentsQuery, {
     onCompleted: (data) => {
       setDocuments(data.getDocuments || []);
+      setIsLoading(false);
     },
     onError: (err) => {
       console.error("Error fetching documents:", err);
+      setIsLoading(false);
     },
   });
 
   useEffect(() => {
     if (self?.username && selectedUserToChat) {
+      setIsLoading(true);
       getDocuments({
         variables: { sender: self.username, receiver: selectedUserToChat },
       });
@@ -204,7 +208,7 @@ const DocumentBox = ({
                 Documents with {selectedUserToChat}
               </h3>
               <p className="text-sm text-purple-600">
-                {documents.length} document{documents.length !== 1 ? 's' : ''} shared
+                {isLoading ? 'Loading...' : `${documents.length} document${documents.length !== 1 ? 's' : ''} shared`}
               </p>
             </div>
           </div>
@@ -213,7 +217,19 @@ const DocumentBox = ({
 
       {/* Documents Container */}
       <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
-        {documents.length === 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center h-full text-center">
+            <div className="w-32 h-32 bg-purple-100 rounded-full flex items-center justify-center mb-6">
+              <div className="w-16 h-16 border-4 border-purple-200 border-t-purple-500 rounded-full animate-spin"></div>
+            </div>
+            <h3 className="text-xl font-semibold text-gray-700 mb-2">
+              Loading documents...
+            </h3>
+            <p className="text-gray-500 mb-6">
+              Please wait while we fetch your documents
+            </p>
+          </div>
+        ) : documents.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div className="w-32 h-32 bg-purple-100 rounded-full flex items-center justify-center mb-6">
               <IoDocumentText className="w-16 h-16 text-purple-500" />
