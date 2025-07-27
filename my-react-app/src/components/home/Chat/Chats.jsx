@@ -232,7 +232,12 @@ const Chats = ({
               onBack={() => setIsDocumentMode(false)}
             />
           ) : isAudioMode ? (
-            <AudioBox  onBack={() => setAudioMode(null)} />
+            <AudioBox
+              selectedUserToChat={selectedUserToChat}
+              self={self}
+              socket={socket}
+              onBack={() => setAudioMode(null)}
+            />
           ) : (
             <Chatbox
               setAudioMode={setAudioMode}
@@ -372,7 +377,12 @@ const Chats = ({
                     onBack={() => setIsDocumentMode(false)}
                   />
                 ) : isAudioMode ? (
-                  <AudioBox onBack={() => setAudioMode(null)} />
+                  <AudioBox
+                    selectedUserToChat={selectedUserToChat}
+                    self={self}
+                    socket={socket}
+                    onBack={() => setAudioMode(null)}
+                  />
                 ) : (
                   <Chatbox
                     setAudioMode={setAudioMode}

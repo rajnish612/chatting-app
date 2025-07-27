@@ -13,6 +13,7 @@ import cors from "cors";
 import sharedsession from "express-socket.io-session";
 import Message from "./models/messages.js";
 import Document from "./models/documents.js";
+import AudioMessage from "./models/audioMessages.js";
 import { ApolloServer } from "@apollo/server";
 import typeDefs from "./graphql/schema.js";
 import resolver from "./graphql/resolver.js";
@@ -105,6 +106,65 @@ io.on("connection", (socket) => {
   socket.on("messageSeenByReceiver", async ({ sender, receiver }) => {
     io.to(sender).emit("messageSeen", { receiver });
   });
+
+  socket.on("sendAudioMessage", async ({ sender, receiver, audioData, duration, fileType }) => {
+    try {
+      // Validate required fields
+      if (!sender || !receiver || !audioData) {
+        console.error("Audio message validation failed: missing required fields", {
+          sender,
+          receiver,
+          audioData: audioData ? "provided" : "missing",
+        });
+        return;
+      }
+
+      // Validate audio data format
+      if (!audioData.startsWith('data:audio/')) {
+        console.error("Invalid audio data format");
+        return;
+      }
+
+      let newAudioMessage = new AudioMessage({
+        sender,
+        receiver,
+        audioData,
+        duration: duration || 0,
+        fileType: fileType || audioData.split(';')[0].split(':')[1], // Extract MIME type
+        isSeen: false,
+        isPlayed: false,
+      });
+      
+      await newAudioMessage.save();
+      
+      io.to(receiver).emit("receiveAudioMessage", { 
+        _id: newAudioMessage._id,
+        sender, 
+        receiver, 
+        audioData,
+        duration: duration || 0,
+        fileType: newAudioMessage.fileType,
+        timestamp: newAudioMessage.timestamp,
+        isSeen: false,
+        isPlayed: false
+      });
+    } catch (error) {
+      console.error("Error saving audio message:", error);
+    }
+  });
+
+  socket.on("audioMessageSeenByReceiver", async ({ sender, receiver }) => {
+    try {
+      await AudioMessage.updateMany(
+        { sender, receiver, isSeen: false },
+        { $set: { isSeen: true } }
+      );
+      io.to(sender).emit("audioMessageSeen", { receiver });
+    } catch (error) {
+      console.error("Error marking audio messages as seen:", error);
+    }
+  });
+
   socket.on("call-user", ({ from, to, offer, type }) => {
     console.log(from, to, type);
 

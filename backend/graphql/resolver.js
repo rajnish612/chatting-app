@@ -1,5 +1,6 @@
 import Message from "../models/messages.js";
 import Document from "../models/documents.js";
+import AudioMessage from "../models/audioMessages.js";
 import User from "../models/User.js";
 import OTP from "../models/OTP.js";
 import bcrypt from "bcrypt";
@@ -494,6 +495,27 @@ const resolver = {
         ],
       }).sort({ timestamp: 1 });
       return documents;
+    },
+    getAudioMessages: async (parent, args, { req }) => {
+      if (!req?.session?.user) return null;
+      const { sender, receiver } = args;
+      if (!sender || !receiver) throw new Error("Audio messages not available");
+      const audioMessages = await AudioMessage.find({
+        $or: [
+          { sender: sender, receiver: receiver },
+          { sender: receiver, receiver: sender },
+        ],
+      }).sort({ timestamp: 1 });
+      return audioMessages;
+    },
+    seeAudioMessages: async (parent, args) => {
+      const { sender, receiver } = args;
+      const audioMessages = await AudioMessage.updateMany(
+        { sender, receiver },
+        { $set: { isSeen: true } }
+      );
+      const updatedAudioMessages = await AudioMessage.find({ sender, receiver });
+      return updatedAudioMessages;
     },
     login: async (parent, args, { req }) => {
       const { email, password } = args;
