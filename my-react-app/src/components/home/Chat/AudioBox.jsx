@@ -111,7 +111,7 @@ const AudioBox = ({ onBack, selectedUserToChat, self, socket }) => {
   };
 
   const formatTime = (seconds) => {
-    if (isNaN(seconds) || !isFinite(seconds) || seconds < 0) {
+    if (isNaN(seconds) || !isFinite(seconds) || seconds < 0 || seconds === undefined || seconds === null) {
       return "0:00";
     }
     const mins = Math.floor(seconds / 60);
@@ -144,7 +144,16 @@ const AudioBox = ({ onBack, selectedUserToChat, self, socket }) => {
       [messageId]: currentTime
     }));
     
-    if (duration && !audioDurations[messageId]) {
+    if (duration && isFinite(duration) && duration > 0) {
+      setAudioDurations(prev => ({
+        ...prev,
+        [messageId]: duration
+      }));
+    }
+  };
+
+  const handleAudioLoadedMetadata = (messageId, duration) => {
+    if (duration && isFinite(duration) && duration > 0) {
       setAudioDurations(prev => ({
         ...prev,
         [messageId]: duration
@@ -230,9 +239,11 @@ const AudioBox = ({ onBack, selectedUserToChat, self, socket }) => {
         sender: self.username,
         receiver: selectedUserToChat,
         audioData: base64Audio,
-        duration: Math.floor(duration),
+        duration: Math.floor(duration) || recordingTime, // Use recordingTime as fallback
         fileType: 'audio/webm'
       };
+      
+      console.log('Sending audio message with duration:', audioMessage.duration, 'original duration:', duration, 'recordingTime:', recordingTime);
 
       socket.emit('sendAudioMessage', audioMessage);
       
@@ -242,7 +253,7 @@ const AudioBox = ({ onBack, selectedUserToChat, self, socket }) => {
         sender: self.username,
         receiver: selectedUserToChat,
         audioData: base64Audio,
-        duration: Math.floor(duration),
+        duration: Math.floor(duration) || recordingTime, // Use recordingTime as fallback
         fileType: 'audio/webm',
         timestamp: new Date().toISOString(),
         isSeen: false,
@@ -337,6 +348,30 @@ const AudioBox = ({ onBack, selectedUserToChat, self, socket }) => {
       socket.off('receiveAudioMessage', handleReceiveAudioMessage);
     };
   }, [socket, self.username, selectedUserToChat]);
+
+  // Initialize durations from message data and force metadata loading
+  React.useEffect(() => {
+    audioMessages.forEach(message => {
+      // Set duration from message data immediately if we don't have it
+      setAudioDurations(prev => {
+        if (!prev[message._id] && message.duration) {
+          return {
+            ...prev,
+            [message._id]: message.duration
+          };
+        }
+        return prev;
+      });
+      
+      // Force audio metadata loading
+      setTimeout(() => {
+        const audioElement = document.getElementById(`audio-${message._id}`);
+        if (audioElement) {
+          audioElement.load(); // Force metadata loading
+        }
+      }, 100);
+    });
+  }, [audioMessages]);
 
   return (
     <div className="relative h-screen flex  bg-slate-50 flex-col ">
@@ -450,7 +485,12 @@ const AudioBox = ({ onBack, selectedUserToChat, self, socket }) => {
                       id={`audio-${message._id}`}
                       src={message.audioData}
                       onTimeUpdate={(e) => handleAudioTimeUpdate(message._id, e.target.currentTime, e.target.duration)}
+                      onLoadedMetadata={(e) => handleAudioLoadedMetadata(message._id, e.target.duration)}
+                      onLoadedData={(e) => handleAudioLoadedMetadata(message._id, e.target.duration)}
+                      onCanPlay={(e) => handleAudioLoadedMetadata(message._id, e.target.duration)}
                       onEnded={() => handleAudioEnded(message._id)}
+                      preload="metadata"
+                      crossOrigin="anonymous"
                       className="!hidden"
                     />
                     
