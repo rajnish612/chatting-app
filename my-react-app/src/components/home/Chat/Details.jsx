@@ -1,139 +1,37 @@
-import { gql, useMutation } from "@apollo/client";
-import React, { useState } from "react";
+import { gql, useQuery } from "@apollo/client";
+import React from "react";
 import {
-  HiPhone,
-  HiVideoCamera,
-  HiMail,
   HiInformationCircle,
-  HiPhotograph,
-  HiLink,
-  HiDocument,
-  HiVolumeUp,
-  HiVolumeOff,
-  HiBell,
-  HiTrash,
-  HiUserAdd,
-  HiUserRemove,
-  HiX,
-  HiExclamation,
+  HiUsers,
+  HiUserGroup,
 } from "react-icons/hi";
-import { FaSpinner } from "react-icons/fa";
-const blockUserQuery = gql`
-  mutation blockUser($selfId: ID!, $username: String!) {
-    blockUser(selfId: $selfId, username: $username)
-  }
-`;
-
-const GET_CHATS = gql`
-  query {
-    getChats {
-      username
-      unseenCount
-    }
-  }
-`;
-
-const SELF_QUERY = gql`
-  query {
-    self {
+const GET_USER_QUERY = gql`
+  query getUser($username: String!) {
+    getUser(username: $username) {
       _id
-      email
       username
       name
       bio
-      followings {
-        _id
-        username
-        email
-        name
-        bio
-      }
       followers {
         _id
         username
-        email
         name
         bio
       }
-      blockedUsers {
+      followings {
         _id
         username
-        email
         name
         bio
       }
     }
   }
 `;
-const Details = ({ selectedUserToChat, self, onUserBlocked }) => {
-  const [blockUser, { loading: blockingUser }] = useMutation(blockUserQuery, {
-    refetchQueries: [
-      { query: GET_CHATS },
-      { query: SELF_QUERY }
-    ],
-    awaitRefetchQueries: true,
-    onCompleted: (data) => {
-      console.log(data);
-      setShowBlockModal(false);
-      setShowSuccessModal(true);
-      
-      // Notify parent component that user was blocked
-      if (onUserBlocked) {
-        onUserBlocked(selectedUserToChat);
-      }
-      
-      // Auto-hide success modal after 3 seconds
-      setTimeout(() => {
-        setShowSuccessModal(false);
-      }, 3000);
-    },
-    onError: (err) => {
-      console.error("Error blocking user:", err);
-      setShowBlockModal(false);
-      setBlockError(err.message || "Failed to block user. Please try again.");
-    },
+const Details = ({ selectedUserToChat }) => {
+  const { data, loading, error } = useQuery(GET_USER_QUERY, {
+    variables: { username: selectedUserToChat },
+    skip: !selectedUserToChat,
   });
-
-  const [isMuted, setIsMuted] = useState(false);
-  const [isNotificationsOn, setIsNotificationsOn] = useState(true);
-  const [showBlockModal, setShowBlockModal] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [blockError, setBlockError] = useState("");
-
-  const handleBlockUser = () => {
-    setBlockError("");
-    setShowBlockModal(true);
-  };
-
-  const confirmBlockUser = async () => {
-    setBlockError("");
-    
-    console.log("Debug - self object:", self);
-    console.log("Debug - self._id:", self?._id);
-    console.log("Debug - selectedUserToChat:", selectedUserToChat);
-    
-    if (!selectedUserToChat) {
-      setBlockError("No user selected to block.");
-      return;
-    }
-    
-    if (!self || !self._id) {
-      setBlockError("Session expired. Please refresh the page and try again.");
-      return;
-    }
-    
-    try {
-      await blockUser({
-        variables: { 
-          username: selectedUserToChat, 
-          selfId: self._id 
-        },
-      });
-    } catch (error) {
-      console.error("Block user error:", error);
-      setBlockError("Failed to block user. Please try again.");
-    }
-  };
   if (!selectedUserToChat) {
     return (
       <div className="w-full h-full bg-gray-50 border-l border-gray-200 flex items-center justify-center">
@@ -152,254 +50,114 @@ const Details = ({ selectedUserToChat, self, onUserBlocked }) => {
     );
   }
 
+  if (loading) {
+    return (
+      <div className="w-full h-full bg-white border-l border-gray-200 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading user info...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="w-full h-full bg-white border-l border-gray-200 flex items-center justify-center">
+        <div className="text-center px-6">
+          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <HiInformationCircle className="w-10 h-10 text-red-400" />
+          </div>
+          <h3 className="text-lg font-medium text-gray-600 mb-2">
+            Error loading user
+          </h3>
+          <p className="text-gray-500 text-sm">
+            Could not load user information
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const user = data?.getUser;
+
   return (
-    <div className="w-full h-full bg-white border-l border-gray-200 flex flex-col overflow-y-auto">
+    <div className="w-full h-full bg-gradient-to-br from-slate-50 to-blue-50 border-l border-slate-200 flex flex-col overflow-y-auto">
       {/* Header */}
-      <div className="p-6 border-b border-gray-100">
-        <h2 className="text-lg font-semibold text-gray-900">Contact Info</h2>
+      <div className="p-6 bg-white/80 backdrop-blur-sm border-b border-slate-200/50">
+        <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          Profile Info
+        </h2>
       </div>
 
       {/* Profile Section */}
-      <div className="p-6 border-b border-gray-100 text-center">
-        <div className="relative inline-block mb-4">
-          <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
-            <span className="text-3xl font-bold text-white">
-              {selectedUserToChat.charAt(0).toUpperCase()}
+      <div className="p-8 text-center bg-white/70 backdrop-blur-sm border-b border-slate-200/50">
+        <div className="relative inline-block mb-6">
+          <div className="w-32 h-32 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-2xl ring-4 ring-white/50 transition-transform hover:scale-105">
+            <span className="text-4xl font-bold text-white drop-shadow-sm">
+              {(user?.name || user?.username || selectedUserToChat).charAt(0).toUpperCase()}
             </span>
           </div>
-          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 border-3 border-white rounded-full"></div>
-        </div>
-        <h3 className="text-xl font-semibold text-gray-900 mb-1">
-          {selectedUserToChat}
-        </h3>
-        <p className="text-sm text-gray-500 mb-4">Last seen recently</p>
-
-        {/* Quick Actions */}
-        <div className="flex justify-center gap-4">
-          <button className="!p-3 !bg-green-500 hover:!bg-green-600 !text-white !rounded-full !transition-colors !shadow-lg">
-            <HiPhone className="w-5 h-5" />
-          </button>
-          <button className="!p-3 !bg-blue-500 hover:!bg-blue-600 !text-white !rounded-full !transition-colors !shadow-lg">
-            <HiVideoCamera className="w-5 h-5" />
-          </button>
-          <button className="!p-3 !bg-gray-500 hover:!bg-gray-600 !text-white !rounded-full !transition-colors !shadow-lg">
-            <HiMail className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-
-      {/* About Section */}
-      <div className="p-6 border-b border-gray-100">
-        <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
-          About
-        </h4>
-        <p className="text-gray-700">Hey there! I am using WhatsApp.</p>
-      </div>
-
-      {/* Media, Links, Docs */}
-      <div className="p-6 border-b border-gray-100">
-        <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
-          Media, Links and Docs
-        </h4>
-        <div className="grid grid-cols-3 gap-4">
-          <button className="!flex !flex-col !items-center !p-3 hover:!bg-gray-50 !rounded-lg !transition-colors">
-            <HiPhotograph className="w-6 h-6 text-blue-500 mb-1" />
-            <span className="text-xs text-gray-600">Media</span>
-            <span className="text-xs text-gray-500">12</span>
-          </button>
-          <button className="!flex !flex-col !items-center !p-3 hover:!bg-gray-50 !rounded-lg !transition-colors">
-            <HiLink className="w-6 h-6 text-green-500 mb-1" />
-            <span className="text-xs text-gray-600">Links</span>
-            <span className="text-xs text-gray-500">3</span>
-          </button>
-          <button className="!flex !flex-col !items-center !p-3 hover:!bg-gray-50 !rounded-lg !transition-colors">
-            <HiDocument className="w-6 h-6 text-purple-500 mb-1" />
-            <span className="text-xs text-gray-600">Docs</span>
-            <span className="text-xs text-gray-500">5</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Settings */}
-      <div className="p-6 space-y-4">
-        <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wide">
-          Settings
-        </h4>
-
-        {/* Mute Notifications */}
-        <button
-          onClick={() => setIsMuted(!isMuted)}
-          className="!w-full !flex !items-center !justify-between !p-3 hover:!bg-gray-50 !rounded-lg !transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            {isMuted ? (
-              <HiVolumeOff className="w-5 h-5 text-red-500" />
-            ) : (
-              <HiVolumeUp className="w-5 h-5 text-gray-600" />
-            )}
-            <span className="text-gray-700">
-              {isMuted ? "Unmute" : "Mute"} notifications
-            </span>
-          </div>
-          <div
-            className={`w-11 h-6 rounded-full transition-colors ${
-              isMuted ? "bg-red-500" : "bg-gray-300"
-            }`}
-          >
-            <div
-              className={`w-5 h-5 rounded-full bg-white shadow transform transition-transform ${
-                isMuted ? "translate-x-5" : "translate-x-0.5"
-              } mt-0.5`}
-            ></div>
-          </div>
-        </button>
-
-        {/* Notifications */}
-        <button
-          onClick={() => setIsNotificationsOn(!isNotificationsOn)}
-          className="!w-full !flex !items-center !justify-between !p-3 hover:!bg-gray-50 !rounded-lg !transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <HiBell
-              className={`w-5 h-5 ${
-                isNotificationsOn ? "text-blue-500" : "text-gray-400"
-              }`}
-            />
-            <span className="text-gray-700">Notifications</span>
-          </div>
-          <div
-            className={`w-11 h-6 rounded-full transition-colors ${
-              isNotificationsOn ? "bg-blue-500" : "bg-gray-300"
-            }`}
-          >
-            <div
-              className={`w-5 h-5 rounded-full bg-white shadow transform transition-transform ${
-                isNotificationsOn ? "translate-x-5" : "translate-x-0.5"
-              } mt-0.5`}
-            ></div>
-          </div>
-        </button>
-
-        {/* Block User */}
-        <button
-          onClick={handleBlockUser}
-          disabled={blockingUser}
-          className="!w-full !flex !items-center !gap-3 !p-3 hover:!bg-red-50 !rounded-lg !transition-colors !text-red-600 disabled:!opacity-50 disabled:!cursor-not-allowed"
-        >
-          {blockingUser ? (
-            <FaSpinner className="w-5 h-5 animate-spin" />
-          ) : (
-            <HiUserRemove className="w-5 h-5" />
-          )}
-          <span>
-            {blockingUser ? "Blocking..." : `Block ${selectedUserToChat}`}
-          </span>
-        </button>
-
-        {/* Delete Chat */}
-        <button className="!w-full !flex !items-center !gap-3 !p-3 hover:!bg-red-50 !rounded-lg !transition-colors !text-red-600">
-          <HiTrash className="w-5 h-5" />
-          <span>Delete chat</span>
-        </button>
-      </div>
-
-      {/* Block User Confirmation Modal */}
-      {showBlockModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full mx-4">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                <HiExclamation className="w-6 h-6 text-red-600" />
-              </div>
-              <h3 className="text-lg font-bold text-gray-900">Block User</h3>
-            </div>
-            
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to block <strong>{selectedUserToChat}</strong>? 
-              They won't be able to message you or see your profile.
-            </p>
-            
-            {blockError && (
-              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
-                {blockError}
-              </div>
-            )}
-            
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setShowBlockModal(false);
-                  setBlockError("");
-                }}
-                disabled={blockingUser}
-                className="!flex-1 !px-4 !py-2 !border !border-gray-300 !rounded-lg !text-gray-700 hover:!bg-gray-50 !transition-colors disabled:!opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmBlockUser}
-                disabled={blockingUser}
-                className="!flex-1 !px-4 !py-2 !bg-red-500 !text-white !rounded-lg hover:!bg-red-600 !transition-colors disabled:!bg-gray-400 !flex !items-center !justify-center !gap-2"
-              >
-                {blockingUser ? (
-                  <>
-                    <FaSpinner className="animate-spin" size={14} />
-                    Blocking...
-                  </>
-                ) : (
-                  'Block User'
-                )}
-              </button>
-            </div>
+          <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-gradient-to-br from-green-400 to-emerald-500 border-4 border-white rounded-full shadow-lg">
+            <div className="w-full h-full rounded-full bg-green-400 animate-pulse"></div>
           </div>
         </div>
-      )}
-
-      {/* Success Modal */}
-      {showSuccessModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full mx-4">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">User Blocked</h3>
-              <p className="text-gray-600 mb-4">
-                <strong>{selectedUserToChat}</strong> has been blocked successfully.
+        
+        <div className="space-y-2 mb-6">
+          <h3 className="text-2xl font-bold text-slate-800">
+            {user?.name || user?.username || selectedUserToChat}
+          </h3>
+          <p className="text-sm font-medium text-slate-500 bg-slate-100 rounded-full px-3 py-1 inline-block">
+            @{user?.username || selectedUserToChat}
+          </p>
+          {user?.bio && (
+            <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl border border-blue-100">
+              <p className="text-sm text-slate-700 font-medium italic leading-relaxed">
+                "{user.bio}"
               </p>
-              <button
-                onClick={() => setShowSuccessModal(false)}
-                className="!px-6 !py-2 !bg-green-500 !text-white !rounded-lg hover:!bg-green-600 !transition-colors"
-              >
-                OK
-              </button>
             </div>
-          </div>
+          )}
         </div>
-      )}
+      </div>
 
-      {/* Error Modal */}
-      {blockError && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full mx-4">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <HiX className="w-8 h-8 text-red-600" />
+      {/* Followers Section */}
+      <div className="p-8 bg-white/60 backdrop-blur-sm">
+        <div className="grid grid-cols-2 gap-6">
+          {/* Followers */}
+          <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-blue-100/50 text-center transition-all hover:shadow-xl hover:scale-105">
+            <div className="flex items-center justify-center mb-4">
+              <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full shadow-lg">
+                <HiUsers className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">Error</h3>
-              <p className="text-gray-600 mb-4">{blockError}</p>
-              <button
-                onClick={() => setBlockError("")}
-                className="!px-6 !py-2 !bg-red-500 !text-white !rounded-lg hover:!bg-red-600 !transition-colors"
-              >
-                Close
-              </button>
+            </div>
+            <div className="space-y-2">
+              <span className="text-xs font-bold text-blue-600 uppercase tracking-wider block">
+                Followers
+              </span>
+              <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
+                {user?.followers?.length || 0}
+              </div>
+            </div>
+          </div>
+
+          {/* Following */}
+          <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-green-100/50 text-center transition-all hover:shadow-xl hover:scale-105">
+            <div className="flex items-center justify-center mb-4">
+              <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full shadow-lg">
+                <HiUserGroup className="w-6 h-6 text-white" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <span className="text-xs font-bold text-green-600 uppercase tracking-wider block">
+                Following
+              </span>
+              <div className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-700 bg-clip-text text-transparent">
+                {user?.followings?.length || 0}
+              </div>
             </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };

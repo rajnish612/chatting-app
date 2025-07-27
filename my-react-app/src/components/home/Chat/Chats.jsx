@@ -108,17 +108,6 @@ const Chats = ({
     setIsDrawerOpen(false);
   };
 
-  // Handle user blocking - clear selected chat and refresh chat list
-  const handleUserBlocked = (blockedUsername) => {
-    // If the currently selected user was blocked, clear the selection
-    if (selectedUserToChat === blockedUsername) {
-      setSelectedUserToChat("");
-    }
-    // Refresh chat list to remove blocked user's chat
-    if (chatsrefetch) {
-      chatsrefetch();
-    }
-  };
 
   // Fetch unseen document counts
   const fetchUnseenDocumentCounts = async () => {
@@ -358,7 +347,6 @@ const Chats = ({
           <Details
             self={self}
             selectedUserToChat={selectedUserToChat}
-            onUserBlocked={handleUserBlocked}
           />
         </div>
       </div>
