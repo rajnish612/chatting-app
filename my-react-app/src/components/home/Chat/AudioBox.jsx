@@ -483,8 +483,7 @@ const AudioBox = ({ onBack, selectedUserToChat, self, socket }) => {
                             {formatTime(audioCurrentTime[message._id] || 0)}
                           </span>
                           <span>
-                            {console.log('🕒 DURATION RENDER:', message._id, 'audioDurations:', audioDurations[message._id], 'message.duration:', message.duration)}
-                            {formatTime(audioDurations[message._id] || message.duration || 0)}
+                            {formatTime(audioDurations[message._id] || message.duration || 15)}
                           </span>
                         </div>
                       </div>

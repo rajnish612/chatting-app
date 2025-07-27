@@ -36,6 +36,7 @@ const Chats = ({
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isDocumentMode, setIsDocumentMode] = useState(false);
   const [unseenDocumentCounts, setUnseenDocumentCounts] = useState({});
+  const [unseenAudioCounts, setUnseenAudioCounts] = useState({});
   const containerRef = useRef(null);
 
   // Minimum swipe distance to trigger navigation
@@ -140,6 +141,27 @@ const Chats = ({
     }
   };
 
+  // Fetch unseen audio message counts
+  const fetchUnseenAudioCounts = async () => {
+    if (!self?.username) return;
+
+    try {
+      const response = await fetch(
+        `http://localhost:3000/api/audio-messages/unseen-counts/${self.username}`,
+        {
+          credentials: "include",
+        }
+      );
+
+      if (response.ok) {
+        const counts = await response.json();
+        setUnseenAudioCounts(counts);
+      }
+    } catch (error) {
+      console.error("Error fetching unseen audio message counts:", error);
+    }
+  };
+
   // Mark documents as seen when entering document mode
   const markDocumentsAsSeen = async (sender, receiver) => {
     try {
@@ -164,9 +186,34 @@ const Chats = ({
     }
   };
 
-  // Fetch initial unseen document counts
+  // Mark audio messages as seen when entering audio mode
+  const markAudioMessagesAsSeen = async (sender, receiver) => {
+    try {
+      await fetch(
+        `http://localhost:3000/api/audio-messages/seen/conversation/${sender}/${receiver}`,
+        {
+          method: "PATCH",
+          credentials: "include",
+        }
+      );
+
+      // Update local counts
+      setUnseenAudioCounts((prev) => ({
+        ...prev,
+        [sender]: 0,
+      }));
+
+      // Emit socket event
+      socket.emit("audioMessageSeenByReceiver", { sender, receiver });
+    } catch (error) {
+      console.error("Error marking audio messages as seen:", error);
+    }
+  };
+
+  // Fetch initial unseen document and audio counts
   useEffect(() => {
     fetchUnseenDocumentCounts();
+    fetchUnseenAudioCounts();
   }, [self?.username]);
 
   // Socket listeners for document events
@@ -187,12 +234,32 @@ const Chats = ({
       }));
     };
 
+    const handleReceiveAudioMessage = ({ sender, receiver }) => {
+      if (receiver === self?.username) {
+        setUnseenAudioCounts((prev) => ({
+          ...prev,
+          [sender]: (prev[sender] || 0) + 1,
+        }));
+      }
+    };
+
+    const handleAudioMessageSeen = ({ receiver }) => {
+      setUnseenAudioCounts((prev) => ({
+        ...prev,
+        [receiver]: 0,
+      }));
+    };
+
     socket.on("receiveDocument", handleReceiveDocument);
     socket.on("documentSeen", handleDocumentSeen);
+    socket.on("receiveAudioMessage", handleReceiveAudioMessage);
+    socket.on("audioMessageSeen", handleAudioMessageSeen);
 
     return () => {
       socket.off("receiveDocument", handleReceiveDocument);
       socket.off("documentSeen", handleDocumentSeen);
+      socket.off("receiveAudioMessage", handleReceiveAudioMessage);
+      socket.off("audioMessageSeen", handleAudioMessageSeen);
     };
   }, [socket, self?.username]);
 
@@ -203,6 +270,15 @@ const Chats = ({
       markDocumentsAsSeen(selectedUserToChat, self?.username);
     }
     setIsDocumentMode(true);
+  };
+
+  // Handle audio mode switch
+  const handleAudioModeToggle = () => {
+    if (!isAudioMode && selectedUserToChat) {
+      // Mark audio messages as seen when entering audio mode
+      markAudioMessagesAsSeen(selectedUserToChat, self?.username);
+    }
+    setAudioMode(true);
   };
 
   return (
@@ -217,6 +293,7 @@ const Chats = ({
             self={self}
             chats={chats}
             unseenDocumentCounts={unseenDocumentCounts}
+            unseenAudioCounts={unseenAudioCounts}
           />
         </div>
 
@@ -240,7 +317,7 @@ const Chats = ({
             />
           ) : (
             <Chatbox
-              setAudioMode={setAudioMode}
+              setAudioMode={handleAudioModeToggle}
               userOnCall={userOnCall}
               localVideoRef={localVideoRef}
               setCallType={setCallType}
@@ -262,6 +339,9 @@ const Chats = ({
               onDocumentClick={handleDocumentModeToggle}
               unseenDocumentCount={
                 unseenDocumentCounts[selectedUserToChat] || 0
+              }
+              unseenAudioCount={
+                unseenAudioCounts[selectedUserToChat] || 0
               }
             />
           )}
@@ -304,6 +384,7 @@ const Chats = ({
             self={self}
             chats={chats}
             unseenDocumentCounts={unseenDocumentCounts}
+            unseenAudioCounts={unseenAudioCounts}
           />
         </div>
 
@@ -385,7 +466,7 @@ const Chats = ({
                   />
                 ) : (
                   <Chatbox
-                    setAudioMode={setAudioMode}
+                    setAudioMode={handleAudioModeToggle}
                     userOnCall={userOnCall}
                     localVideoRef={localVideoRef}
                     setCallType={setCallType}
@@ -407,6 +488,9 @@ const Chats = ({
                     onDocumentClick={handleDocumentModeToggle}
                     unseenDocumentCount={
                       unseenDocumentCounts[selectedUserToChat] || 0
+                    }
+                    unseenAudioCount={
+                      unseenAudioCounts[selectedUserToChat] || 0
                     }
                   />
                 )

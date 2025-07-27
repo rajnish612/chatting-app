@@ -4,6 +4,7 @@ import connectDB from "./lib/connection.js";
 import Authrouter from "./routes/auth.js";
 import Homerouter from "./routes/home.js";
 import Documentsrouter from "./routes/documents.js";
+import AudioMessagesrouter from "./routes/audioMessages.js";
 import { Server } from "socket.io";
 import http from "http";
 import session, { Cookie } from "express-session";
@@ -129,7 +130,7 @@ io.on("connection", (socket) => {
         sender,
         receiver,
         audioData,
-        duration: duration || 0,
+        duration: duration && duration > 0 ? duration : 15, // Default to 15 seconds if no valid duration
         fileType: fileType || audioData.split(';')[0].split(':')[1], // Extract MIME type
         isSeen: false,
         isPlayed: false,
@@ -142,7 +143,7 @@ io.on("connection", (socket) => {
         sender, 
         receiver, 
         audioData,
-        duration: duration || 0,
+        duration: duration && duration > 0 ? duration : 15,
         fileType: newAudioMessage.fileType,
         timestamp: newAudioMessage.timestamp,
         isSeen: false,
@@ -223,6 +224,7 @@ app.use(
 app.use("/api/auth", Authrouter);
 app.use("/api/users", Homerouter);
 app.use("/api/documents", Documentsrouter);
+app.use("/api/audio-messages", AudioMessagesrouter);
 
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

@@ -59,6 +59,7 @@ const Chatbox = ({
   onDocumentClick,
   setAudioMode,
   unseenDocumentCount = 0,
+  unseenAudioCount = 0,
 }) => {
   console.log("setOutGoingVideoCall:", setOutGoingVideoCall);
   const messagesEndRef = React.useRef(null);
@@ -492,8 +493,9 @@ const Chatbox = ({
 
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setAudioMode(true)}
-              className="!bg-purple-500 hover:!bg-purple-600 !shadow-lg !p-3 action-btn !rounded-full"
+              onClick={setAudioMode}
+              className="!bg-purple-500 hover:!bg-purple-600 !shadow-lg !p-3 action-btn !rounded-full !relative"
+              title="Audio Messages"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -509,6 +511,11 @@ const Chatbox = ({
                   d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z"
                 />
               </svg>
+              {unseenAudioCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold border-2 border-white">
+                  {unseenAudioCount > 99 ? "99+" : unseenAudioCount}
+                </span>
+              )}
             </button>
             <button
               onClick={onDocumentClick}
