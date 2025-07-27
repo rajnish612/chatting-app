@@ -18,7 +18,22 @@ type Message {
   receiver: String!
   isSeen: Boolean!
   content: String!
-   }
+}
+
+type Document {
+  _id: ID!
+  sender: String!
+  receiver: String!
+  fileName: String!
+  originalName: String!
+  fileSize: Int!
+  fileType: String!
+  filePath: String!
+  fileUrl: String!
+  description: String
+  timestamp: String!
+  isSeen: Boolean!
+}
 type Query {
   getChats: [chatPreview]
   getRandomUsers: [User]
@@ -46,6 +61,7 @@ type Mutation {
   register(email: String!, password: String!, username: String!, name: String, bio: String): String
   follow(userId: ID!): User
   getMessages(sender: String!, receiver: String!): [Message]
+  getDocuments(sender: String!, receiver: String!): [Document]
 }
 `;
 

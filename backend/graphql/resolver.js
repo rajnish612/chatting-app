@@ -1,4 +1,5 @@
 import Message from "../models/messages.js";
+import Document from "../models/documents.js";
 import User from "../models/User.js";
 import OTP from "../models/OTP.js";
 import bcrypt from "bcrypt";
@@ -481,6 +482,18 @@ const resolver = {
         ],
       });
       return messages;
+    },
+    getDocuments: async (parent, args, { req }) => {
+      if (!req?.session?.user) return null;
+      const { sender, receiver } = args;
+      if (!sender || !receiver) throw new Error("Documents not available");
+      const documents = await Document.find({
+        $or: [
+          { sender: sender, receiver: receiver },
+          { sender: receiver, receiver: sender },
+        ],
+      }).sort({ timestamp: 1 });
+      return documents;
     },
     login: async (parent, args, { req }) => {
       const { email, password } = args;

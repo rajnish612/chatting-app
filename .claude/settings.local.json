@@ -10,7 +10,8 @@
       "Bash(node:*)",
       "Bash(npx eslint:*)",
       "Bash(curl:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": []
   }

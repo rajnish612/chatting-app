@@ -14,6 +14,7 @@ import { IoArrowDown } from "react-icons/io5";
 import { BsCheckAll, BsCheck } from "react-icons/bs";
 import { IoArrowBack } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
+import { IoDocumentText } from "react-icons/io5";
 
 const isSeenQuery = gql`
   mutation SeeMessages($sender: String!, $receiver: String!) {
@@ -55,6 +56,7 @@ const Chatbox = ({
   localVideoRef,
   onCall,
   peerConnection,
+  onDocumentClick,
 }) => {
   console.log("setOutGoingVideoCall:", setOutGoingVideoCall);
   const messagesEndRef = React.useRef(null);
@@ -487,6 +489,13 @@ const Chatbox = ({
           </div>
 
           <div className="flex items-center gap-3">
+            <button
+              onClick={onDocumentClick}
+              className="action-btn p-3 rounded-full bg-purple-500 hover:bg-purple-600 text-white shadow-lg"
+              title="Share Documents"
+            >
+              <IoDocumentText size={18} />
+            </button>
             <button
               onClick={() => {
                 if (peerConnection.current) {

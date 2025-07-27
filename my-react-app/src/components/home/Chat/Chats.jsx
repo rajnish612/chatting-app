@@ -1,7 +1,9 @@
 import React, { useState, useRef } from "react";
 import { HiMenu, HiX } from "react-icons/hi";
+import { IoDocumentText, IoChatbubbleEllipses } from "react-icons/io5";
 import Chatlist from "./Chatlist";
 import Chatbox from "./Chatbox";
+import DocumentBox from "./DocumentBox";
 import Details from "./Details";
 
 const Chats = ({
@@ -30,6 +32,7 @@ const Chats = ({
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [isSwping, setIsSwping] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isDocumentMode, setIsDocumentMode] = useState(false);
   const containerRef = useRef(null);
 
   // Minimum swipe distance to trigger navigation
@@ -129,26 +132,38 @@ const Chats = ({
 
         {/* Chatbox - flexible middle section */}
         <div className="flex-1 min-w-0 max-w-none xl:max-w-3xl flex-col flex">
-          <Chatbox
-            userOnCall={userOnCall}
-            localVideoRef={localVideoRef}
-            setCallType={setCallType}
-            setUserOnCall={setUserOnCall}
-            peerConnection={peerConnection}
-            destroyPeerConnection={destroyPeerConnection}
-            showOutgoingCallModal={showOutgoingCallModal}
-            onCall={onCall}
-            setShowOutgoingCallModal={setShowOutgoingCallModal}
-            chatsrefetch={chatsrefetch}
-            setChats={setChats}
-            setUserMessages={setUserMessages}
-            setOutGoingVideoCall={setOutGoingVideoCall}
-            userMessages={userMessages}
-            socket={socket}
-            self={self}
-            selectedUserToChat={selectedUserToChat}
-            setSelectedUserToChat={setSelectedUserToChat}
-          />
+          {/* Content Area */}
+          {isDocumentMode ? (
+            <DocumentBox
+              selectedUserToChat={selectedUserToChat}
+              setSelectedUserToChat={setSelectedUserToChat}
+              socket={socket}
+              self={self}
+              onBack={() => setIsDocumentMode(false)}
+            />
+          ) : (
+            <Chatbox
+              userOnCall={userOnCall}
+              localVideoRef={localVideoRef}
+              setCallType={setCallType}
+              setUserOnCall={setUserOnCall}
+              peerConnection={peerConnection}
+              destroyPeerConnection={destroyPeerConnection}
+              showOutgoingCallModal={showOutgoingCallModal}
+              onCall={onCall}
+              setShowOutgoingCallModal={setShowOutgoingCallModal}
+              chatsrefetch={chatsrefetch}
+              setChats={setChats}
+              setUserMessages={setUserMessages}
+              setOutGoingVideoCall={setOutGoingVideoCall}
+              userMessages={userMessages}
+              socket={socket}
+              self={self}
+              selectedUserToChat={selectedUserToChat}
+              setSelectedUserToChat={setSelectedUserToChat}
+              onDocumentClick={() => setIsDocumentMode(true)}
+            />
+          )}
         </div>
 
         {/* Details - desktop only, responsive width */}
@@ -210,17 +225,30 @@ const Chats = ({
               </button>
 
               {selectedUserToChat ? (
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                    <span className="text-white font-bold">
-                      {selectedUserToChat.charAt(0).toUpperCase()}
-                    </span>
+                <div className="flex items-center justify-between flex-1">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                      <span className="text-white font-bold">
+                        {selectedUserToChat.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">
+                        {selectedUserToChat}
+                      </h3>
+                      <p className="text-sm text-gray-500">Online</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">
-                      {selectedUserToChat}
-                    </h3>
-                    <p className="text-sm text-gray-500">Online</p>
+                  
+                  {/* Mobile Action Buttons */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setIsDocumentMode(true)}
+                      className="p-2 rounded-full bg-purple-500 hover:bg-purple-600 text-white shadow-lg transition-all"
+                      title="Share Documents"
+                    >
+                      <IoDocumentText size={16} />
+                    </button>
                   </div>
                 </div>
               ) : (
@@ -231,26 +259,37 @@ const Chats = ({
             {/* Chatbox Content */}
             <div className="flex-1">
               {selectedUserToChat ? (
-                <Chatbox
-                  userOnCall={userOnCall}
-                  localVideoRef={localVideoRef}
-                  setCallType={setCallType}
-                  setUserOnCall={setUserOnCall}
-                  peerConnection={peerConnection}
-                  destroyPeerConnection={destroyPeerConnection}
-                  showOutgoingCallModal={showOutgoingCallModal}
-                  onCall={onCall}
-                  setShowOutgoingCallModal={setShowOutgoingCallModal}
-                  chatsrefetch={chatsrefetch}
-                  setChats={setChats}
-                  setUserMessages={setUserMessages}
-                  setOutGoingVideoCall={setOutGoingVideoCall}
-                  userMessages={userMessages}
-                  socket={socket}
-                  self={self}
-                  selectedUserToChat={selectedUserToChat}
-                  setSelectedUserToChat={setSelectedUserToChat}
-                />
+                isDocumentMode ? (
+                  <DocumentBox
+                    selectedUserToChat={selectedUserToChat}
+                    setSelectedUserToChat={setSelectedUserToChat}
+                    socket={socket}
+                    self={self}
+                    onBack={() => setIsDocumentMode(false)}
+                  />
+                ) : (
+                  <Chatbox
+                    userOnCall={userOnCall}
+                    localVideoRef={localVideoRef}
+                    setCallType={setCallType}
+                    setUserOnCall={setUserOnCall}
+                    peerConnection={peerConnection}
+                    destroyPeerConnection={destroyPeerConnection}
+                    showOutgoingCallModal={showOutgoingCallModal}
+                    onCall={onCall}
+                    setShowOutgoingCallModal={setShowOutgoingCallModal}
+                    chatsrefetch={chatsrefetch}
+                    setChats={setChats}
+                    setUserMessages={setUserMessages}
+                    setOutGoingVideoCall={setOutGoingVideoCall}
+                    userMessages={userMessages}
+                    socket={socket}
+                    self={self}
+                    selectedUserToChat={selectedUserToChat}
+                    setSelectedUserToChat={setSelectedUserToChat}
+                    onDocumentClick={() => setIsDocumentMode(true)}
+                  />
+                )
               ) : (
                 <div className="flex flex-col items-center justify-center h-full px-6 text-center">
                   <div className="w-64 h-64 mb-8">

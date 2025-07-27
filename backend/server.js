@@ -3,6 +3,7 @@ import bodyParser from "body-parser";
 import connectDB from "./lib/connection.js";
 import Authrouter from "./routes/auth.js";
 import Homerouter from "./routes/home.js";
+import Documentsrouter from "./routes/documents.js";
 import { Server } from "socket.io";
 import http from "http";
 import session, { Cookie } from "express-session";
@@ -11,10 +12,17 @@ import { expressMiddleware } from "@apollo/server/express4";
 import cors from "cors";
 import sharedsession from "express-socket.io-session";
 import Message from "./models/messages.js";
+import Document from "./models/documents.js";
 import { ApolloServer } from "@apollo/server";
 import typeDefs from "./graphql/schema.js";
 import resolver from "./graphql/resolver.js";
 import { upload } from "./lib/Uploader.js";
+import path from "path";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 dotenv.config();
 const app = express();
@@ -125,6 +133,15 @@ io.on("connection", (socket) => {
       from: from,
     });
   });
+
+  socket.on("sendDocument", async ({ sender, receiver, document }) => {
+    try {
+      io.to(receiver).emit("receiveDocument", { sender, receiver, document });
+    } catch (error) {
+      console.error("Error sending document:", error);
+    }
+  });
+
   socket.on("disconnect", () => {
     console.log("disconnected");
   });
@@ -141,5 +158,9 @@ app.use(
 );
 app.use("/api/auth", Authrouter);
 app.use("/api/users", Homerouter);
+app.use("/api/documents", Documentsrouter);
+
+// Serve uploaded files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 server.listen(3000, () => console.log("Server running on port 3000"));
