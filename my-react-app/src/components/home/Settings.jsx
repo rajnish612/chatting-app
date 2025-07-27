@@ -124,7 +124,7 @@ const Settings = ({ self, onLogout }) => {
               e.stopPropagation();
               onToggle(!toggleValue);
             }}
-            className="text-2xl transition-colors"
+            className="!text-2xl !transition-colors"
           >
             {toggleValue ? (
               <FaToggleOn className="text-blue-500" />
@@ -152,7 +152,7 @@ const Settings = ({ self, onLogout }) => {
                       {self?.name?.charAt(0)?.toUpperCase() || self?.username?.charAt(0)?.toUpperCase() || "U"}
                     </span>
                   </div>
-                  <button className="absolute -bottom-1 -right-1 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-colors">
+                  <button className="!absolute !-bottom-1 !-right-1 !w-8 !h-8 !bg-blue-500 !rounded-full !flex !items-center !justify-center !text-white hover:!bg-blue-600 !transition-colors">
                     <FaCamera size={12} />
                   </button>
                 </div>
@@ -503,8 +503,8 @@ const Settings = ({ self, onLogout }) => {
               <button
                 key={section.id}
                 onClick={() => setActiveSection(section.id)}
-                className={`sidebar-item w-full p-4 rounded-xl flex items-center gap-4 text-left ${
-                  activeSection === section.id ? "active" : "text-gray-700"
+                className={`sidebar-item !w-full !p-4 !rounded-xl !flex !items-center !gap-4 !text-left ${
+                  activeSection === section.id ? "active" : "!text-gray-700"
                 }`}
               >
                 <div
@@ -523,7 +523,7 @@ const Settings = ({ self, onLogout }) => {
             {/* Logout Button */}
             <button
               onClick={onLogout}
-              className="sidebar-item w-full p-4 rounded-xl flex items-center gap-4 text-left text-red-600 hover:bg-red-50 mt-8"
+              className="sidebar-item !w-full !p-4 !rounded-xl !flex !items-center !gap-4 !text-left !text-red-600 hover:!bg-red-50 !mt-8"
             >
               <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center text-red-600">
                 <FaSignOutAlt />
@@ -594,7 +594,7 @@ const Settings = ({ self, onLogout }) => {
                 </h3>
                 <button
                   onClick={() => setShowModal(false)}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  className="!p-2 hover:!bg-gray-100 !rounded-full !transition-colors"
                 >
                   <IoClose size={20} />
                 </button>
@@ -632,16 +632,16 @@ const Settings = ({ self, onLogout }) => {
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowModal(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="!flex-1 !px-4 !py-2 !border !border-gray-300 !rounded-lg !text-gray-700 hover:!bg-gray-50 !transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => setShowModal(false)}
-                  className={`flex-1 px-4 py-2 rounded-lg text-white transition-colors ${
+                  className={`!flex-1 !px-4 !py-2 !rounded-lg !text-white !transition-colors ${
                     modalType === "clearHistory"
-                      ? "bg-red-500 hover:bg-red-600"
-                      : "bg-blue-500 hover:bg-blue-600"
+                      ? "!bg-red-500 hover:!bg-red-600"
+                      : "!bg-blue-500 hover:!bg-blue-600"
                   }`}
                 >
                   {modalType === "clearHistory" && "Clear"}

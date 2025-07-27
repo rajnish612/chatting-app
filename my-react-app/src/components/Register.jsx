@@ -274,8 +274,8 @@ const Register = () => {
               <button
                 onClick={handleSubmit}
                 disabled={loading}
-                className={`btn-premium w-full px-6 py-3 text-white font-bold rounded-xl text-base mt-3 ${
-                  loading ? "opacity-50 cursor-not-allowed" : ""
+                className={`btn-premium !w-full !px-6 !py-3 !text-white !font-bold !rounded-xl !text-base !mt-3 ${
+                  loading ? "!opacity-50 !cursor-not-allowed" : ""
                 }`}
                 type="submit"
               >
@@ -310,7 +310,7 @@ const Register = () => {
                 Already have an account?{" "}
                 <span
                   onClick={() => navigate("/login")}
-                  className="text-blue-600 font-semibold cursor-pointer hover:text-blue-700"
+                  className="!text-blue-600 !font-semibold !cursor-pointer hover:!text-blue-700"
                 >
                   Sign in
                 </span>

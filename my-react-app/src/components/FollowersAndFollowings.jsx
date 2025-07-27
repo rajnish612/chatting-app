@@ -178,16 +178,16 @@ const FollowersAndFollowings = ({ self, setRefreshUsers }) => {
               <button
                 key={idx}
                 onClick={() => setSelectedIdx(idx)}
-                className={`tab-button flex items-center gap-3 px-8 py-4 font-semibold text-lg transition-all duration-300 ${
+                className={`tab-button flex items-center gap-3 !px-8 !py-4 !font-semibold !text-lg !transition-all !duration-300 ${
                   selectedIdx === idx
-                    ? "bg-blue-500 text-white shadow-lg rounded-xl transform scale-105"
-                    : "bg-gray-50 text-gray-600 hover:bg-gray-100 rounded-xl"
+                    ? "!bg-blue-500 !text-white !shadow-lg !rounded-xl !transform !scale-105"
+                    : "!bg-gray-50 !text-gray-600 hover:!bg-gray-100 !rounded-xl"
                 }`}
               >
                 <FaUsers size={20} />
                 {item}
-                <span className={`ml-2 px-2 py-1 rounded-full text-xs font-bold ${
-                  selectedIdx === idx ? "bg-white text-blue-500" : "bg-gray-200 text-gray-600"
+                <span className={`!ml-2 !px-2 !py-1 !rounded-full !text-xs !font-bold ${
+                  selectedIdx === idx ? "!bg-white !text-blue-500" : "!bg-gray-200 !text-gray-600"
                 }`}>
                   {selectedIdx === 0 ? self?.followers?.length || 0 : self?.followings?.length || 0}
                 </span>
@@ -273,11 +273,11 @@ const FollowersAndFollowings = ({ self, setRefreshUsers }) => {
                             setLoading(user?._id);
                             handleFollow(user?._id);
                           }}
-                          className={`follow-btn flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 min-w-32 justify-center ${
+                          className={`follow-btn !flex !items-center !gap-2 !px-6 !py-3 !rounded-xl !font-semibold !text-sm !transition-all !duration-300 !min-w-32 !justify-center ${
                             isFollowing
-                              ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg hover:shadow-xl"
-                              : "bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg hover:shadow-xl pulse-ring"
-                          } ${isLoading ? "opacity-70 cursor-not-allowed" : ""}`}
+                              ? "!bg-gradient-to-r !from-green-500 !to-emerald-500 !text-white !shadow-lg hover:!shadow-xl"
+                              : "!bg-gradient-to-r !from-blue-500 !to-purple-500 !text-white !shadow-lg hover:!shadow-xl pulse-ring"
+                          } ${isLoading ? "!opacity-70 !cursor-not-allowed" : ""}`}
                         >
                           {isLoading ? (
                             <FaSpinner className="animate-spin" />
@@ -302,7 +302,7 @@ const FollowersAndFollowings = ({ self, setRefreshUsers }) => {
                             setLoading(user?._id);
                             handleFollow(user?._id);
                           }}
-                          className="follow-btn flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg hover:shadow-xl transition-all duration-300 min-w-32 justify-center"
+                          className="follow-btn !flex !items-center !gap-2 !px-6 !py-3 !rounded-xl !font-semibold !text-sm !bg-gradient-to-r !from-green-500 !to-emerald-500 !text-white !shadow-lg hover:!shadow-xl !transition-all !duration-300 !min-w-32 !justify-center"
                         >
                           {isLoading ? (
                             <FaSpinner className="animate-spin" />

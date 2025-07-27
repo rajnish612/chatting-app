@@ -270,8 +270,8 @@ const Login = () => {
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className={`btn-premium w-full px-8 py-4 text-white font-bold rounded-2xl text-lg cursor-pointer border-none ${
-                loading ? "opacity-50 cursor-not-allowed" : ""
+              className={`btn-premium !w-full !px-8 !py-4 !text-white !font-bold !rounded-2xl !text-lg !cursor-pointer !border-none ${
+                loading ? "!opacity-50 !cursor-not-allowed" : ""
               }`}
               title="Sign In"
               type="submit"
@@ -305,7 +305,7 @@ const Login = () => {
               Don't have an account?{" "}
               <span 
                 onClick={() => navigate("/register")}
-                className="text-blue-600 font-semibold cursor-pointer hover:text-blue-700 transition-colors"
+                className="!text-blue-600 !font-semibold !cursor-pointer hover:!text-blue-700 !transition-colors"
               >
                 Sign up
               </span>

@@ -694,7 +694,7 @@ const Home = () => {
         <div className="absolute top-4 right-6 z-50">
           <button
             onClick={() => setOpen(true)}
-            className="glass-morphism floating-action p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110 group"
+            className="glass-morphism floating-action !p-3 !rounded-full !shadow-lg hover:!shadow-xl !transition-all !duration-300 !transform hover:!scale-110 group"
           >
             <SlOptions
               size={20}
@@ -730,7 +730,7 @@ const Home = () => {
             </div>
             <button
               onClick={() => setOpen(false)}
-              className="p-2 rounded-full hover:bg-white/10 transition-all duration-300 transform hover:scale-110"
+              className="!p-2 !rounded-full hover:!bg-white/10 !transition-all !duration-300 !transform hover:!scale-110"
             >
               <RxCross1 size={18} className="text-white" />
             </button>
@@ -745,15 +745,15 @@ const Home = () => {
                   setIdx(itemIdx);
                   setOpen(false);
                 }}
-                className={`drawer-button flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 transform hover:scale-105 ${
+                className={`drawer-button !flex !items-center !gap-4 !p-4 !rounded-2xl !transition-all !duration-300 !transform hover:!scale-105 ${
                   idx === itemIdx
-                    ? `bg-gradient-to-r ${item.color} shadow-lg text-white`
-                    : "hover:bg-white/10 text-gray-300 hover:text-white"
+                    ? `!bg-gradient-to-r ${item.color} !shadow-lg !text-white`
+                    : "hover:!bg-white/10 !text-gray-300 hover:!text-white"
                 }`}
               >
                 <div
-                  className={`p-2 rounded-lg ${
-                    idx === itemIdx ? "bg-white/20" : "bg-white/10"
+                  className={`!p-2 !rounded-lg ${
+                    idx === itemIdx ? "!bg-white/20" : "!bg-white/10"
                   }`}
                 >
                   {item.icon}

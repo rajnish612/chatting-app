@@ -188,7 +188,7 @@ const DocumentBox = ({
         <div className="flex items-center gap-4">
           <button
             onClick={onBack}
-            className="p-2 rounded-full hover:bg-purple-100 transition-colors"
+            className="!p-2 !rounded-full hover:!bg-purple-100 !transition-colors"
           >
             <IoArrowBack className="text-purple-600" size={20} />
           </button>
@@ -290,10 +290,10 @@ const DocumentBox = ({
                             link.download = doc.originalName;
                             link.click();
                           }}
-                          className={`p-1 rounded-full transition-colors ${
+                          className={`!p-1 !rounded-full !transition-colors ${
                             isOwn 
-                              ? 'hover:bg-white/20 text-white' 
-                              : 'hover:bg-purple-100 text-purple-600'
+                              ? 'hover:!bg-white/20 !text-white' 
+                              : 'hover:!bg-purple-100 !text-purple-600'
                           }`}
                         >
                           <MdDownload size={16} />
@@ -338,7 +338,7 @@ const DocumentBox = ({
                     </div>
                     <button
                       onClick={() => removeFile(index)}
-                      className="p-1 rounded-full hover:bg-purple-200 transition-colors"
+                      className="!p-1 !rounded-full hover:!bg-purple-200 !transition-colors"
                     >
                       <MdClose size={16} className="text-gray-600" />
                     </button>
@@ -366,17 +366,17 @@ const DocumentBox = ({
                   setDescription("");
                   if (fileInputRef.current) fileInputRef.current.value = '';
                 }}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                className="!px-4 !py-2 !text-gray-600 hover:!bg-gray-100 !rounded-lg !transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={uploadDocuments}
                 disabled={isUploading}
-                className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${
+                className={`!px-6 !py-2 !rounded-lg !font-medium !transition-all !duration-200 !flex !items-center !gap-2 ${
                   isUploading
-                    ? "bg-gray-400 text-white cursor-not-allowed"
-                    : "bg-purple-500 hover:bg-purple-600 text-white"
+                    ? "!bg-gray-400 !text-white !cursor-not-allowed"
+                    : "!bg-purple-500 hover:!bg-purple-600 !text-white"
                 }`}
               >
                 {isUploading ? (

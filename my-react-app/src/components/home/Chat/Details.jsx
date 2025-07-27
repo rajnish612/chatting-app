@@ -176,13 +176,13 @@ const Details = ({ selectedUserToChat, self, onUserBlocked }) => {
 
         {/* Quick Actions */}
         <div className="flex justify-center gap-4">
-          <button className="p-3 bg-green-500 hover:bg-green-600 text-white rounded-full transition-colors shadow-lg">
+          <button className="!p-3 !bg-green-500 hover:!bg-green-600 !text-white !rounded-full !transition-colors !shadow-lg">
             <HiPhone className="w-5 h-5" />
           </button>
-          <button className="p-3 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-colors shadow-lg">
+          <button className="!p-3 !bg-blue-500 hover:!bg-blue-600 !text-white !rounded-full !transition-colors !shadow-lg">
             <HiVideoCamera className="w-5 h-5" />
           </button>
-          <button className="p-3 bg-gray-500 hover:bg-gray-600 text-white rounded-full transition-colors shadow-lg">
+          <button className="!p-3 !bg-gray-500 hover:!bg-gray-600 !text-white !rounded-full !transition-colors !shadow-lg">
             <HiMail className="w-5 h-5" />
           </button>
         </div>
@@ -202,17 +202,17 @@ const Details = ({ selectedUserToChat, self, onUserBlocked }) => {
           Media, Links and Docs
         </h4>
         <div className="grid grid-cols-3 gap-4">
-          <button className="flex flex-col items-center p-3 hover:bg-gray-50 rounded-lg transition-colors">
+          <button className="!flex !flex-col !items-center !p-3 hover:!bg-gray-50 !rounded-lg !transition-colors">
             <HiPhotograph className="w-6 h-6 text-blue-500 mb-1" />
             <span className="text-xs text-gray-600">Media</span>
             <span className="text-xs text-gray-500">12</span>
           </button>
-          <button className="flex flex-col items-center p-3 hover:bg-gray-50 rounded-lg transition-colors">
+          <button className="!flex !flex-col !items-center !p-3 hover:!bg-gray-50 !rounded-lg !transition-colors">
             <HiLink className="w-6 h-6 text-green-500 mb-1" />
             <span className="text-xs text-gray-600">Links</span>
             <span className="text-xs text-gray-500">3</span>
           </button>
-          <button className="flex flex-col items-center p-3 hover:bg-gray-50 rounded-lg transition-colors">
+          <button className="!flex !flex-col !items-center !p-3 hover:!bg-gray-50 !rounded-lg !transition-colors">
             <HiDocument className="w-6 h-6 text-purple-500 mb-1" />
             <span className="text-xs text-gray-600">Docs</span>
             <span className="text-xs text-gray-500">5</span>
@@ -229,7 +229,7 @@ const Details = ({ selectedUserToChat, self, onUserBlocked }) => {
         {/* Mute Notifications */}
         <button
           onClick={() => setIsMuted(!isMuted)}
-          className="w-full flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors"
+          className="!w-full !flex !items-center !justify-between !p-3 hover:!bg-gray-50 !rounded-lg !transition-colors"
         >
           <div className="flex items-center gap-3">
             {isMuted ? (
@@ -257,7 +257,7 @@ const Details = ({ selectedUserToChat, self, onUserBlocked }) => {
         {/* Notifications */}
         <button
           onClick={() => setIsNotificationsOn(!isNotificationsOn)}
-          className="w-full flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors"
+          className="!w-full !flex !items-center !justify-between !p-3 hover:!bg-gray-50 !rounded-lg !transition-colors"
         >
           <div className="flex items-center gap-3">
             <HiBell
@@ -284,7 +284,7 @@ const Details = ({ selectedUserToChat, self, onUserBlocked }) => {
         <button
           onClick={handleBlockUser}
           disabled={blockingUser}
-          className="w-full flex items-center gap-3 p-3 hover:bg-red-50 rounded-lg transition-colors text-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="!w-full !flex !items-center !gap-3 !p-3 hover:!bg-red-50 !rounded-lg !transition-colors !text-red-600 disabled:!opacity-50 disabled:!cursor-not-allowed"
         >
           {blockingUser ? (
             <FaSpinner className="w-5 h-5 animate-spin" />
@@ -297,7 +297,7 @@ const Details = ({ selectedUserToChat, self, onUserBlocked }) => {
         </button>
 
         {/* Delete Chat */}
-        <button className="w-full flex items-center gap-3 p-3 hover:bg-red-50 rounded-lg transition-colors text-red-600">
+        <button className="!w-full !flex !items-center !gap-3 !p-3 hover:!bg-red-50 !rounded-lg !transition-colors !text-red-600">
           <HiTrash className="w-5 h-5" />
           <span>Delete chat</span>
         </button>
@@ -332,14 +332,14 @@ const Details = ({ selectedUserToChat, self, onUserBlocked }) => {
                   setBlockError("");
                 }}
                 disabled={blockingUser}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                className="!flex-1 !px-4 !py-2 !border !border-gray-300 !rounded-lg !text-gray-700 hover:!bg-gray-50 !transition-colors disabled:!opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmBlockUser}
                 disabled={blockingUser}
-                className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:bg-gray-400 flex items-center justify-center gap-2"
+                className="!flex-1 !px-4 !py-2 !bg-red-500 !text-white !rounded-lg hover:!bg-red-600 !transition-colors disabled:!bg-gray-400 !flex !items-center !justify-center !gap-2"
               >
                 {blockingUser ? (
                   <>
@@ -371,7 +371,7 @@ const Details = ({ selectedUserToChat, self, onUserBlocked }) => {
               </p>
               <button
                 onClick={() => setShowSuccessModal(false)}
-                className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                className="!px-6 !py-2 !bg-green-500 !text-white !rounded-lg hover:!bg-green-600 !transition-colors"
               >
                 OK
               </button>
@@ -392,7 +392,7 @@ const Details = ({ selectedUserToChat, self, onUserBlocked }) => {
               <p className="text-gray-600 mb-4">{blockError}</p>
               <button
                 onClick={() => setBlockError("")}
-                className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                className="!px-6 !py-2 !bg-red-500 !text-white !rounded-lg hover:!bg-red-600 !transition-colors"
               >
                 Close
               </button>

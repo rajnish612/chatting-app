@@ -225,7 +225,7 @@ const Search = ({ setRefreshUsers, self, setIdx, setSelectedUserToChat }) => {
           setSelectedUserToChat(user.username);
           setIdx(0);
         }}
-        className="p-2 hover:scale-[1.1] bg-blue-300 rounded-full"
+        className="!p-2 hover:!scale-[1.1] !bg-blue-300 !rounded-full"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -249,13 +249,13 @@ const Search = ({ setRefreshUsers, self, setIdx, setSelectedUserToChat }) => {
           onFollow(user._id, isSearchResult ? setSearchedUsers : setUsers);
         }}
         disabled={loading}
-        className={`follow-btn px-4 py-2 rounded-xl font-medium flex items-center gap-2 transition-all duration-300 ${
+        className={`follow-btn !px-4 !py-2 !rounded-xl !font-medium !flex !items-center !gap-2 !transition-all !duration-300 ${
           self?.followings?.some(following => 
             typeof following === 'object' ? following._id === user._id : following === user._id
           )
-            ? "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            : "bg-blue-500 text-white hover:bg-blue-600 hover:scale-105"
-        } disabled:opacity-50 disabled:cursor-not-allowed`}
+            ? "!bg-gray-100 !text-gray-600 hover:!bg-gray-200"
+            : "!bg-blue-500 !text-white hover:!bg-blue-600 hover:!scale-105"
+        } disabled:!opacity-50 disabled:!cursor-not-allowed`}
       >
         {getFollowButtonIcon(user)}
         <span className="text-sm">{getFollowButtonText(user)}</span>
@@ -295,7 +295,7 @@ const Search = ({ setRefreshUsers, self, setIdx, setSelectedUserToChat }) => {
             <div className="flex gap-2 justify-center">
               <button 
                 onClick={() => window.location.reload()} 
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                className="!px-4 !py-2 !bg-blue-500 !text-white !rounded-lg hover:!bg-blue-600 !transition-colors"
               >
                 Retry
               </button>
@@ -306,7 +306,7 @@ const Search = ({ setRefreshUsers, self, setIdx, setSelectedUserToChat }) => {
                     console.log("cd backend && node scripts/cleanUserReferences.js");
                     alert("Check the console for database cleanup instructions");
                   }}
-                  className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                  className="!px-4 !py-2 !bg-orange-500 !text-white !rounded-lg hover:!bg-orange-600 !transition-colors"
                 >
                   Show Fix
                 </button>
@@ -449,7 +449,7 @@ const Search = ({ setRefreshUsers, self, setIdx, setSelectedUserToChat }) => {
                     setSearchTerm("");
                     setSearchedUsers([]);
                   }}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  className="!p-2 hover:!bg-gray-100 !rounded-full !transition-colors"
                 >
                   <IoClose className="text-gray-400" size={20} />
                 </button>

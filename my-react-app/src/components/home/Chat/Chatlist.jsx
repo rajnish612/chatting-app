@@ -131,7 +131,7 @@ const Chatlist = ({
                 <button
                   key={`following-${index}`}
                   onClick={() => setSelectedUserToChat(chat.username)}
-                  className={`chat-item w-full p-3 md:p-4 flex items-center text-left ${
+                  className={`chat-item !w-full !p-3 md:!p-4 !flex !items-center !text-left ${
                     selectedUserToChat === chat.username ? "active" : ""
                   }`}
                 >
@@ -188,7 +188,7 @@ const Chatlist = ({
                 <button
                   key={`chat-${index}`}
                   onClick={() => setSelectedUserToChat(chat.username)}
-                  className={`chat-item w-full p-3 md:p-4 flex items-center text-left ${
+                  className={`chat-item !w-full !p-3 md:!p-4 !flex !items-center !text-left ${
                     selectedUserToChat === chat.username ? "active" : ""
                   }`}
                 >

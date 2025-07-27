@@ -466,7 +466,7 @@ const Chatbox = ({
             {/* Mobile back button - only show on mobile */}
             <button
               onClick={() => setSelectedUserToChat("")}
-              className="md:hidden p-2 rounded-full hover:bg-gray-100 transition-colors"
+              className="md:hidden !p-2 !rounded-full hover:!bg-gray-100 !transition-colors"
             >
               <IoArrowBack className="text-gray-600" size={20} />
             </button>
@@ -492,7 +492,7 @@ const Chatbox = ({
           <div className="flex items-center gap-3">
             <button
               onClick={onDocumentClick}
-              className="action-btn p-3 rounded-full bg-purple-500 hover:bg-purple-600 text-white shadow-lg relative"
+              className="action-btn !p-3 !rounded-full !bg-purple-500 hover:!bg-purple-600 !text-white !shadow-lg !relative"
               title="Share Documents"
             >
               <IoDocumentText size={18} />
@@ -511,7 +511,7 @@ const Chatbox = ({
                 setShowOutgoingCallModal(true);
                 handleAudioCall();
               }}
-              className="action-btn p-3 rounded-full bg-blue-500 hover:bg-blue-600 text-white shadow-lg"
+              className="action-btn !p-3 !rounded-full !bg-blue-500 hover:!bg-blue-600 !text-white !shadow-lg"
             >
               <FaPhoneAlt size={16} />
             </button>
@@ -524,7 +524,7 @@ const Chatbox = ({
 
                 handleVideoCall(); // Use video call function
               }}
-              className="action-btn p-3 rounded-full bg-green-500 hover:bg-green-600 text-white shadow-lg"
+              className="action-btn !p-3 !rounded-full !bg-green-500 hover:!bg-green-600 !text-white !shadow-lg"
             >
               <FaVideo size={18} />
             </button>
@@ -536,7 +536,7 @@ const Chatbox = ({
           {/* Scroll Down Button */}
           {showScrollDownArrow && (
             <button
-              className="scroll-down-btn absolute bottom-6 right-6 z-10 w-12 h-12 bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300"
+              className="scroll-down-btn !absolute !bottom-6 !right-6 !z-10 !w-12 !h-12 !bg-blue-500 hover:!bg-blue-600 !text-white !rounded-full !shadow-lg !flex !items-center !justify-center !transition-all !duration-300"
               onClick={scrollToBottom}
             >
               <IoArrowDown size={20} />
@@ -659,7 +659,7 @@ const Chatbox = ({
             <div className="relative">
               <button
                 onClick={() => setEmojiOpen((prev) => !prev)}
-                className="action-btn p-2 text-blue-500  hover:bg-blue-50 rounded-full transition-colors"
+                className="action-btn !p-2 !text-blue-500 hover:!bg-blue-50 !rounded-full !transition-colors"
               >
                 <MdOutlineEmojiEmotions size={24} />
               </button>
@@ -699,7 +699,7 @@ const Chatbox = ({
             </div>
 
             {/* Voice Message Button */}
-            <button className="action-btn p-2 text-blue-500 hover:bg-blue-50 rounded-full transition-colors">
+            <button className="action-btn !p-2 !text-blue-500 hover:!bg-blue-50 !rounded-full !transition-colors">
               <MdOutlineKeyboardVoice size={24} />
             </button>
 
@@ -707,10 +707,10 @@ const Chatbox = ({
             <button
               onClick={handleSend}
               disabled={!content.trim() || !self?.username}
-              className={`action-btn p-3 rounded-full shadow-lg transition-all duration-200 ${
+              className={`action-btn !p-3 !rounded-full !shadow-lg !transition-all !duration-200 ${
                 content.trim() && self?.username
-                  ? "bg-blue-500 hover:bg-blue-600 text-white"
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  ? "!bg-blue-500 hover:!bg-blue-600 !text-white"
+                  : "!bg-gray-300 !text-gray-500 !cursor-not-allowed"
               }`}
             >
               <IoIosSend size={20} />
