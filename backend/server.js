@@ -142,6 +142,10 @@ io.on("connection", (socket) => {
     }
   });
 
+  socket.on("documentSeenByReceiver", async ({ sender, receiver }) => {
+    io.to(sender).emit("documentSeen", { receiver });
+  });
+
   socket.on("disconnect", () => {
     console.log("disconnected");
   });

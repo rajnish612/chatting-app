@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { HiMenu, HiX } from "react-icons/hi";
 import { IoDocumentText, IoChatbubbleEllipses } from "react-icons/io5";
 import Chatlist from "./Chatlist";
@@ -33,6 +33,7 @@ const Chats = ({
   const [isSwping, setIsSwping] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isDocumentMode, setIsDocumentMode] = useState(false);
+  const [unseenDocumentCounts, setUnseenDocumentCounts] = useState({});
   const containerRef = useRef(null);
 
   // Minimum swipe distance to trigger navigation
@@ -116,6 +117,86 @@ const Chats = ({
     }
   };
 
+  // Fetch unseen document counts
+  const fetchUnseenDocumentCounts = async () => {
+    if (!self?.username) return;
+    
+    try {
+      const response = await fetch(`http://localhost:3000/api/documents/unseen-counts/${self.username}`, {
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const counts = await response.json();
+        setUnseenDocumentCounts(counts);
+      }
+    } catch (error) {
+      console.error('Error fetching unseen document counts:', error);
+    }
+  };
+
+  // Mark documents as seen when entering document mode
+  const markDocumentsAsSeen = async (sender, receiver) => {
+    try {
+      await fetch(`http://localhost:3000/api/documents/seen/conversation/${sender}/${receiver}`, {
+        method: 'PATCH',
+        credentials: 'include'
+      });
+      
+      // Update local counts
+      setUnseenDocumentCounts(prev => ({
+        ...prev,
+        [sender]: 0
+      }));
+      
+      // Emit socket event
+      socket.emit("documentSeenByReceiver", { sender, receiver });
+    } catch (error) {
+      console.error('Error marking documents as seen:', error);
+    }
+  };
+
+  // Fetch initial unseen document counts
+  useEffect(() => {
+    fetchUnseenDocumentCounts();
+  }, [self?.username]);
+
+  // Socket listeners for document events
+  useEffect(() => {
+    const handleReceiveDocument = ({ sender, receiver, document }) => {
+      if (receiver === self?.username) {
+        setUnseenDocumentCounts(prev => ({
+          ...prev,
+          [sender]: (prev[sender] || 0) + 1
+        }));
+      }
+    };
+
+    const handleDocumentSeen = ({ receiver }) => {
+      setUnseenDocumentCounts(prev => ({
+        ...prev,
+        [receiver]: 0
+      }));
+    };
+
+    socket.on("receiveDocument", handleReceiveDocument);
+    socket.on("documentSeen", handleDocumentSeen);
+
+    return () => {
+      socket.off("receiveDocument", handleReceiveDocument);
+      socket.off("documentSeen", handleDocumentSeen);
+    };
+  }, [socket, self?.username]);
+
+  // Handle document mode switch
+  const handleDocumentModeToggle = () => {
+    if (!isDocumentMode && selectedUserToChat) {
+      // Mark documents as seen when entering document mode
+      markDocumentsAsSeen(selectedUserToChat, self?.username);
+    }
+    setIsDocumentMode(true);
+  };
+
   return (
     <div className="h-screen bg-white w-full flex overflow-hidden relative">
       {/* Desktop Layout */}
@@ -127,6 +208,7 @@ const Chats = ({
             selectedUserToChat={selectedUserToChat}
             self={self}
             chats={chats}
+            unseenDocumentCounts={unseenDocumentCounts}
           />
         </div>
 
@@ -161,7 +243,8 @@ const Chats = ({
               self={self}
               selectedUserToChat={selectedUserToChat}
               setSelectedUserToChat={setSelectedUserToChat}
-              onDocumentClick={() => setIsDocumentMode(true)}
+              onDocumentClick={handleDocumentModeToggle}
+              unseenDocumentCount={unseenDocumentCounts[selectedUserToChat] || 0}
             />
           )}
         </div>
@@ -202,6 +285,7 @@ const Chats = ({
             selectedUserToChat={selectedUserToChat}
             self={self}
             chats={chats}
+            unseenDocumentCounts={unseenDocumentCounts}
           />
         </div>
 
@@ -243,11 +327,16 @@ const Chats = ({
                   {/* Mobile Action Buttons */}
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => setIsDocumentMode(true)}
-                      className="p-2 rounded-full bg-purple-500 hover:bg-purple-600 text-white shadow-lg transition-all"
+                      onClick={handleDocumentModeToggle}
+                      className="p-2 rounded-full bg-purple-500 hover:bg-purple-600 text-white shadow-lg transition-all relative"
                       title="Share Documents"
                     >
                       <IoDocumentText size={16} />
+                      {unseenDocumentCounts[selectedUserToChat] > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-bold border border-white">
+                          {unseenDocumentCounts[selectedUserToChat] > 9 ? '9+' : unseenDocumentCounts[selectedUserToChat]}
+                        </span>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -287,7 +376,8 @@ const Chats = ({
                     self={self}
                     selectedUserToChat={selectedUserToChat}
                     setSelectedUserToChat={setSelectedUserToChat}
-                    onDocumentClick={() => setIsDocumentMode(true)}
+                    onDocumentClick={handleDocumentModeToggle}
+                    unseenDocumentCount={unseenDocumentCounts[selectedUserToChat] || 0}
                   />
                 )
               ) : (

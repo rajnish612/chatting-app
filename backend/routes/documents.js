@@ -130,4 +130,57 @@ router.patch('/seen/:documentId', async (req, res) => {
   }
 });
 
+// Mark all documents as seen for a conversation
+router.patch('/seen/conversation/:sender/:receiver', async (req, res) => {
+  try {
+    const { sender, receiver } = req.params;
+
+    await Document.updateMany(
+      { 
+        sender: receiver, 
+        receiver: sender, 
+        isSeen: false 
+      },
+      { isSeen: true }
+    );
+
+    res.json({ message: 'Documents marked as seen' });
+  } catch (error) {
+    console.error('Error marking documents as seen:', error);
+    res.status(500).json({ error: 'Failed to mark documents as seen' });
+  }
+});
+
+// Get unseen document counts for a user
+router.get('/unseen-counts/:username', async (req, res) => {
+  try {
+    const { username } = req.params;
+
+    const unseenCounts = await Document.aggregate([
+      {
+        $match: {
+          receiver: username,
+          isSeen: false
+        }
+      },
+      {
+        $group: {
+          _id: '$sender',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const counts = {};
+    unseenCounts.forEach(item => {
+      counts[item._id] = item.count;
+    });
+
+    res.json(counts);
+  } catch (error) {
+    console.error('Error getting unseen document counts:', error);
+    res.status(500).json({ error: 'Failed to get unseen document counts' });
+  }
+});
+
 export default router;

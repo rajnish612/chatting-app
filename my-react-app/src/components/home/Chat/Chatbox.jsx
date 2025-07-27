@@ -57,6 +57,7 @@ const Chatbox = ({
   onCall,
   peerConnection,
   onDocumentClick,
+  unseenDocumentCount = 0,
 }) => {
   console.log("setOutGoingVideoCall:", setOutGoingVideoCall);
   const messagesEndRef = React.useRef(null);
@@ -491,10 +492,15 @@ const Chatbox = ({
           <div className="flex items-center gap-3">
             <button
               onClick={onDocumentClick}
-              className="action-btn p-3 rounded-full bg-purple-500 hover:bg-purple-600 text-white shadow-lg"
+              className="action-btn p-3 rounded-full bg-purple-500 hover:bg-purple-600 text-white shadow-lg relative"
               title="Share Documents"
             >
               <IoDocumentText size={18} />
+              {unseenDocumentCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold border-2 border-white">
+                  {unseenDocumentCount > 99 ? '99+' : unseenDocumentCount}
+                </span>
+              )}
             </button>
             <button
               onClick={() => {

@@ -6,6 +6,7 @@ const Chatlist = ({
   setSelectedUserToChat,
   chats,
   selectedUserToChat,
+  unseenDocumentCounts = {},
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -159,12 +160,19 @@ const Chatlist = ({
                     </p>
                   </div>
 
-                  {/* Unread badge */}
-                  {chat.unseenCount > 0 && (
-                    <div className="ml-2 bg-red-500 text-white text-xs rounded-full min-w-5 h-5 px-1 flex items-center justify-center flex-shrink-0">
-                      {chat.unseenCount}
-                    </div>
-                  )}
+                  {/* Unread badges */}
+                  <div className="flex items-center gap-1 ml-2">
+                    {chat.unseenCount > 0 && (
+                      <div className="bg-blue-500 text-white text-xs rounded-full min-w-5 h-5 px-1 flex items-center justify-center flex-shrink-0" title="Unread messages">
+                        {chat.unseenCount}
+                      </div>
+                    )}
+                    {unseenDocumentCounts[chat.username] > 0 && (
+                      <div className="bg-purple-500 text-white text-xs rounded-full min-w-5 h-5 px-1 flex items-center justify-center flex-shrink-0" title="Unread documents">
+                        {unseenDocumentCounts[chat.username]}
+                      </div>
+                    )}
+                  </div>
                 </button>
               ))}
             </div>
@@ -209,12 +217,19 @@ const Chatlist = ({
                     </p>
                   </div>
 
-                  {/* Unread badge */}
-                  {chat.unseenCount > 0 && (
-                    <div className="ml-2 bg-red-500 text-white text-xs rounded-full min-w-5 h-5 px-1 flex items-center justify-center flex-shrink-0">
-                      {chat.unseenCount}
-                    </div>
-                  )}
+                  {/* Unread badges */}
+                  <div className="flex items-center gap-1 ml-2">
+                    {chat.unseenCount > 0 && (
+                      <div className="bg-blue-500 text-white text-xs rounded-full min-w-5 h-5 px-1 flex items-center justify-center flex-shrink-0" title="Unread messages">
+                        {chat.unseenCount}
+                      </div>
+                    )}
+                    {unseenDocumentCounts[chat.username] > 0 && (
+                      <div className="bg-purple-500 text-white text-xs rounded-full min-w-5 h-5 px-1 flex items-center justify-center flex-shrink-0" title="Unread documents">
+                        {unseenDocumentCounts[chat.username]}
+                      </div>
+                    )}
+                  </div>
                 </button>
               ))}
             </div>
