@@ -33,6 +33,9 @@ const AudioBox = ({ onBack, selectedUserToChat, self, socket }) => {
   const [isSending, setIsSending] = React.useState(false);
   const [audioBlobRef, setAudioBlobRef] = React.useState(null);
   const audioRef = React.useRef(null);
+  const [playingAudio, setPlayingAudio] = React.useState(null);
+  const [audioCurrentTime, setAudioCurrentTime] = React.useState({});
+  const [audioDurations, setAudioDurations] = React.useState({});
   const mediaRecorderRef = React.useRef(null);
   const streamRef = React.useRef(null);
   const audioChunksRef = React.useRef([]);
@@ -114,6 +117,55 @@ const AudioBox = ({ onBack, selectedUserToChat, self, socket }) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const toggleAudioPlayback = (messageId, audioSrc) => {
+    const audio = document.getElementById(`audio-${messageId}`);
+    if (!audio) return;
+
+    if (playingAudio === messageId) {
+      audio.pause();
+      setPlayingAudio(null);
+    } else {
+      // Pause any currently playing audio
+      if (playingAudio) {
+        const currentAudio = document.getElementById(`audio-${playingAudio}`);
+        if (currentAudio) currentAudio.pause();
+      }
+      
+      audio.play();
+      setPlayingAudio(messageId);
+    }
+  };
+
+  const handleAudioTimeUpdate = (messageId, currentTime, duration) => {
+    setAudioCurrentTime(prev => ({
+      ...prev,
+      [messageId]: currentTime
+    }));
+    
+    if (duration && !audioDurations[messageId]) {
+      setAudioDurations(prev => ({
+        ...prev,
+        [messageId]: duration
+      }));
+    }
+  };
+
+  const handleAudioEnded = (messageId) => {
+    setPlayingAudio(null);
+    setAudioCurrentTime(prev => ({
+      ...prev,
+      [messageId]: 0
+    }));
+  };
+
+  const seekAudio = (messageId, percentage) => {
+    const audio = document.getElementById(`audio-${messageId}`);
+    if (audio && audioDurations[messageId]) {
+      const newTime = (percentage / 100) * audioDurations[messageId];
+      audio.currentTime = newTime;
+    }
   };
 
   const togglePlayback = () => {
@@ -332,17 +384,78 @@ const AudioBox = ({ onBack, selectedUserToChat, self, socket }) => {
                         {message.sender === self.username ? 'You' : message.sender}
                       </span>
                     </div>
-                    <div className="w-full">
-                      <audio
-                        controls
-                        src={message.audioData}
-                        className="w-full h-8"
-                        style={{ maxWidth: '200px' }}
-                      />
+                    
+                    {/* Custom Audio Player */}
+                    <div className="flex items-center space-x-3 py-2">
+                      {/* Play/Pause Button */}
+                      <button
+                        onClick={() => toggleAudioPlayback(message._id, message.audioData)}
+                        className={`!flex-shrink-0 !w-10 !h-10 !rounded-full !flex !items-center !justify-center !transition-all !duration-200 !shadow-md ${
+                          message.sender === self.username
+                            ? '!bg-blue-600 hover:!bg-blue-700'
+                            : '!bg-gray-600 hover:!bg-gray-700'
+                        }`}
+                      >
+                        {playingAudio === message._id ? (
+                          <svg className="w-5 h-5 !text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                          </svg>
+                        ) : (
+                          <svg className="w-5 h-5 !text-white !ml-1" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z"/>
+                          </svg>
+                        )}
+                      </button>
+                      
+                      {/* Waveform/Progress Bar */}
+                      <div className="!flex-1 !space-y-1">
+                        <div 
+                          className="!flex !items-center !space-x-1 !cursor-pointer"
+                          onClick={(e) => {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const percentage = ((e.clientX - rect.left) / rect.width) * 100;
+                            seekAudio(message._id, percentage);
+                          }}
+                        >
+                          {[...Array(20)].map((_, i) => (
+                            <div
+                              key={i}
+                              className={`!w-1 !rounded-full !transition-all !duration-200 ${
+                                message.sender === self.username
+                                  ? '!bg-blue-200'
+                                  : '!bg-gray-300'
+                              }`}
+                              style={{
+                                height: `${Math.random() * 16 + 8}px`,
+                                opacity: (audioCurrentTime[message._id] || 0) / (audioDurations[message._id] || message.duration || 1) > i / 20 ? 1 : 0.4
+                              }}
+                            />
+                          ))}
+                        </div>
+                        
+                        {/* Time Display */}
+                        <div className="!flex !justify-between !text-xs !opacity-75">
+                          <span>
+                            {formatTime(audioCurrentTime[message._id] || 0)}
+                          </span>
+                          <span>
+                            {formatTime(audioDurations[message._id] || message.duration || 0)}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-xs opacity-75 mt-1 flex justify-between">
+                    
+                    {/* Hidden Audio Element */}
+                    <audio
+                      id={`audio-${message._id}`}
+                      src={message.audioData}
+                      onTimeUpdate={(e) => handleAudioTimeUpdate(message._id, e.target.currentTime, e.target.duration)}
+                      onEnded={() => handleAudioEnded(message._id)}
+                      className="!hidden"
+                    />
+                    
+                    <div className="text-xs opacity-75 mt-1">
                       <span>Voice message</span>
-                      <span>{message.duration}s</span>
                     </div>
                   </div>
                 </div>
