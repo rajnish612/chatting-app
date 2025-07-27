@@ -243,7 +243,11 @@ const AudioBox = ({ onBack, selectedUserToChat, self, socket }) => {
         fileType: 'audio/webm'
       };
       
-      console.log('Sending audio message with duration:', audioMessage.duration, 'original duration:', duration, 'recordingTime:', recordingTime);
+      console.log('🎵 SENDING AUDIO MESSAGE:');
+      console.log('- audioMessage.duration:', audioMessage.duration);
+      console.log('- original duration:', duration);
+      console.log('- recordingTime:', recordingTime);
+      console.log('- full audioMessage:', audioMessage);
 
       socket.emit('sendAudioMessage', audioMessage);
       
@@ -351,15 +355,20 @@ const AudioBox = ({ onBack, selectedUserToChat, self, socket }) => {
 
   // Initialize durations from message data and force metadata loading
   React.useEffect(() => {
+    console.log('🔄 PROCESSING AUDIO MESSAGES:', audioMessages.length, 'messages');
     audioMessages.forEach(message => {
+      console.log('📨 Message:', message._id, 'duration:', message.duration, 'full message:', message);
+      
       // Set duration from message data immediately if we don't have it
       setAudioDurations(prev => {
         if (!prev[message._id] && message.duration) {
+          console.log('✅ Setting duration for', message._id, 'to:', message.duration);
           return {
             ...prev,
             [message._id]: message.duration
           };
         }
+        console.log('❌ NOT setting duration for', message._id, 'prev exists:', !!prev[message._id], 'message.duration:', message.duration);
         return prev;
       });
       
@@ -474,6 +483,7 @@ const AudioBox = ({ onBack, selectedUserToChat, self, socket }) => {
                             {formatTime(audioCurrentTime[message._id] || 0)}
                           </span>
                           <span>
+                            {console.log('🕒 DURATION RENDER:', message._id, 'audioDurations:', audioDurations[message._id], 'message.duration:', message.duration)}
                             {formatTime(audioDurations[message._id] || message.duration || 0)}
                           </span>
                         </div>
