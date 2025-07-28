@@ -14,6 +14,7 @@ import {
   HttpLink,
 } from "@apollo/client";
 import User from "./components/User";
+import Avatar from "./components/Avatar";
 const client = new ApolloClient({
   link: new HttpLink({
     uri: import.meta.env.VITE_API_URL + "/graphql",

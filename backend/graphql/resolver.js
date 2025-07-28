@@ -160,7 +160,7 @@ const resolver = {
       const self = await User.findOne({ username: selfUsername });
       console.log("DEBUG - self.blockedUsers:", self.blockedUsers);
       console.log("DEBUG - self.blockedBy:", self.blockedBy);
-      
+
       // Get all users from messages, documents, and audio messages
       const allChatUsers = await Promise.all([
         // From regular messages
@@ -242,7 +242,7 @@ const resolver = {
 
       // Combine and deduplicate users
       const uniqueUsers = new Map();
-      allChatUsers.flat().forEach(user => {
+      allChatUsers.flat().forEach((user) => {
         if (user.username) {
           uniqueUsers.set(user.username, user);
         }
@@ -271,18 +271,22 @@ const resolver = {
         if (!userDetails) continue;
 
         // Check if user is blocked
-        const isBlocked = self.blockedUsers?.some(blockedId => 
-          blockedId.toString() === userDetails._id.toString()
-        ) || self.blockedBy?.some(blockedById => 
-          blockedById.toString() === userDetails._id.toString()
-        );
+        const isBlocked =
+          self.blockedUsers?.some(
+            (blockedId) => blockedId.toString() === userDetails._id.toString()
+          ) ||
+          self.blockedBy?.some(
+            (blockedById) =>
+              blockedById.toString() === userDetails._id.toString()
+          );
 
         if (isBlocked) continue;
 
         chatUsersWithUnseen.push({
           _id: userDetails._id,
           username: user.username,
-          unseenCount: unseenMessages.length > 0 ? unseenMessages[0].unseenCount : 0,
+          unseenCount:
+            unseenMessages.length > 0 ? unseenMessages[0].unseenCount : 0,
         });
       }
 
@@ -357,6 +361,10 @@ const resolver = {
           username: user.username,
           name: user.name,
           bio: user.bio,
+          profilePic: {
+            public_id: user?.profilePic?.public_id,
+            url: user?.profilePic?.url,
+          },
           followers: followersData,
           followings: followingsData,
           blockedUsers: blockedUsersData,
@@ -565,7 +573,10 @@ const resolver = {
         { sender, receiver },
         { $set: { isSeen: true } }
       );
-      const updatedAudioMessages = await AudioMessage.find({ sender, receiver });
+      const updatedAudioMessages = await AudioMessage.find({
+        sender,
+        receiver,
+      });
       return updatedAudioMessages;
     },
     login: async (parent, args, { req }) => {
@@ -657,10 +668,7 @@ const resolver = {
 
       // Check if user still doesn't exist (in case someone registered with same details)
       const existingUser = await User.findOne({
-        $or: [
-          { email },
-          { username: otpRecord.registrationData.username },
-        ],
+        $or: [{ email }, { username: otpRecord.registrationData.username }],
       });
       if (existingUser) {
         await OTP.deleteOne({ _id: otpRecord._id });

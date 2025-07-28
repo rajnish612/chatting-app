@@ -1,10 +1,15 @@
 const typeDefs = `#graphql
+type ProfilePic {
+  public_id: String
+  url: String
+}
 type User {
   _id: ID!
   email: String!
   username: String!
   name: String
   bio: String
+  profilePic:ProfilePic
   followings: [User]
   followers: [User]
   blockedUsers: [User]

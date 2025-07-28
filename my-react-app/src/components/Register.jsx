@@ -7,10 +7,23 @@ import { useCallback } from "react";
 import { gql, useMutation } from "@apollo/client";
 import { useNavigate } from "react-router-dom";
 import Modal from "@mui/material/Modal";
+import Avatar from "./Avatar";
 
 const SEND_REGISTRATION_OTP = gql`
-  mutation SendRegistrationOTP($email: String!, $password: String!, $username: String!, $name: String, $bio: String) {
-    sendRegistrationOTP(email: $email, password: $password, username: $username, name: $name, bio: $bio)
+  mutation SendRegistrationOTP(
+    $email: String!
+    $password: String!
+    $username: String!
+    $name: String
+    $bio: String
+  ) {
+    sendRegistrationOTP(
+      email: $email
+      password: $password
+      username: $username
+      name: $name
+      bio: $bio
+    )
   }
 `;
 
@@ -22,6 +35,7 @@ const VERIFY_REGISTRATION_OTP = gql`
 
 const Register = () => {
   const navigate = useNavigate();
+  const [avatarOpen, setAvatarOpen] = React.useState(false);
   const [form, setForm] = React.useState({
     email: "",
     password: "",
@@ -52,9 +66,10 @@ const Register = () => {
 
   const [verifyOtpMutation] = useMutation(VERIFY_REGISTRATION_OTP, {
     onCompleted: (data) => {
+      setAvatarOpen(true);
       console.log("Registration completed:", data);
       alert("Registration successful! Please login.");
-      navigate("/login");
+      // navigate("/login");
     },
     onError: (err) => {
       console.error("OTP verification error:", err);
@@ -66,7 +81,7 @@ const Register = () => {
   const handleSubmit = useCallback(
     async (e) => {
       e.preventDefault();
-      
+
       if (step === 1) {
         // First step: Send OTP
         if (
@@ -121,7 +136,7 @@ const Register = () => {
   const handleBackToForm = useCallback(() => {
     setStep(1);
     setOtpSent(false);
-    setForm(prev => ({ ...prev, otp: "" }));
+    setForm((prev) => ({ ...prev, otp: "" }));
   }, []);
 
   const handleChange = useCallback(
@@ -149,7 +164,6 @@ const Register = () => {
         .simple-bg {
           background: #f8fafc;
         }
-
 
         .simple-card {
           background: white;
@@ -188,7 +202,6 @@ const Register = () => {
       `}</style>
 
       <div className="simple-bg w-screen flex justify-center items-center flex-col gap-6 overflow-x-hidden h-screen relative p-4">
-
         <div className="w-full flex justify-center items-center flex-col gap-6 overflow-x-hidden h-full">
           {/* Enhanced Logo Section */}
           <div
@@ -206,34 +219,26 @@ const Register = () => {
           </div>
 
           {/* Enhanced Register Card */}
-          <div
-            className="simple-card max-w-lg w-full mx-4 p-6 rounded-xl gap-4 flex flex-col justify-center items-center"
-          >
+          <div className="simple-card max-w-lg w-full mx-4 p-6 rounded-xl gap-4 flex flex-col justify-center items-center">
             {/* Header */}
             <div className="w-full text-center">
-              <span
-                className="text-2xl lg:text-3xl md:text-3xl font-black text-gray-800 bg-gradient-to-r from-gray-800 to-blue-600 bg-clip-text text-transparent"
-              >
+              <span className="text-2xl lg:text-3xl md:text-3xl font-black text-gray-800 bg-gradient-to-r from-gray-800 to-blue-600 bg-clip-text text-transparent">
                 {step === 1 ? "Create Account" : "Verify Email"}
               </span>
-              <p
-                className="text-gray-600 mt-1 font-medium text-sm"
-              >
-                {step === 1 ? "Join our community today" : "Enter the OTP sent to your email"}
+              <p className="text-gray-600 mt-1 font-medium text-sm">
+                {step === 1
+                  ? "Join our community today"
+                  : "Enter the OTP sent to your email"}
               </p>
             </div>
 
             {/* Enhanced Form */}
-            <form
-              className="flex w-full justify-center gap-3 items-center flex-col"
-            >
+            <form className="flex w-full justify-center gap-3 items-center flex-col">
               {step === 1 ? (
                 <>
                   {/* Registration Form Fields */}
                   {/* Email Input */}
-                  <div
-                    className="input-container flex w-full items-center gap-3 rounded-xl px-4 py-3"
-                  >
+                  <div className="input-container flex w-full items-center gap-3 rounded-xl px-4 py-3">
                     <MdOutlineMail className="text-blue-500 text-xl flex-shrink-0" />
                     <input
                       onChange={handleChange}
@@ -248,9 +253,7 @@ const Register = () => {
                   </div>
 
                   {/* Username Input */}
-                  <div
-                    className="input-container flex w-full items-center gap-3 rounded-xl px-4 py-3"
-                  >
+                  <div className="input-container flex w-full items-center gap-3 rounded-xl px-4 py-3">
                     <CiUser className="text-green-500 text-xl flex-shrink-0" />
                     <input
                       onChange={handleChange}
@@ -265,9 +268,7 @@ const Register = () => {
                   </div>
 
                   {/* Name Input */}
-                  <div
-                    className="input-container flex w-full items-center gap-3 rounded-xl px-4 py-3"
-                  >
+                  <div className="input-container flex w-full items-center gap-3 rounded-xl px-4 py-3">
                     <FaUserTag className="text-orange-500 text-xl flex-shrink-0" />
                     <input
                       onChange={handleChange}
@@ -281,9 +282,7 @@ const Register = () => {
                   </div>
 
                   {/* Bio Input */}
-                  <div
-                    className="input-container flex w-full items-start gap-3 rounded-xl px-4 py-3"
-                  >
+                  <div className="input-container flex w-full items-start gap-3 rounded-xl px-4 py-3">
                     <FaQuoteLeft className="text-indigo-500 text-xl flex-shrink-0 mt-1" />
                     <textarea
                       onChange={handleChange}
@@ -298,9 +297,7 @@ const Register = () => {
                   </div>
 
                   {/* Password Input */}
-                  <div
-                    className="input-container flex w-full items-center gap-3 rounded-xl px-4 py-3"
-                  >
+                  <div className="input-container flex w-full items-center gap-3 rounded-xl px-4 py-3">
                     <MdOutlinePassword className="text-purple-500 text-xl flex-shrink-0" />
                     <input
                       onChange={handleChange}
@@ -315,9 +312,7 @@ const Register = () => {
                   </div>
 
                   {/* Confirm Password Input */}
-                  <div
-                    className="input-container flex w-full items-center gap-3 rounded-xl px-4 py-3"
-                  >
+                  <div className="input-container flex w-full items-center gap-3 rounded-xl px-4 py-3">
                     <MdOutlinePassword className="text-red-500 text-xl flex-shrink-0" />
                     <input
                       onChange={handleChange}
@@ -342,11 +337,19 @@ const Register = () => {
                   </div>
 
                   {/* OTP Input */}
-                  <div
-                    className="input-container flex w-full items-center gap-3 rounded-xl px-4 py-3"
-                  >
-                    <svg className="w-6 h-6 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <div className="input-container flex w-full items-center gap-3 rounded-xl px-4 py-3">
+                    <svg
+                      className="w-6 h-6 text-blue-500 flex-shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
                     </svg>
                     <input
                       onChange={handleChange}
@@ -383,10 +386,13 @@ const Register = () => {
                 type="submit"
               >
                 <span className="flex items-center justify-center gap-3">
-                  {loading ? 
-                    (step === 1 ? "Sending OTP..." : "Verifying...") : 
-                    (step === 1 ? "Send OTP" : "Verify & Create Account")
-                  }
+                  {loading
+                    ? step === 1
+                      ? "Sending OTP..."
+                      : "Verifying..."
+                    : step === 1
+                    ? "Send OTP"
+                    : "Verify & Create Account"}
                   {loading ? (
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                   ) : (
@@ -400,9 +406,10 @@ const Register = () => {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth="2"
-                        d={step === 1 ? 
-                          "M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" :
-                          "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        d={
+                          step === 1
+                            ? "M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                            : "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                         }
                       />
                     </svg>
@@ -412,9 +419,7 @@ const Register = () => {
             </form>
 
             {/* Footer Links */}
-            <div
-              className="w-full text-center space-y-3"
-            >
+            <div className="w-full text-center space-y-3">
               <p className="text-gray-600 text-sm">
                 Already have an account?{" "}
                 <span
@@ -433,8 +438,8 @@ const Register = () => {
             </div>
           </div>
         </div>
-
       </div>
+      {avatarOpen && <Avatar email={form.email} />}
     </>
   );
 };
