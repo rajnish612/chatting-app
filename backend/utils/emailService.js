@@ -27,6 +27,11 @@ export const sendOTPEmail = async (email, otp, type = 'password_reset') => {
     let subject, title, description;
     
     switch (type) {
+      case 'registration':
+        subject = 'Complete Your Registration - Chat Me';
+        title = 'Registration Verification';
+        description = 'Welcome to Chat Me! Use the OTP below to complete your registration:';
+        break;
       case 'email_change':
         subject = 'Email Change Verification - Chat Me';
         title = 'Email Change Verification';

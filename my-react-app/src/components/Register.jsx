@@ -8,9 +8,15 @@ import { gql, useMutation } from "@apollo/client";
 import { useNavigate } from "react-router-dom";
 import Modal from "@mui/material/Modal";
 
-const REGISTER_MUTATION = gql`
-  mutation Register($email: String!, $password: String!, $username: String!, $name: String!, $bio: String) {
-    register(email: $email, password: $password, username: $username, name: $name, bio: $bio)
+const SEND_REGISTRATION_OTP = gql`
+  mutation SendRegistrationOTP($email: String!, $password: String!, $username: String!, $name: String, $bio: String) {
+    sendRegistrationOTP(email: $email, password: $password, username: $username, name: $name, bio: $bio)
+  }
+`;
+
+const VERIFY_REGISTRATION_OTP = gql`
+  mutation VerifyRegistrationOTP($email: String!, $otp: String!) {
+    verifyRegistrationOTP(email: $email, otp: $otp)
   }
 `;
 
@@ -23,18 +29,36 @@ const Register = () => {
     name: "",
     bio: "",
     confirmPassword: "",
+    otp: "",
   });
   const [loading, setLoading] = React.useState(false);
+  const [step, setStep] = React.useState(1); // 1: Registration form, 2: OTP verification
+  const [otpSent, setOtpSent] = React.useState(false);
 
-  const [registerMutation] = useMutation(REGISTER_MUTATION, {
+  const [sendOtpMutation] = useMutation(SEND_REGISTRATION_OTP, {
     onCompleted: (data) => {
-      console.log("Registration successful:", data);
+      console.log("OTP sent:", data);
+      setOtpSent(true);
+      setStep(2);
+      setLoading(false);
+      alert("OTP sent to your email! Please check your inbox.");
+    },
+    onError: (err) => {
+      console.error("Send OTP error:", err);
+      alert("Failed to send OTP: " + err.message);
+      setLoading(false);
+    },
+  });
+
+  const [verifyOtpMutation] = useMutation(VERIFY_REGISTRATION_OTP, {
+    onCompleted: (data) => {
+      console.log("Registration completed:", data);
       alert("Registration successful! Please login.");
       navigate("/login");
     },
     onError: (err) => {
-      console.error("Registration error:", err);
-      alert("Registration failed: " + err.message);
+      console.error("OTP verification error:", err);
+      alert("OTP verification failed: " + err.message);
       setLoading(false);
     },
   });
@@ -42,35 +66,63 @@ const Register = () => {
   const handleSubmit = useCallback(
     async (e) => {
       e.preventDefault();
-      if (
-        !form.email ||
-        !form.password ||
-        !form.username ||
-        !form.confirmPassword
-      ) {
-        return alert("Please fill all required fields");
-      } else if (form.password !== form.confirmPassword) {
-        return alert("Passwords do not match");
-      }
+      
+      if (step === 1) {
+        // First step: Send OTP
+        if (
+          !form.email ||
+          !form.password ||
+          !form.username ||
+          !form.confirmPassword
+        ) {
+          return alert("Please fill all required fields");
+        } else if (form.password !== form.confirmPassword) {
+          return alert("Passwords do not match");
+        }
 
-      setLoading(true);
-      try {
-        await registerMutation({
-          variables: {
-            email: form.email,
-            password: form.password,
-            username: form.username,
-            name: form.name || form.username,
-            bio: form.bio || "",
-          },
-        });
-      } catch (error) {
-        // Error is handled in onError callback
-        setLoading(false);
+        setLoading(true);
+        try {
+          await sendOtpMutation({
+            variables: {
+              email: form.email,
+              password: form.password,
+              username: form.username,
+              name: form.name || form.username,
+              bio: form.bio || "",
+            },
+          });
+        } catch (error) {
+          // Error is handled in onError callback
+          setLoading(false);
+        }
+      } else if (step === 2) {
+        // Second step: Verify OTP
+        if (!form.otp) {
+          return alert("Please enter the OTP");
+        }
+
+        setLoading(true);
+        try {
+          await verifyOtpMutation({
+            variables: {
+              email: form.email,
+              otp: form.otp,
+            },
+          });
+        } catch (error) {
+          // Error is handled in onError callback
+          setLoading(false);
+        }
       }
     },
-    [form, registerMutation]
+    [form, sendOtpMutation, verifyOtpMutation, step]
   );
+
+  const handleBackToForm = useCallback(() => {
+    setStep(1);
+    setOtpSent(false);
+    setForm(prev => ({ ...prev, otp: "" }));
+  }, []);
 
   const handleChange = useCallback(
     (e) => {
@@ -162,12 +214,12 @@ const Register = () => {
               <span
                 className="text-2xl lg:text-3xl md:text-3xl font-black text-gray-800 bg-gradient-to-r from-gray-800 to-blue-600 bg-clip-text text-transparent"
               >
-                Create Account
+                {step === 1 ? "Create Account" : "Verify Email"}
               </span>
               <p
                 className="text-gray-600 mt-1 font-medium text-sm"
               >
-                Join our community today
+                {step === 1 ? "Join our community today" : "Enter the OTP sent to your email"}
               </p>
             </div>
 
@@ -175,100 +227,151 @@ const Register = () => {
             <form
               className="flex w-full justify-center gap-3 items-center flex-col"
             >
-              {/* Email Input */}
-              <div
-                className="input-container flex w-full items-center gap-3 rounded-xl px-4 py-3"
-              >
-                <MdOutlineMail className="text-blue-500 text-xl flex-shrink-0" />
-                <input
-                  onChange={handleChange}
-                  name="email"
-                  value={form.email}
-                  className="text-gray-800 font-medium placeholder-gray-500 text-lg"
-                  placeholder="Enter your email"
-                  type="email"
-                  required
-                />
-              </div>
+              {step === 1 ? (
+                <>
+                  {/* Registration Form Fields */}
+                  {/* Email Input */}
+                  <div
+                    className="input-container flex w-full items-center gap-3 rounded-xl px-4 py-3"
+                  >
+                    <MdOutlineMail className="text-blue-500 text-xl flex-shrink-0" />
+                    <input
+                      onChange={handleChange}
+                      name="email"
+                      value={form.email}
+                      className="text-gray-800 font-medium placeholder-gray-500 text-lg"
+                      placeholder="Enter your email"
+                      type="email"
+                      required
+                      disabled={loading}
+                    />
+                  </div>
 
-              {/* Username Input */}
-              <div
-                className="input-container flex w-full items-center gap-3 rounded-xl px-4 py-3"
-              >
-                <CiUser className="text-green-500 text-xl flex-shrink-0" />
-                <input
-                  onChange={handleChange}
-                  name="username"
-                  value={form.username}
-                  className="text-gray-800 font-medium placeholder-gray-500 text-lg"
-                  placeholder="Choose a username"
-                  type="text"
-                  required
-                />
-              </div>
+                  {/* Username Input */}
+                  <div
+                    className="input-container flex w-full items-center gap-3 rounded-xl px-4 py-3"
+                  >
+                    <CiUser className="text-green-500 text-xl flex-shrink-0" />
+                    <input
+                      onChange={handleChange}
+                      name="username"
+                      value={form.username}
+                      className="text-gray-800 font-medium placeholder-gray-500 text-lg"
+                      placeholder="Choose a username"
+                      type="text"
+                      required
+                      disabled={loading}
+                    />
+                  </div>
 
-              {/* Name Input */}
-              <div
-                className="input-container flex w-full items-center gap-3 rounded-xl px-4 py-3"
-              >
-                <FaUserTag className="text-orange-500 text-xl flex-shrink-0" />
-                <input
-                  onChange={handleChange}
-                  name="name"
-                  value={form.name}
-                  className="text-gray-800 font-medium placeholder-gray-500 text-lg"
-                  placeholder="Enter your full name (optional)"
-                  type="text"
-                />
-              </div>
+                  {/* Name Input */}
+                  <div
+                    className="input-container flex w-full items-center gap-3 rounded-xl px-4 py-3"
+                  >
+                    <FaUserTag className="text-orange-500 text-xl flex-shrink-0" />
+                    <input
+                      onChange={handleChange}
+                      name="name"
+                      value={form.name}
+                      className="text-gray-800 font-medium placeholder-gray-500 text-lg"
+                      placeholder="Enter your full name (optional)"
+                      type="text"
+                      disabled={loading}
+                    />
+                  </div>
 
-              {/* Bio Input */}
-              <div
-                className="input-container flex w-full items-start gap-3 rounded-xl px-4 py-3"
-              >
-                <FaQuoteLeft className="text-indigo-500 text-xl flex-shrink-0 mt-1" />
-                <textarea
-                  onChange={handleChange}
-                  name="bio"
-                  value={form.bio}
-                  className="text-gray-800 font-medium placeholder-gray-500 text-lg resize-none"
-                  placeholder="Tell us about yourself (optional)"
-                  rows="2"
-                  maxLength="200"
-                />
-              </div>
+                  {/* Bio Input */}
+                  <div
+                    className="input-container flex w-full items-start gap-3 rounded-xl px-4 py-3"
+                  >
+                    <FaQuoteLeft className="text-indigo-500 text-xl flex-shrink-0 mt-1" />
+                    <textarea
+                      onChange={handleChange}
+                      name="bio"
+                      value={form.bio}
+                      className="text-gray-800 font-medium placeholder-gray-500 text-lg resize-none"
+                      placeholder="Tell us about yourself (optional)"
+                      rows="2"
+                      maxLength="200"
+                      disabled={loading}
+                    />
+                  </div>
 
-              {/* Password Input */}
-              <div
-                className="input-container flex w-full items-center gap-3 rounded-xl px-4 py-3"
-              >
-                <MdOutlinePassword className="text-purple-500 text-xl flex-shrink-0" />
-                <input
-                  onChange={handleChange}
-                  name="password"
-                  value={form.password}
-                  className="text-gray-800 font-medium placeholder-gray-500 text-lg"
-                  placeholder="Create password"
-                  type="password"
-                  required
-                />
-              </div>
+                  {/* Password Input */}
+                  <div
+                    className="input-container flex w-full items-center gap-3 rounded-xl px-4 py-3"
+                  >
+                    <MdOutlinePassword className="text-purple-500 text-xl flex-shrink-0" />
+                    <input
+                      onChange={handleChange}
+                      name="password"
+                      value={form.password}
+                      className="text-gray-800 font-medium placeholder-gray-500 text-lg"
+                      placeholder="Create password"
+                      type="password"
+                      required
+                      disabled={loading}
+                    />
+                  </div>
 
-              {/* Confirm Password Input */}
-              <div
-                className="input-container flex w-full items-center gap-3 rounded-xl px-4 py-3"
-              >
-                <MdOutlinePassword className="text-red-500 text-xl flex-shrink-0" />
-                <input
-                  onChange={handleChange}
-                  name="confirmPassword"
-                  value={form.confirmPassword}
-                  className="text-gray-800 font-medium placeholder-gray-500 text-lg"
-                  placeholder="Confirm password"
-                  type="password"
-                  required
-                />
-              </div>
+                  {/* Confirm Password Input */}
+                  <div
+                    className="input-container flex w-full items-center gap-3 rounded-xl px-4 py-3"
+                  >
+                    <MdOutlinePassword className="text-red-500 text-xl flex-shrink-0" />
+                    <input
+                      onChange={handleChange}
+                      name="confirmPassword"
+                      value={form.confirmPassword}
+                      className="text-gray-800 font-medium placeholder-gray-500 text-lg"
+                      placeholder="Confirm password"
+                      type="password"
+                      required
+                      disabled={loading}
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* OTP Verification Form */}
+                  <div className="w-full text-center mb-4">
+                    <p className="text-gray-600 text-sm">
+                      We sent a 6-digit verification code to:
+                    </p>
+                    <p className="text-blue-600 font-semibold">{form.email}</p>
+                  </div>
+
+                  {/* OTP Input */}
+                  <div
+                    className="input-container flex w-full items-center gap-3 rounded-xl px-4 py-3"
+                  >
+                    <svg className="w-6 h-6 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <input
+                      onChange={handleChange}
+                      name="otp"
+                      value={form.otp}
+                      className="text-gray-800 font-medium placeholder-gray-500 text-lg text-center tracking-widest"
+                      placeholder="Enter 6-digit OTP"
+                      type="text"
+                      maxLength="6"
+                      required
+                      disabled={loading}
+                    />
+                  </div>
+
+                  {/* Back to Form Button */}
+                  <button
+                    type="button"
+                    onClick={handleBackToForm}
+                    className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                    disabled={loading}
+                  >
+                    ← Back to registration form
+                  </button>
+                </>
+              )}
 
               {/* Enhanced Submit Button */}
               <button
@@ -280,7 +383,10 @@ const Register = () => {
                 type="submit"
               >
                 <span className="flex items-center justify-center gap-3">
-                  {loading ? "Creating Account..." : "Create Account"}
+                  {loading ? 
+                    (step === 1 ? "Sending OTP..." : "Verifying...") : 
+                    (step === 1 ? "Send OTP" : "Verify & Create Account")
+                  }
                   {loading ? (
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                   ) : (
@@ -294,7 +400,10 @@ const Register = () => {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth="2"
-                        d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+                        d={step === 1 ? 
+                          "M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" :
+                          "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        }
                       />
                     </svg>
                   )}

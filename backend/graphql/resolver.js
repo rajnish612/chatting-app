@@ -589,7 +589,105 @@ const resolver = {
       return "Login successful";
     },
 
+    sendRegistrationOTP: async (parent, args) => {
+      const { email, password, username, name, bio } = args;
+      if (!email || !password || !username) {
+        throw new Error("Email, password, and username are required");
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        throw new Error("Invalid email format");
+      }
+
+      // Check if user already exists
+      const existingUser = await User.findOne({
+        $or: [{ email }, { username }],
+      });
+      if (existingUser) {
+        throw new Error("User already exists with this email or username");
+      }
+
+      // Hash password for storage in OTP record
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+      // Generate OTP
+      const otp = generateOTP();
+
+      // Delete any existing registration OTPs for this email
+      await OTP.deleteMany({ email, type: "registration" });
+
+      // Save OTP with registration data
+      await OTP.create({
+        email,
+        otp,
+        type: "registration",
+        registrationData: {
+          username,
+          password: hashedPassword,
+          name: name || username,
+          bio: bio || "",
+        },
+      });
+
+      // Send OTP email
+      await sendOTPEmail(email, otp, "registration");
+
+      return "OTP sent to your email. Please verify to complete registration.";
+    },
+
+    verifyRegistrationOTP: async (parent, args) => {
+      const { email, otp } = args;
+      if (!email || !otp) {
+        throw new Error("Email and OTP are required");
+      }
+
+      // Find OTP record
+      const otpRecord = await OTP.findOne({
+        email,
+        otp,
+        type: "registration",
+      });
+
+      if (!otpRecord) {
+        throw new Error("Invalid or expired OTP");
+      }
+
+      // Check if user still doesn't exist (in case someone registered with same details)
+      const existingUser = await User.findOne({
+        $or: [
+          { email },
+          { username: otpRecord.registrationData.username },
+        ],
+      });
+      if (existingUser) {
+        await OTP.deleteOne({ _id: otpRecord._id });
+        throw new Error("User already exists with this email or username");
+      }
+
+      // Create new user
+      const newUser = new User({
+        email,
+        username: otpRecord.registrationData.username,
+        name: otpRecord.registrationData.name,
+        bio: otpRecord.registrationData.bio,
+        password: otpRecord.registrationData.password,
+        followings: [],
+        followers: [],
+      });
+
+      await newUser.save();
+
+      // Delete used OTP
+      await OTP.deleteOne({ _id: otpRecord._id });
+
+      return "Registration completed successfully! Please login.";
+    },
+
     register: async (parent, args) => {
+      // Keep the old register for backward compatibility, but recommend using OTP flow
       const { email, password, username, name, bio } = args;
       if (!email || !password || !username) {
         throw new Error("Email, password, and username are required");

@@ -11,7 +11,7 @@ const OTPSchema = new mongoose.Schema({
   },
   type: { 
     type: String, 
-    enum: ['password_reset', 'email_change', 'password_change'], 
+    enum: ['password_reset', 'email_change', 'password_change', 'registration'], 
     required: true 
   },
   newEmail: {
@@ -21,6 +21,12 @@ const OTPSchema = new mongoose.Schema({
   userId: {
     type: String,
     required: false // Only required for email_change type
+  },
+  registrationData: {
+    username: String,
+    password: String,
+    name: String,
+    bio: String
   },
   createdAt: { 
     type: Date, 

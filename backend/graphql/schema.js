@@ -71,6 +71,8 @@ type Mutation {
   deactivateAccount(password: String!): String
   SeeMessages(sender: String!, receiver: String!): [Message]
   login(email: String!, password: String!): String
+  sendRegistrationOTP(email: String!, password: String!, username: String!, name: String, bio: String): String
+  verifyRegistrationOTP(email: String!, otp: String!): String
   register(email: String!, password: String!, username: String!, name: String, bio: String): String
   follow(userId: ID!): User
   getMessages(sender: String!, receiver: String!): [Message]
