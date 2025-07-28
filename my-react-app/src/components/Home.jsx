@@ -54,6 +54,10 @@ const selfQuery = gql`
       username
       name
       bio
+      profilePic {
+        public_id
+        url
+      }
       followings {
         _id
         username
@@ -127,6 +131,7 @@ const Home = () => {
   const [idx, setIdx] = React.useState(0);
   const [selectUserToBlock, setUserToBlock] = useState("");
   const SelectedComponent = DrawerItems[idx].element;
+  console.log(self);
 
   useEffect(() => {
     const handleReceive = ({ sender, receiver, content }) => {
@@ -770,9 +775,16 @@ const Home = () => {
           <div className="mt-auto pt-6 border-t border-white/10">
             <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold text-sm">
-                  {self?.username?.charAt(0)?.toUpperCase() || "U"}
-                </span>
+                {self?.profilePic?.url ? (
+                  <img
+                    src={self?.profilePic?.url}
+                    className="object-cover w-full h-full rounded-full"
+                  />
+                ) : (
+                  <span className="text-white font-bold text-sm">
+                    {self?.username?.charAt(0)?.toUpperCase() || "U"}
+                  </span>
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-white font-medium truncate">

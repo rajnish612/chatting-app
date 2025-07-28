@@ -148,13 +148,22 @@ const Settings = ({ self, onLogout }) => {
               <div className="flex items-center gap-6 mb-6">
                 <div className="relative">
                   <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                    <span className="text-white font-bold text-2xl">
-                      {self?.name?.charAt(0)?.toUpperCase() || self?.username?.charAt(0)?.toUpperCase() || "U"}
-                    </span>
+                    {self?.profilePic?.url ? (
+                      <img
+                        src={self?.profilePic?.url}
+                        className="object-cover w-full h-full rounded-full"
+                      />
+                    ) : (
+                      <span className="text-white font-bold text-2xl">
+                        {self?.name?.charAt(0)?.toUpperCase() ||
+                          self?.username?.charAt(0)?.toUpperCase() ||
+                          "U"}
+                      </span>
+                    )}
                   </div>
-                  <button className="!absolute !-bottom-1 !-right-1 !w-8 !h-8 !bg-blue-500 !rounded-full !flex !items-center !justify-center !text-white hover:!bg-blue-600 !transition-colors">
-                    <FaCamera size={12} />
-                  </button>
+                  <div className="absolute -bottom-1 cursor-pointer -right-1 w-8 h-8 !bg-blue-500 rounded-full flex items-center justify-center text-white hover:bg-blue-600 hover:scale-[1.1] transition-all">
+                    <FaCamera size={10} className="absolute" />
+                  </div>
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xl font-bold text-gray-900">
@@ -167,8 +176,11 @@ const Settings = ({ self, onLogout }) => {
                     {self?.email || "email@example.com"}
                   </p>
                   {self?.bio && (
-                    <p className="text-gray-700 text-sm mt-2 bg-gray-50 rounded-lg p-2">
-                      {self.bio}
+                    <p
+                      style={{ fontFamily: "cursive"}}
+                      className="text-gray-700 text-sm mt-2  bg-gray-50 rounded-lg p-2"
+                    >
+                      "{self.bio}"
                     </p>
                   )}
                   <div className="flex gap-4 mt-3">
@@ -547,105 +559,79 @@ const Settings = ({ self, onLogout }) => {
         {showModal && modalType === "blockedUsers" && (
           <BlockedUsers onClose={() => setShowModal(false)} />
         )}
-        
+
         {showModal && modalType === "changePassword" && (
           <ChangePassword onClose={() => setShowModal(false)} />
         )}
-        
+
         {showModal && modalType === "changeEmail" && (
-          <ChangeEmail 
-            onClose={() => setShowModal(false)} 
+          <ChangeEmail
+            onClose={() => setShowModal(false)}
             currentEmail={self?.email}
           />
         )}
-        
+
         {showModal && modalType === "deactivateAccount" && (
-          <DeactivateAccount 
-            onClose={() => setShowModal(false)} 
+          <DeactivateAccount
+            onClose={() => setShowModal(false)}
             onLogout={onLogout}
           />
         )}
-        
+
         {showModal && modalType === "editProfile" && (
-          <ChangeProfile 
-            onClose={() => setShowModal(false)} 
+          <ChangeProfile
+            onClose={() => setShowModal(false)}
             currentName={self?.name}
             currentBio={self?.bio}
           />
         )}
 
         {/* Other modals */}
-        {showModal && !["blockedUsers", "changePassword", "changeEmail", "deactivateAccount", "editProfile"].includes(modalType) && (
-          <div className="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="modal-content bg-white rounded-2xl p-6 max-w-md w-full mx-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-gray-900">
-                  {modalType === "editProfile" && "Edit Profile"}
-                  {modalType === "changeEmail" && "Change Email"}
-                  {modalType === "2fa" && "Two-Factor Authentication"}
-                  {modalType === "downloadData" && "Download Data"}
-                  {modalType === "clearHistory" && "Clear History"}
-                  {modalType === "themeColor" && "Theme Color"}
-                  {modalType === "language" && "Language"}
-                  {modalType === "help" && "Help Center"}
-                  {modalType === "contact" && "Contact Support"}
-                  {modalType === "terms" && "Terms of Service"}
-                  {modalType === "privacy" && "Privacy Policy"}
-                </h3>
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="!p-2 hover:!bg-gray-100 !rounded-full !transition-colors"
-                >
-                  <IoClose size={20} />
-                </button>
-              </div>
+        {showModal &&
+          ![
+            "blockedUsers",
+            "changePassword",
+            "changeEmail",
+            "deactivateAccount",
+            "editProfile",
+          ].includes(modalType) && (
+            <div className="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="modal-content bg-white rounded-2xl p-6 max-w-md w-full mx-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-bold text-gray-900">
+                    {modalType === "editProfile" && "Edit Profile"}
+                    {modalType === "changeEmail" && "Change Email"}
+                    {modalType === "2fa" && "Two-Factor Authentication"}
+                    {modalType === "downloadData" && "Download Data"}
+                    {modalType === "clearHistory" && "Clear History"}
+                    {modalType === "themeColor" && "Theme Color"}
+                    {modalType === "language" && "Language"}
+                    {modalType === "help" && "Help Center"}
+                    {modalType === "contact" && "Contact Support"}
+                    {modalType === "terms" && "Terms of Service"}
+                    {modalType === "privacy" && "Privacy Policy"}
+                  </h3>
+                  <button
+                    onClick={() => setShowModal(false)}
+                    className="!p-2 hover:!bg-gray-100 !rounded-full !transition-colors"
+                  >
+                    <IoClose size={20} />
+                  </button>
+                </div>
 
-              <div className="text-gray-600 mb-6">
-                {modalType === "clearHistory" && (
-                  <p>
-                    This will permanently delete all your chat conversations.
-                    This action cannot be undone.
-                  </p>
-                )}
-                {modalType === "downloadData" && (
-                  <p>
-                    We'll prepare a download of your data and send it to your
-                    email address.
-                  </p>
-                )}
-                {(modalType === "editProfile" ||
-                  modalType === "changeEmail" ||
-                  modalType === "2fa" ||
-                  modalType === "themeColor" ||
-                  modalType === "language" ||
-                  modalType === "help" ||
-                  modalType === "contact" ||
-                  modalType === "terms" ||
-                  modalType === "privacy") && (
-                  <p>
-                    Feature coming soon! This functionality will be available in
-                    the next update.
-                  </p>
-                )}
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="!flex-1 !px-4 !py-2 !border !border-gray-300 !rounded-lg !text-gray-700 hover:!bg-gray-50 !transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => setShowModal(false)}
-                  className={`!flex-1 !px-4 !py-2 !rounded-lg !text-white !transition-colors ${
-                    modalType === "clearHistory"
-                      ? "!bg-red-500 hover:!bg-red-600"
-                      : "!bg-blue-500 hover:!bg-blue-600"
-                  }`}
-                >
-                  {modalType === "clearHistory" && "Clear"}
-                  {modalType === "downloadData" && "Download"}
+                <div className="text-gray-600 mb-6">
+                  {modalType === "clearHistory" && (
+                    <p>
+                      This will permanently delete all your chat conversations.
+                      This action cannot be undone.
+                    </p>
+                  )}
+                  {modalType === "downloadData" && (
+                    <p>
+                      We'll prepare a download of your data and send it to your
+                      email address.
+                    </p>
+                  )}
                   {(modalType === "editProfile" ||
                     modalType === "changeEmail" ||
                     modalType === "2fa" ||
@@ -654,13 +640,46 @@ const Settings = ({ self, onLogout }) => {
                     modalType === "help" ||
                     modalType === "contact" ||
                     modalType === "terms" ||
-                    modalType === "privacy") &&
-                    "Continue"}
-                </button>
+                    modalType === "privacy") && (
+                    <p>
+                      Feature coming soon! This functionality will be available
+                      in the next update.
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowModal(false)}
+                    className="!flex-1 !px-4 !py-2 !border !border-gray-300 !rounded-lg !text-gray-700 hover:!bg-gray-50 !transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => setShowModal(false)}
+                    className={`!flex-1 !px-4 !py-2 !rounded-lg !text-white !transition-colors ${
+                      modalType === "clearHistory"
+                        ? "!bg-red-500 hover:!bg-red-600"
+                        : "!bg-blue-500 hover:!bg-blue-600"
+                    }`}
+                  >
+                    {modalType === "clearHistory" && "Clear"}
+                    {modalType === "downloadData" && "Download"}
+                    {(modalType === "editProfile" ||
+                      modalType === "changeEmail" ||
+                      modalType === "2fa" ||
+                      modalType === "themeColor" ||
+                      modalType === "language" ||
+                      modalType === "help" ||
+                      modalType === "contact" ||
+                      modalType === "terms" ||
+                      modalType === "privacy") &&
+                      "Continue"}
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
       </div>
     </>
   );
