@@ -87,6 +87,9 @@ const chatsQuery = gql`
   query {
     getChats {
       username
+      profilePic {
+        url
+      }
       lastMessage
       unseenCount
     }
@@ -302,7 +305,7 @@ const Home = () => {
     };
   }, [socket, destroyPeerConnection, callEnded]);
 
-  console.log(self);
+  console.log("self", self);
   if (loading) {
     return (
       <div className="w-screen h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">

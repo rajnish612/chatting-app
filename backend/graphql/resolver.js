@@ -353,10 +353,15 @@ const resolver = {
             lastMessageTime = lastMessages[2].timestamp;
           }
         }
+        console.log(userDetails);
 
         chatUsersWithUnseen.push({
           _id: userDetails._id,
           username: user.username,
+          profilePic: {
+            public_id: userDetails?.profilePic?.public_id,
+            url: userDetails?.profilePic?.url,
+          },
           unseenCount:
             unseenMessages.length > 0 ? unseenMessages[0].unseenCount : 0,
           lastMessage,

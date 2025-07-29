@@ -36,6 +36,9 @@ const Chatlist = ({
       return {
         username,
         unseenCount: chat ? chat.unseenCount : 0,
+        profilePic: {
+          url: chat?.profilePic?.url,
+        },
       };
     }) || [];
 
@@ -155,7 +158,11 @@ const Chatlist = ({
                   {/* Avatar */}
                   <div className="relative mr-3">
                     <img
-                      src="/images/avatar.png"
+                      src={
+                        chat?.profilePic?.url
+                          ? chat?.profilePic?.url
+                          : "/images/avatar.png"
+                      }
                       alt="Avatar"
                       className="w-12 h-12 rounded-full object-cover"
                     />
@@ -226,7 +233,11 @@ const Chatlist = ({
                   {/* Avatar */}
                   <div className="relative mr-3">
                     <img
-                      src="/images/avatar.png"
+                      src={
+                        chat?.profilePic?.url
+                          ? chat?.profilePic?.url
+                          : "/images/avatar.png"
+                      }
                       alt="Avatar"
                       className="w-12 h-12 rounded-full object-cover"
                     />

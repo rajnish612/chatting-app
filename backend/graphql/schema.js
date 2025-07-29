@@ -16,6 +16,7 @@ type User {
 }
 type chatPreview {
   username: String!
+  profilePic:ProfilePic
   unseenCount: Int!
   lastMessage: String
   lastMessageType: String
