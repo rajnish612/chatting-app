@@ -356,18 +356,26 @@ const Chatbox = ({
   };
 
   const formatMessageTime = (timestamp) => {
-    if (!timestamp) return "";
+    if (!timestamp) {
+      console.log("⚠️ No timestamp provided");
+      return "";
+    }
+    
+    console.log("📅 Formatting timestamp:", timestamp, "type:", typeof timestamp);
     
     try {
       // Handle different timestamp formats
       let messageDate;
       
       if (typeof timestamp === 'string' && timestamp.includes('T')) {
-        // ISO string format (from audio messages)
+        // ISO string format
         messageDate = new Date(timestamp);
       } else if (typeof timestamp === 'number') {
-        // Unix timestamp
+        // Unix timestamp as number
         messageDate = new Date(timestamp);
+      } else if (typeof timestamp === 'string' && /^\d+$/.test(timestamp)) {
+        // Unix timestamp as string - convert to number first
+        messageDate = new Date(parseInt(timestamp, 10));
       } else if (typeof timestamp === 'string') {
         // Try parsing as ISO string or fallback to Date constructor
         messageDate = new Date(timestamp);
@@ -378,7 +386,7 @@ const Chatbox = ({
 
       // Check if the date is valid
       if (isNaN(messageDate.getTime())) {
-        console.error("Invalid timestamp:", timestamp);
+        console.error("❌ Invalid timestamp:", timestamp);
         return "";
       }
 
@@ -395,9 +403,11 @@ const Chatbox = ({
         hour12: true 
       });
 
-      return `${dateStr}, ${timeStr}`;
+      const result = `${dateStr}, ${timeStr}`;
+      console.log("✅ Formatted result:", result);
+      return result;
     } catch (error) {
-      console.error("Error formatting message time:", error, "timestamp:", timestamp);
+      console.error("❌ Error formatting message time:", error, "timestamp:", timestamp);
       return "";
     }
   };
@@ -484,12 +494,16 @@ const Chatbox = ({
       timestamp: msg.timestamp || (msg._id ? new Date(parseInt(msg._id.substring(0, 8), 16) * 1000).toISOString() : new Date(Date.now() + index).toISOString())
     })) || [];
 
-    const audioMsgs = audioMessages?.map(msg => ({
-      ...msg,
-      type: 'audio'
-    })) || [];
+    const audioMsgs = audioMessages?.map(msg => {
+      console.log("🎵 Audio message data:", msg);
+      return {
+        ...msg,
+        type: 'audio'
+      };
+    }) || [];
 
     console.log("📊 getAllMessages - text:", textMessages.length, "audio:", audioMsgs.length, "total:", textMessages.length + audioMsgs.length);
+    console.log("📊 Sample audio message:", audioMsgs[0]);
 
     return [...textMessages, ...audioMsgs].sort((a, b) => 
       new Date(a.timestamp) - new Date(b.timestamp)
