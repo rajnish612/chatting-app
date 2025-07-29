@@ -364,6 +364,7 @@ const resolver = {
           },
           unseenCount:
             unseenMessages.length > 0 ? unseenMessages[0].unseenCount : 0,
+          name: userDetails?.name,
           lastMessage,
           lastMessageType,
           lastMessageTime,

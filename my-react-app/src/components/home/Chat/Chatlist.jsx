@@ -39,6 +39,7 @@ const Chatlist = ({
         profilePic: {
           url: chat?.profilePic?.url,
         },
+        name: chat?.name,
       };
     }) || [];
 
@@ -171,10 +172,11 @@ const Chatlist = ({
 
                   {/* Content */}
                   <div className="flex-1 min-w-0 mr-2">
-                    <div className="flex items-center justify-between">
-                      <h3 className="username font-semibold text-gray-900 truncate pr-2">
-                        {chat.username}
-                      </h3>
+                    <div className="flex items-start flex-col justify-between">
+                      <span>{chat?.name}</span>
+                      <span className="username font-light text-gray-400 truncate pr-2">
+                        @{chat.username}
+                      </span>
                       <span className="time text-xs text-gray-500 flex-shrink-0">
                         {formatTime(chat.lastMessageTime)}
                       </span>
@@ -246,14 +248,23 @@ const Chatlist = ({
 
                   {/* Content */}
                   <div className="flex-1 min-w-0 mr-2">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-start flex-col justify-between">
+                      <span>{chat?.name}</span>
+                      <span className="username font-light text-gray-400 truncate pr-2">
+                        @{chat.username}
+                      </span>
+                      <span className="time text-xs text-gray-500 flex-shrink-0">
+                        {formatTime(chat.lastMessageTime)}
+                      </span>
+                    </div>
+                    {/* <div className="flex items-center justify-between">
                       <h3 className="username font-semibold text-gray-900 truncate pr-2">
                         {chat.username}
                       </h3>
                       <span className="time text-xs text-gray-500 flex-shrink-0">
                         {formatTime(chat.lastMessageTime)}
                       </span>
-                    </div>
+                    </div> */}
                     <p className="message text-sm text-gray-600 truncate mt-1">
                       {chat.lastMessage || "Start a conversation..."}
                     </p>
