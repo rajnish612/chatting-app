@@ -61,6 +61,9 @@ const selfQuery = gql`
       followings {
         _id
         username
+        profilePic {
+          url
+        }
         email
         name
         bio
@@ -68,6 +71,9 @@ const selfQuery = gql`
       followers {
         _id
         username
+        profilePic {
+          url
+        }
         email
         name
         bio
