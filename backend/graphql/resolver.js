@@ -82,6 +82,9 @@ const resolver = {
             username: user.username,
             name: user.name,
             bio: user.bio,
+            profilePic: {
+              url: user?.profilePic?.url,
+            },
             followers: followersData,
             followings: followingsData,
           });
@@ -141,6 +144,9 @@ const resolver = {
             username: user.username,
             name: user.name,
             bio: user.bio,
+            profilePic: {
+              url: user?.profilePic?.url,
+            },
             followers: followersData,
             followings: followingsData,
           });

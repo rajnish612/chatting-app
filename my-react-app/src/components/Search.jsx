@@ -11,6 +11,9 @@ const randomUsersQuery = gql`
       username
       name
       bio
+      profilePic {
+        url
+      }
       followings {
         _id
         username
@@ -34,6 +37,9 @@ const searchUsersQuery = gql`
       username
       name
       bio
+      profilePic {
+        url
+      }
       followers {
         _id
         username
@@ -73,18 +79,29 @@ const followUserMutation = gql`
   }
 `;
 
-const Search = ({ setRefreshUsers, self, setIdx, setSelectedUserToChat }) => {
-  const { data, loading: userLoading, error: userError } = useQuery(randomUsersQuery, {
+const Search = ({
+  setRefreshUsers,
+  self,
+  setIdx,
+  setSelectedUserToChat,
+  setSelectedUserData,
+}) => {
+  const {
+    data,
+    loading: userLoading,
+    error: userError,
+  } = useQuery(randomUsersQuery, {
     fetchPolicy: "network-only",
     onError: (error) => {
       console.error("Random users query error:", error);
-    }
+    },
   });
 
   const [searchedUsers, setSearchedUsers] = useState([]);
   const [users, setUsers] = useState([]);
-  const [searchUsers, { loading: searchLoading }] =
-    useLazyQuery(searchUsersQuery, {
+  const [searchUsers, { loading: searchLoading }] = useLazyQuery(
+    searchUsersQuery,
+    {
       onCompleted: async (data) => {
         console.log("Search completed:", data);
         setSearchedUsers(data.searchUsers || []);
@@ -93,7 +110,8 @@ const Search = ({ setRefreshUsers, self, setIdx, setSelectedUserToChat }) => {
         console.error("Search users error:", error);
       },
       fetchPolicy: "network-only",
-    });
+    }
+  );
 
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -106,7 +124,7 @@ const Search = ({ setRefreshUsers, self, setIdx, setSelectedUserToChat }) => {
     onError: (error) => {
       console.error("Follow mutation error:", error);
       alert("Error following user: " + (error.message || "Unknown error"));
-    }
+    },
   });
 
   const handleSearch = (value) => {
@@ -118,25 +136,25 @@ const Search = ({ setRefreshUsers, self, setIdx, setSelectedUserToChat }) => {
   async function handleFollow(userId, set) {
     console.log("handleFollow called with userId:", userId);
     console.log("Current self:", self);
-    
+
     if (!self?._id) {
       alert("You must be logged in to follow users");
       return;
     }
-    
+
     setLoading(true);
 
     try {
       console.log("Calling followUser mutation with variables:", { userId });
       const result = await followUser({
-        variables: { userId }
+        variables: { userId },
       });
       console.log("Follow mutation result:", result);
     } catch (error) {
-      console.error('Follow error details:', {
+      console.error("Follow error details:", {
         message: error.message,
         graphQLErrors: error.graphQLErrors,
-        networkError: error.networkError
+        networkError: error.networkError,
       });
     } finally {
       setLoading(false);
@@ -150,43 +168,51 @@ const Search = ({ setRefreshUsers, self, setIdx, setSelectedUserToChat }) => {
 
   const getFollowButtonText = (user) => {
     if (loading) return "Loading...";
-    
+
     // Check if I'm following this user (check my followings list)
-    const iFollowUser = self?.followings?.some(following => 
-      typeof following === 'object' ? following._id === user._id : following === user._id
+    const iFollowUser = self?.followings?.some((following) =>
+      typeof following === "object"
+        ? following._id === user._id
+        : following === user._id
     );
-    
+
     if (iFollowUser) return "Following";
-    
+
     // Check if this user follows me (for follow back)
-    const userFollowsMe = self?.followers?.some(follower => 
-      typeof follower === 'object' ? follower._id === user._id : follower === user._id
+    const userFollowsMe = self?.followers?.some((follower) =>
+      typeof follower === "object"
+        ? follower._id === user._id
+        : follower === user._id
     );
-    
+
     if (userFollowsMe) {
       return "Follow Back";
     }
-    
+
     return "Follow";
   };
 
   const getFollowButtonIcon = (user) => {
     // Check if I'm following this user (check my followings list)
-    const iFollowUser = self?.followings?.some(following => 
-      typeof following === 'object' ? following._id === user._id : following === user._id
+    const iFollowUser = self?.followings?.some((following) =>
+      typeof following === "object"
+        ? following._id === user._id
+        : following === user._id
     );
-    
+
     if (iFollowUser) return <FaUserCheck size={14} />;
-    
+
     // Check if this user follows me (for follow back)
-    const userFollowsMe = self?.followers?.some(follower => 
-      typeof follower === 'object' ? follower._id === user._id : follower === user._id
+    const userFollowsMe = self?.followers?.some((follower) =>
+      typeof follower === "object"
+        ? follower._id === user._id
+        : follower === user._id
     );
-    
+
     if (userFollowsMe) {
       return <FaUsers size={14} />;
     }
-    
+
     return <FaUserPlus size={14} />;
   };
 
@@ -195,9 +221,18 @@ const Search = ({ setRefreshUsers, self, setIdx, setSelectedUserToChat }) => {
       {/* Avatar */}
       <div className="relative">
         <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
-          <span className="text-white font-bold text-lg">
-            {user.name?.charAt(0)?.toUpperCase() || user.username?.charAt(0)?.toUpperCase() || 'U'}
-          </span>
+          {user?.profilePic?.url ? (
+            <img
+              className="w-full h-full object-cover rounded-full"
+              src={user?.profilePic?.url}
+            />
+          ) : (
+            <span className="text-white font-bold text-lg">
+              {user.name?.charAt(0)?.toUpperCase() ||
+                user.username?.charAt(0)?.toUpperCase() ||
+                "U"}
+            </span>
+          )}
         </div>
         <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
       </div>
@@ -222,6 +257,10 @@ const Search = ({ setRefreshUsers, self, setIdx, setSelectedUserToChat }) => {
       </div>
       <div
         onClick={() => {
+          setSelectedUserData({
+            profilePic: user?.profilePic?.url,
+            name: user?.name,
+          });
           setSelectedUserToChat(user.username);
           setIdx(0);
         }}
@@ -250,8 +289,10 @@ const Search = ({ setRefreshUsers, self, setIdx, setSelectedUserToChat }) => {
         }}
         disabled={loading}
         className={`follow-btn !px-4 !py-2 !rounded-xl !font-medium !flex !items-center !gap-2 !transition-all !duration-300 ${
-          self?.followings?.some(following => 
-            typeof following === 'object' ? following._id === user._id : following === user._id
+          self?.followings?.some((following) =>
+            typeof following === "object"
+              ? following._id === user._id
+              : following === user._id
           )
             ? "!bg-gray-100 !text-gray-600 hover:!bg-gray-200"
             : "!bg-blue-500 !text-white hover:!bg-blue-600 hover:!scale-105"
@@ -279,32 +320,51 @@ const Search = ({ setRefreshUsers, self, setIdx, setSelectedUserToChat }) => {
       <div className="h-screen w-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-red-100">
         <div className="bg-white rounded-2xl p-8 shadow-lg flex flex-col items-center gap-4 max-w-md">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
-            <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              className="w-8 h-8 text-red-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
           </div>
           <div className="text-center">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Failed to load users</h3>
-            <p className="text-gray-600 text-sm mb-2">Error: {userError.message}</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Failed to load users
+            </h3>
+            <p className="text-gray-600 text-sm mb-2">
+              Error: {userError.message}
+            </p>
             <p className="text-gray-500 text-xs mb-4">
-              {userError.message.includes("ObjectId") 
+              {userError.message.includes("ObjectId")
                 ? "Database needs cleanup. This can happen with corrupted user data."
-                : "Please make sure you're logged in and try again."
-              }
+                : "Please make sure you're logged in and try again."}
             </p>
             <div className="flex gap-2 justify-center">
-              <button 
-                onClick={() => window.location.reload()} 
+              <button
+                onClick={() => window.location.reload()}
                 className="!px-4 !py-2 !bg-blue-500 !text-white !rounded-lg hover:!bg-blue-600 !transition-colors"
               >
                 Retry
               </button>
               {userError.message.includes("ObjectId") && (
-                <button 
+                <button
                   onClick={() => {
-                    console.log("To fix this error, run the database cleanup script:");
-                    console.log("cd backend && node scripts/cleanUserReferences.js");
-                    alert("Check the console for database cleanup instructions");
+                    console.log(
+                      "To fix this error, run the database cleanup script:"
+                    );
+                    console.log(
+                      "cd backend && node scripts/cleanUserReferences.js"
+                    );
+                    alert(
+                      "Check the console for database cleanup instructions"
+                    );
                   }}
                   className="!px-4 !py-2 !bg-orange-500 !text-white !rounded-lg hover:!bg-orange-600 !transition-colors"
                 >

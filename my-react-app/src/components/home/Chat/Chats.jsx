@@ -469,7 +469,7 @@ const Chats = ({
 
             {/* Chatbox Content */}
             <div className="flex-1">
-              {selectedUserToChat ? (
+              {selectedUserToChat && selectedUserData?.name ? (
                 isDocumentMode ? (
                   <DocumentBox
                     selectedUserToChat={selectedUserToChat}
@@ -480,32 +480,33 @@ const Chats = ({
                   />
                 ) : (
                   <Chatbox
-                    userOnCall={userOnCall}
-                    localVideoRef={localVideoRef}
-                    setCallType={setCallType}
-                    setUserOnCall={setUserOnCall}
-                    peerConnection={peerConnection}
-                    destroyPeerConnection={destroyPeerConnection}
-                    showOutgoingCallModal={showOutgoingCallModal}
-                    onCall={onCall}
-                    setShowOutgoingCallModal={setShowOutgoingCallModal}
-                    chatsrefetch={chatsrefetch}
-                    setChats={setChats}
-                    setUserMessages={setUserMessages}
-                    setOutGoingVideoCall={setOutGoingVideoCall}
-                    userMessages={userMessages}
-                    socket={socket}
-                    self={self}
-                    selectedUserToChat={selectedUserToChat}
-                    setSelectedUserToChat={setSelectedUserToChat}
-                    onDocumentClick={handleDocumentModeToggle}
-                    unseenDocumentCount={
-                      unseenDocumentCounts[selectedUserToChat] || 0
-                    }
-                    unseenAudioCount={
-                      unseenAudioCounts[selectedUserToChat] || 0
-                    }
-                    onMarkAudioMessagesAsSeen={markAudioMessagesAsSeen}
+                  userOnCall={userOnCall}
+                  selectedUserData={selectedUserData}
+                  localVideoRef={localVideoRef}
+                  setCallType={setCallType}
+                  setUserOnCall={setUserOnCall}
+                  peerConnection={peerConnection}
+                  destroyPeerConnection={destroyPeerConnection}
+                  showOutgoingCallModal={showOutgoingCallModal}
+                  onCall={onCall}
+                  setShowOutgoingCallModal={setShowOutgoingCallModal}
+                  chatsrefetch={chatsrefetch}
+                  setChats={setChats}
+                  setUserMessages={setUserMessages}
+                  setOutGoingVideoCall={setOutGoingVideoCall}
+                  userMessages={userMessages}
+                  socket={socket}
+                  self={self}
+                  selectedUserToChat={selectedUserToChat}
+                  setSelectedUserToChat={setSelectedUserToChat}
+                  onDocumentClick={handleDocumentModeToggle}
+                  unseenDocumentCount={
+                    unseenDocumentCounts[selectedUserToChat] || 0
+                  }
+                  unseenAudioCount={
+                    unseenAudioCounts[selectedUserToChat] || 0
+                  }
+                  onMarkAudioMessagesAsSeen={markAudioMessagesAsSeen}
                   />
                 )
               ) : (
