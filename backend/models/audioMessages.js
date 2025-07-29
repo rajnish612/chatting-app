@@ -10,6 +10,8 @@ const audioMessageSchema = new mongoose.Schema({
   timestamp: { type: Date, default: Date.now },
   isSeen: { type: Boolean, default: false },
   isPlayed: { type: Boolean, default: false },
+  deletedFor: { type: [String], default: [] },
+  deletedForEveryone: { type: Boolean, default: false },
 });
 
 const AudioMessage = mongoose.model("AudioMessage", audioMessageSchema);

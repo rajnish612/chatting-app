@@ -5,6 +5,8 @@ const messageSchema = new mongoose.Schema({
   content: { type: String, required: true },
   timestamp: { type: Date, default: Date.now },
   isSeen: { type: Boolean, default: false },
+  deletedFor: { type: [String], default: [] },
+  deletedForEveryone: { type: Boolean, default: false },
 });
 const Message = mongoose.model("Message", messageSchema);
 export default Message;

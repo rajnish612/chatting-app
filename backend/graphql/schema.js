@@ -17,12 +17,19 @@ type User {
 type chatPreview {
   username: String!
   unseenCount: Int!
+  lastMessage: String
+  lastMessageType: String
+  lastMessageTime: String
 }
 type Message {
+  _id: ID!
   sender: String!
   receiver: String!
   isSeen: Boolean!
   content: String!
+  timestamp: String!
+  deletedFor: [String]
+  deletedForEveryone: Boolean
 }
 
 type Document {
@@ -51,6 +58,8 @@ type AudioMessage {
   timestamp: String!
   isSeen: Boolean!
   isPlayed: Boolean!
+  deletedFor: [String]
+  deletedForEveryone: Boolean
 }
 type Query {
   getChats: [chatPreview]
@@ -82,8 +91,11 @@ type Mutation {
   follow(userId: ID!): User
   getMessages(sender: String!, receiver: String!): [Message]
   getDocuments(sender: String!, receiver: String!): [Document]
-  getAudioMessages(sender: String!, receiver: String!): [AudioMessage]
+  getAudioMessages(sender: String!, receiver: String!, limit: Int, skip: Int): [AudioMessage]
+  getAudioData(messageId: ID!): AudioMessage
   seeAudioMessages(sender: String!, receiver: String!): [AudioMessage]
+  deleteMessage(messageId: ID!, deleteType: String!): String
+  deleteAudioMessage(messageId: ID!, deleteType: String!): String
 }
 `;
 

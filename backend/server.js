@@ -170,11 +170,19 @@ io.on("connection", (socket) => {
 
   socket.on("audioMessageSeenByReceiver", async ({ sender, receiver }) => {
     try {
-      await AudioMessage.updateMany(
+      console.log(`🔔 Backend: Audio messages seen by receiver - sender: ${sender}, receiver: ${receiver}`);
+      
+      const result = await AudioMessage.updateMany(
         { sender, receiver, isSeen: false },
         { $set: { isSeen: true } }
       );
+      
+      console.log(`📝 Backend: Updated ${result.modifiedCount} audio messages as seen`);
+      console.log(`📡 Backend: Emitting audioMessageSeen to sender: ${sender}`);
+      
+      // Try both targeted and broadcast approach
       io.to(sender).emit("audioMessageSeen", { receiver });
+      io.emit("audioMessageSeenBroadcast", { sender, receiver }); // Broadcast as backup
     } catch (error) {
       console.error("Error marking audio messages as seen:", error);
     }

@@ -1,5 +1,5 @@
 import { gql, useMutation } from "@apollo/client";
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import { useEffect } from "react";
 import { useState } from "react";
 import EmojiPicker from "emoji-picker-react";
@@ -29,10 +29,54 @@ const isSeenQuery = gql`
 const getSelectedUserChatsQuery = gql`
   mutation getMessages($sender: String!, $receiver: String!) {
     getMessages(sender: $sender, receiver: $receiver) {
+      _id
       sender
       receiver
       content
       isSeen
+      deletedFor
+      deletedForEveryone
+    }
+  }
+`;
+
+const getAudioMessagesQuery = gql`
+  mutation getAudioMessages($sender: String!, $receiver: String!) {
+    getAudioMessages(sender: $sender, receiver: $receiver) {
+      _id
+      sender
+      receiver
+      audioData
+      duration
+      fileType
+      timestamp
+      isSeen
+      isPlayed
+      deletedFor
+      deletedForEveryone
+    }
+  }
+`;
+
+const deleteMessageQuery = gql`
+  mutation deleteMessage($messageId: ID!, $deleteType: String!) {
+    deleteMessage(messageId: $messageId, deleteType: $deleteType)
+  }
+`;
+
+const deleteAudioMessageQuery = gql`
+  mutation deleteAudioMessage($messageId: ID!, $deleteType: String!) {
+    deleteAudioMessage(messageId: $messageId, deleteType: $deleteType)
+  }
+`;
+
+const getAudioDataQuery = gql`
+  mutation getAudioData($messageId: ID!) {
+    getAudioData(messageId: $messageId) {
+      _id
+      audioData
+      duration
+      fileType
     }
   }
 `;
@@ -60,6 +104,7 @@ const Chatbox = ({
   setAudioMode,
   unseenDocumentCount = 0,
   unseenAudioCount = 0,
+  onMarkAudioMessagesAsSeen,
 }) => {
   console.log("setOutGoingVideoCall:", setOutGoingVideoCall);
   const messagesEndRef = React.useRef(null);
@@ -68,12 +113,80 @@ const Chatbox = ({
   const [showScrollDownArrow, setShowScrollDownArrow] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
 
+  // Audio recording states
+  const [recording, setRecording] = React.useState(false);
+  const [audioMessages, setAudioMessages] = React.useState([]);
+  const [isLoadingAudio, setIsLoadingAudio] = React.useState(false);
+  const [audioURL, setAudioURL] = React.useState("");
+  const [audioLevel, setAudioLevel] = React.useState(0);
+  const [recordingTime, setRecordingTime] = React.useState(0);
+  const [audioBlobRef, setAudioBlobRef] = React.useState(null);
+  const [playingAudio, setPlayingAudio] = React.useState(null);
+  const [audioCurrentTime, setAudioCurrentTime] = React.useState({});
+  const [audioDurations, setAudioDurations] = React.useState({});
+  const [isSendingAudio, setIsSendingAudio] = React.useState(false);
+  const [loadingAudioData, setLoadingAudioData] = React.useState({});
+
+  // Audio recording refs
+  const mediaRecorderRef = React.useRef(null);
+  const streamRef = React.useRef(null);
+  const audioChunksRef = React.useRef([]);
+  const audioContextRef = React.useRef(null);
+  const analyserRef = React.useRef(null);
+  const animationRef = React.useRef(null);
+  const timerRef = React.useRef(null);
+  const hasMarkedSeenRef = React.useRef(false);
+  const audioRef = React.useRef(null);
+
   const [getSelectedUserChat] = useMutation(getSelectedUserChatsQuery, {
     onCompleted: async (data) => {
       setUserMessages(data.getMessages);
     },
     onError: (err) => {
       console.log("error is", err);
+    },
+  });
+
+  const [getAudioMessages] = useMutation(getAudioMessagesQuery, {
+    onCompleted: (data) => {
+      console.log("🎵 Audio messages received:", data.getAudioMessages?.length || 0, data.getAudioMessages);
+      setAudioMessages(data.getAudioMessages || []);
+      setIsLoadingAudio(false);
+    },
+    onError: (err) => {
+      console.error("❌ Error fetching audio messages:", err);
+      setIsLoadingAudio(false);
+    },
+  });
+
+  const [getAudioData] = useMutation(getAudioDataQuery, {
+    onCompleted: (data) => {
+      if (data.getAudioData) {
+        // Update the audio message with the loaded data
+        setAudioMessages(prev => prev.map(msg => 
+          msg._id === data.getAudioData._id 
+            ? { ...msg, audioData: data.getAudioData.audioData }
+            : msg
+        ));
+        // Remove from loading state
+        setLoadingAudioData(prev => {
+          const newState = { ...prev };
+          delete newState[data.getAudioData._id];
+          return newState;
+        });
+      }
+    },
+    onError: (err) => {
+      console.error("❌ Error fetching audio data:", err);
+      // Remove from loading state on error
+      setLoadingAudioData(prev => {
+        const newState = { ...prev };
+        // Find the messageId from the error context if possible
+        Object.keys(newState).forEach(id => {
+          delete newState[id];
+        });
+        return newState;
+      });
     },
   });
 
@@ -96,6 +209,292 @@ const Chatbox = ({
 
   let [content, setContent] = useState("");
   const navigate = useNavigate();
+
+  // Audio recording functions
+  const analyzeAudio = () => {
+    if (!analyserRef.current) return;
+
+    const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+    analyserRef.current.getByteFrequencyData(dataArray);
+
+    const average =
+      dataArray.reduce((sum, value) => sum + value, 0) / dataArray.length;
+    setAudioLevel(Math.min(100, average * 2));
+
+    animationRef.current = requestAnimationFrame(analyzeAudio);
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      mediaRecorderRef.current = new MediaRecorder(stream);
+
+      audioContextRef.current = new (window.AudioContext ||
+        window.webkitAudioContext)();
+      analyserRef.current = audioContextRef.current.createAnalyser();
+      const source = audioContextRef.current.createMediaStreamSource(stream);
+      source.connect(analyserRef.current);
+      analyserRef.current.fftSize = 256;
+
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        audioChunksRef.current.push(event.data);
+      };
+
+      mediaRecorderRef.current.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: "audio/webm",
+        });
+        const url = URL.createObjectURL(audioBlob);
+        setAudioURL(url);
+        setAudioBlobRef(audioBlob);
+        audioChunksRef.current = [];
+      };
+
+      mediaRecorderRef.current.start();
+      setRecording(true);
+      setRecordingTime(0);
+
+      analyzeAudio();
+
+      timerRef.current = setInterval(() => {
+        setRecordingTime((prev) => prev + 1);
+      }, 1000);
+    } catch (error) {
+      console.error('Error accessing microphone:', error);
+      alert('Unable to access microphone. Please check permissions.');
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+    }
+    setRecording(false);
+    setAudioLevel(0);
+
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+    }
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+    }
+  };
+
+  const convertBlobToBase64 = (blob) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  };
+
+  const sendAudioMessage = async () => {
+    if (!audioBlobRef || !selectedUserToChat || isSendingAudio || !socket) return;
+
+    try {
+      setIsSendingAudio(true);
+      
+      const base64Audio = await convertBlobToBase64(audioBlobRef);
+      
+      const audioMessage = {
+        sender: self.username,
+        receiver: selectedUserToChat,
+        audioData: base64Audio,
+        duration: recordingTime,
+        fileType: 'audio/webm'
+      };
+
+      socket.emit('sendAudioMessage', audioMessage);
+      
+      // Add to local state
+      setAudioMessages((prev) => [...prev, {
+        _id: Date.now().toString(),
+        sender: self.username,
+        receiver: selectedUserToChat,
+        audioData: base64Audio,
+        duration: recordingTime,
+        fileType: 'audio/webm',
+        timestamp: new Date().toISOString(),
+        isSeen: false,
+        isPlayed: false
+      }]);
+      
+      setAudioURL("");
+      setAudioBlobRef(null);
+      setRecordingTime(0);
+    } catch (error) {
+      console.error('Error sending audio message:', error);
+    } finally {
+      setIsSendingAudio(false);
+    }
+  };
+
+  const deleteAudioMessage = () => {
+    if (audioURL) {
+      URL.revokeObjectURL(audioURL);
+    }
+    setAudioURL("");
+    setAudioBlobRef(null);
+    setRecordingTime(0);
+  };
+
+  const formatTime = (seconds) => {
+    if (isNaN(seconds) || !isFinite(seconds) || seconds < 0) {
+      return "0:00";
+    }
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const formatMessageTime = (timestamp) => {
+    if (!timestamp) return "";
+    
+    try {
+      // Handle different timestamp formats
+      let messageDate;
+      
+      if (typeof timestamp === 'string' && timestamp.includes('T')) {
+        // ISO string format (from audio messages)
+        messageDate = new Date(timestamp);
+      } else if (typeof timestamp === 'number') {
+        // Unix timestamp
+        messageDate = new Date(timestamp);
+      } else if (typeof timestamp === 'string') {
+        // Try parsing as ISO string or fallback to Date constructor
+        messageDate = new Date(timestamp);
+      } else {
+        // Direct Date object
+        messageDate = new Date(timestamp);
+      }
+
+      // Check if the date is valid
+      if (isNaN(messageDate.getTime())) {
+        console.error("Invalid timestamp:", timestamp);
+        return "";
+      }
+
+      // Always show both date and time
+      const dateStr = messageDate.toLocaleDateString([], {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+      
+      const timeStr = messageDate.toLocaleTimeString([], { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: true 
+      });
+
+      return `${dateStr}, ${timeStr}`;
+    } catch (error) {
+      console.error("Error formatting message time:", error, "timestamp:", timestamp);
+      return "";
+    }
+  };
+
+  const toggleAudioPlayback = useCallback(async (messageId, audioSrc) => {
+    const audio = document.getElementById(`audio-${messageId}`);
+    if (!audio) return;
+
+    if (playingAudio === messageId) {
+      audio.pause();
+      setPlayingAudio(null);
+    } else {
+      // If audio data is not loaded, fetch it first
+      if (!audioSrc) {
+        try {
+          setLoadingAudioData(prev => ({ ...prev, [messageId]: true }));
+          await getAudioData({
+            variables: { messageId }
+          });
+          // Audio data will be updated via onCompleted callback
+          // Don't play yet, let user click again after loading
+          return;
+        } catch (error) {
+          console.error("Failed to load audio data:", error);
+          setLoadingAudioData(prev => {
+            const newState = { ...prev };
+            delete newState[messageId];
+            return newState;
+          });
+          return;
+        }
+      }
+
+      if (playingAudio) {
+        const currentAudio = document.getElementById(`audio-${playingAudio}`);
+        if (currentAudio) currentAudio.pause();
+      }
+      
+      audio.play();
+      setPlayingAudio(messageId);
+    }
+  }, [playingAudio, getAudioData]);
+
+  const handleAudioTimeUpdate = useCallback((messageId, currentTime, duration) => {
+    // Throttle updates to prevent excessive re-renders
+    setAudioCurrentTime(prev => {
+      const prevTime = prev[messageId] || 0;
+      // Only update if the time has changed significantly (more than 0.1 seconds)
+      if (Math.abs(currentTime - prevTime) > 0.1) {
+        return {
+          ...prev,
+          [messageId]: currentTime
+        };
+      }
+      return prev;
+    });
+    
+    if (duration && isFinite(duration) && duration > 0) {
+      setAudioDurations(prev => {
+        if (prev[messageId] !== duration) {
+          return {
+            ...prev,
+            [messageId]: duration
+          };
+        }
+        return prev;
+      });
+    }
+  }, []);
+
+  const handleAudioEnded = useCallback((messageId) => {
+    setPlayingAudio(null);
+    setAudioCurrentTime(prev => ({
+      ...prev,
+      [messageId]: 0
+    }));
+  }, []);
+
+  // Combine and sort all messages by timestamp - memoized to prevent re-renders
+  const getAllMessages = useMemo(() => {
+    const textMessages = userMessages?.map((msg, index) => ({
+      ...msg,
+      type: 'text',
+      timestamp: msg.timestamp || (msg._id ? new Date(parseInt(msg._id.substring(0, 8), 16) * 1000).toISOString() : new Date(Date.now() + index).toISOString())
+    })) || [];
+
+    const audioMsgs = audioMessages?.map(msg => ({
+      ...msg,
+      type: 'audio'
+    })) || [];
+
+    console.log("📊 getAllMessages - text:", textMessages.length, "audio:", audioMsgs.length, "total:", textMessages.length + audioMsgs.length);
+
+    return [...textMessages, ...audioMsgs].sort((a, b) => 
+      new Date(a.timestamp) - new Date(b.timestamp)
+    );
+  }, [userMessages, audioMessages]);
   function handleChange(e) {
     setContent(e.target.value);
     // Simulate typing indicator
@@ -144,13 +543,65 @@ const Chatbox = ({
   useEffect(() => {
     async function getSelectedUserChatFnc() {
       if (self?.username && selectedUserToChat) {
+        // Reset states when switching users
+        hasMarkedSeenRef.current = false;
+        setAudioMessages([]); // Clear previous audio messages
+        setIsLoadingAudio(true);
+        
         await getSelectedUserChat({
+          variables: { sender: self?.username, receiver: selectedUserToChat },
+        });
+        
+        // Also fetch audio messages
+        console.log("🎵 Fetching audio messages for:", self?.username, "->", selectedUserToChat);
+        await getAudioMessages({
           variables: { sender: self?.username, receiver: selectedUserToChat },
         });
       }
     }
     getSelectedUserChatFnc();
-  }, [self?.username, selectedUserToChat, getSelectedUserChat]);
+  }, [self?.username, selectedUserToChat, getSelectedUserChat, getAudioMessages]);
+
+  // Separate useEffect for marking messages as seen to avoid infinite loops
+  useEffect(() => {
+    if (onMarkAudioMessagesAsSeen && unseenAudioCount > 0 && selectedUserToChat && self?.username && !hasMarkedSeenRef.current) {
+      onMarkAudioMessagesAsSeen(selectedUserToChat, self?.username);
+      hasMarkedSeenRef.current = true;
+    }
+  }, [onMarkAudioMessagesAsSeen, unseenAudioCount, selectedUserToChat, self?.username]);
+
+  // Debug audioMessages state
+  useEffect(() => {
+    console.log("🔍 audioMessages state changed:", audioMessages.length, audioMessages);
+  }, [audioMessages]);
+
+  // Socket listener for incoming audio messages
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleReceiveAudioMessage = (message) => {
+      if (message.receiver === self?.username && 
+          message.sender === selectedUserToChat) {
+        setAudioMessages((prev) => [...prev, {
+          _id: message._id,
+          sender: message.sender,
+          receiver: message.receiver,
+          audioData: message.audioData,
+          duration: message.duration || 0,
+          fileType: message.fileType || 'audio/webm',
+          timestamp: message.timestamp,
+          isSeen: message.isSeen || false,
+          isPlayed: message.isPlayed || false
+        }]);
+      }
+    };
+
+    socket.on('receiveAudioMessage', handleReceiveAudioMessage);
+
+    return () => {
+      socket.off('receiveAudioMessage', handleReceiveAudioMessage);
+    };
+  }, [socket, self?.username, selectedUserToChat]);
 
   const isSeenFnc = useCallback(async () => {
     await seeMessage({
@@ -291,10 +742,22 @@ const Chatbox = ({
       );
     };
 
+    const handleAudioMessageSeen = ({ receiver }) => {
+      setAudioMessages((prev) =>
+        prev.map((msg) =>
+          msg.sender === self?.username && msg.receiver === receiver
+            ? { ...msg, isSeen: true }
+            : msg
+        )
+      );
+    };
+
     socket.on("messageSeen", handleMessageSeen);
+    socket.on("audioMessageSeen", handleAudioMessageSeen);
 
     return () => {
       socket.off("messageSeen", handleMessageSeen);
+      socket.off("audioMessageSeen", handleAudioMessageSeen);
     };
   }, [socket, self?.username, setUserMessages]);
 
@@ -493,31 +956,6 @@ const Chatbox = ({
 
           <div className="flex items-center gap-3">
             <button
-              onClick={setAudioMode}
-              className="!bg-purple-500 hover:!bg-purple-600 !shadow-lg !p-3 action-btn !rounded-full !relative"
-              title="Audio Messages"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke-width="1.5"
-                stroke="currentColor"
-                class="size-4"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z"
-                />
-              </svg>
-              {unseenAudioCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold border-2 border-white">
-                  {unseenAudioCount > 99 ? "99+" : unseenAudioCount}
-                </span>
-              )}
-            </button>
-            <button
               onClick={onDocumentClick}
               className="action-btn !p-3 !rounded-full !bg-purple-500 hover:!bg-purple-600 !text-white !shadow-lg !relative"
               title="Share Documents"
@@ -581,15 +1019,27 @@ const Chatbox = ({
             }}
             className="chat-scroll h-full overflow-y-auto px-4 py-6 space-y-4"
           >
-            {userMessages?.map((message, idx) => {
+            {/* Loading indicator for initial audio loading */}
+            {isLoadingAudio && audioMessages.length === 0 && (
+              <div className="flex justify-center items-center py-4">
+                <div className="flex items-center space-x-2 text-gray-500">
+                  <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+                  <span className="text-sm">Loading audio messages...</span>
+                </div>
+              </div>
+            )}
+            
+            {getAllMessages?.map((message, idx) => {
               const isOwn = message.sender === self?.username;
+              // Create a stable key for each message
+              const messageKey = message._id || `${message.type}-${idx}-${message.content || message.duration}`;
 
               return (
                 <div
-                  key={idx}
+                  key={messageKey}
                   ref={
-                    idx === userMessages.length - 1 ||
-                    idx === userMessages.length - 2
+                    idx === getAllMessages.length - 1 ||
+                    idx === getAllMessages.length - 2
                       ? messagesEndRef
                       : null
                   }
@@ -619,32 +1069,120 @@ const Chatbox = ({
                           : "bg-white text-gray-800 rounded-bl-md border border-gray-100"
                       }`}
                     >
-                      <p
-                        className="text-sm font-medium leading-relaxed"
-                        style={{
-                          wordBreak: "break-word",
-                          whiteSpace: "pre-wrap",
-                        }}
-                      >
-                        {message.content}
-                      </p>
+                      {message.type === 'text' ? (
+                        // Text Message
+                        <p
+                          className="text-sm font-medium leading-relaxed"
+                          style={{
+                            wordBreak: "break-word",
+                            whiteSpace: "pre-wrap",
+                          }}
+                        >
+                          {message.content}
+                        </p>
+                      ) : (
+                        // Audio Message
+                        <div className="flex items-center space-x-3 py-2">
+                          {/* Play/Pause Button */}
+                          <button
+                            onClick={() => toggleAudioPlayback(message._id, message.audioData)}
+                            disabled={!message.audioData}
+                            className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 ${
+                              isOwn
+                                ? 'bg-blue-700 hover:bg-blue-800 disabled:bg-blue-400'
+                                : 'bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400'
+                            } ${!message.audioData ? 'cursor-not-allowed' : ''}`}
+                          >
+                            {!message.audioData || loadingAudioData[message._id] ? (
+                              // Loading spinner
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            ) : playingAudio === message._id ? (
+                              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                              </svg>
+                            ) : (
+                              <svg className="w-4 h-4 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z"/>
+                              </svg>
+                            )}
+                          </button>
+                          
+                          {/* Waveform/Progress Bar */}
+                          <div className="flex-1 space-y-1">
+                            {!message.audioData || loadingAudioData[message._id] ? (
+                              // Loading state for waveform
+                              <div className="flex items-center space-x-1">
+                                {[...Array(15)].map((_, i) => (
+                                  <div
+                                    key={i}
+                                    className={`w-1 h-3 rounded-full animate-pulse ${
+                                      isOwn ? 'bg-blue-300' : 'bg-gray-400'
+                                    }`}
+                                    style={{
+                                      animationDelay: `${i * 50}ms`
+                                    }}
+                                  />
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="flex items-center space-x-1">
+                                {[...Array(15)].map((_, i) => {
+                                  // Generate consistent height based on message ID and index
+                                  const seedHeight = ((message._id?.charCodeAt(i % message._id.length) || 0) + i) % 12 + 6;
+                                  return (
+                                    <div
+                                      key={i}
+                                      className={`w-1 rounded-full transition-all duration-200 ${
+                                        isOwn ? 'bg-blue-200' : 'bg-gray-300'
+                                      }`}
+                                      style={{
+                                        height: `${seedHeight}px`,
+                                        opacity: (audioCurrentTime[message._id] || 0) / (audioDurations[message._id] || message.duration || 1) > i / 15 ? 1 : 0.4
+                                      }}
+                                    />
+                                  );
+                                })}
+                              </div>
+                            )}
+                            
+                            {/* Time Display */}
+                            <div className="flex justify-between text-xs opacity-75">
+                              <span>
+                                {!message.audioData || loadingAudioData[message._id] ? "..." : formatTime(audioCurrentTime[message._id] || 0)}
+                              </span>
+                              <span>
+                                {!message.audioData || loadingAudioData[message._id] ? "Loading..." : formatTime(audioDurations[message._id] || message.duration || 0)}
+                              </span>
+                            </div>
+                          </div>
 
-                      {/* Message Status */}
-                      {isOwn && (
-                        <div className="flex items-center justify-end mt-1 gap-1">
-                          <span className="text-xs opacity-75">
-                            {new Date().toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </span>
-                          {message.isSeen ? (
-                            <BsCheckAll className="text-blue-200" size={14} />
-                          ) : (
-                            <BsCheck className="text-blue-200" size={14} />
-                          )}
+                          {/* Hidden Audio Element */}
+                          <audio
+                            id={`audio-${message._id}`}
+                            src={message.audioData}
+                            onTimeUpdate={(e) => handleAudioTimeUpdate(message._id, e.target.currentTime, e.target.duration)}
+                            onEnded={() => handleAudioEnded(message._id)}
+                            preload="metadata"
+                            className="hidden"
+                          />
                         </div>
                       )}
+
+                      {/* Message Status - Show for everyone, but with different styling */}
+                      <div className={`flex items-center mt-1 gap-1 ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                        <span className="text-xs opacity-60">
+                          {formatMessageTime(message.timestamp)}
+                        </span>
+                        {isOwn && (
+                          <>
+                            {message.isSeen ? (
+                              <BsCheckAll className="text-blue-200" size={14} />
+                            ) : (
+                              <BsCheck className="text-blue-200" size={14} />
+                            )}
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -678,6 +1216,81 @@ const Chatbox = ({
             )}
           </div>
         </div>
+
+        {/* Recording Indicator */}
+        {recording && (
+          <div className="mx-4 mb-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                <span className="text-red-600 font-medium">Recording...</span>
+                <span className="text-red-500 font-mono">{formatTime(recordingTime)}</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                {[...Array(8)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="w-1 bg-red-500 rounded-full transition-all duration-150"
+                    style={{
+                      height: `${Math.max(4, (audioLevel / 100) * 20 + Math.random() * 6)}px`,
+                      opacity: audioLevel > 10 ? 1 : 0.3,
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Audio Preview */}
+        {audioURL && !recording && (
+          <div className="mx-4 mb-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => {
+                    const audio = audioRef.current;
+                    if (audio.paused) {
+                      audio.play();
+                    } else {
+                      audio.pause();
+                    }
+                  }}
+                  className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white"
+                >
+                  <svg className="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                </button>
+                <span className="text-blue-600 font-medium">Voice message ready</span>
+                <span className="text-blue-500 text-sm">{formatTime(recordingTime)}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={deleteAudioMessage}
+                  className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-gray-700 text-sm"
+                >
+                  Delete
+                </button>
+                <button
+                  onClick={sendAudioMessage}
+                  disabled={isSendingAudio}
+                  className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm flex items-center space-x-1"
+                >
+                  {isSendingAudio ? (
+                    <>
+                      <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Sending...</span>
+                    </>
+                  ) : (
+                    <span>Send</span>
+                  )}
+                </button>
+              </div>
+            </div>
+            <audio ref={audioRef} src={audioURL} className="hidden" />
+          </div>
+        )}
 
         {/* Enhanced Input Container */}
         <div className="input-container p-4 m-4 rounded-2xl">
@@ -726,7 +1339,14 @@ const Chatbox = ({
             </div>
 
             {/* Voice Message Button */}
-            <button className="action-btn !p-2 !text-blue-500 hover:!bg-blue-50 !rounded-full !transition-colors">
+            <button 
+              onClick={recording ? stopRecording : startRecording}
+              className={`action-btn !p-2 !rounded-full !transition-colors ${
+                recording 
+                  ? '!bg-red-500 hover:!bg-red-600 !text-white !animate-pulse' 
+                  : '!text-blue-500 hover:!bg-blue-50'
+              }`}
+            >
               <MdOutlineKeyboardVoice size={24} />
             </button>
 

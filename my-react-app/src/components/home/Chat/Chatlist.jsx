@@ -11,6 +11,22 @@ const Chatlist = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
 
+  const formatTime = (timestamp) => {
+    if (!timestamp) return "";
+    const now = new Date();
+    const messageTime = new Date(timestamp);
+    const diffInMs = now - messageTime;
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+    if (diffInMinutes < 1) return "now";
+    if (diffInMinutes < 60) return `${diffInMinutes}m`;
+    if (diffInHours < 24) return `${diffInHours}h`;
+    if (diffInDays < 7) return `${diffInDays}d`;
+    return messageTime.toLocaleDateString();
+  };
+
   const followingsWithUnseen =
     self?.followings?.map((following) => {
       // Handle both object and string formats
@@ -153,11 +169,11 @@ const Chatlist = ({
                         {chat.username}
                       </h3>
                       <span className="time text-xs text-gray-500 flex-shrink-0">
-                        2m
+                        {formatTime(chat.lastMessageTime)}
                       </span>
                     </div>
                     <p className="message text-sm text-gray-600 truncate mt-1">
-                      Say hello...
+                      {chat.lastMessage || "Say hello..."}
                     </p>
                   </div>
 
@@ -215,11 +231,11 @@ const Chatlist = ({
                         {chat.username}
                       </h3>
                       <span className="time text-xs text-gray-500 flex-shrink-0">
-                        5m
+                        {formatTime(chat.lastMessageTime)}
                       </span>
                     </div>
                     <p className="message text-sm text-gray-600 truncate mt-1">
-                      Last message preview...
+                      {chat.lastMessage || "Start a conversation..."}
                     </p>
                   </div>
 
