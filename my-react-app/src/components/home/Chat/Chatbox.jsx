@@ -93,6 +93,7 @@ const Chatbox = ({
   setCallType,
   setChats,
   self,
+  selectedUserData,
   setUserMessages,
   setOutGoingVideoCall,
   setShowOutgoingCallModal,
@@ -149,7 +150,11 @@ const Chatbox = ({
 
   const [getAudioMessages] = useMutation(getAudioMessagesQuery, {
     onCompleted: (data) => {
-      console.log("🎵 Audio messages received:", data.getAudioMessages?.length || 0, data.getAudioMessages);
+      console.log(
+        "🎵 Audio messages received:",
+        data.getAudioMessages?.length || 0,
+        data.getAudioMessages
+      );
       setAudioMessages(data.getAudioMessages || []);
       setIsLoadingAudio(false);
     },
@@ -158,18 +163,21 @@ const Chatbox = ({
       setIsLoadingAudio(false);
     },
   });
+  console.log("selectedUserData", selectedUserData);
 
   const [getAudioData] = useMutation(getAudioDataQuery, {
     onCompleted: (data) => {
       if (data.getAudioData) {
         // Update the audio message with the loaded data
-        setAudioMessages(prev => prev.map(msg => 
-          msg._id === data.getAudioData._id 
-            ? { ...msg, audioData: data.getAudioData.audioData }
-            : msg
-        ));
+        setAudioMessages((prev) =>
+          prev.map((msg) =>
+            msg._id === data.getAudioData._id
+              ? { ...msg, audioData: data.getAudioData.audioData }
+              : msg
+          )
+        );
         // Remove from loading state
-        setLoadingAudioData(prev => {
+        setLoadingAudioData((prev) => {
           const newState = { ...prev };
           delete newState[data.getAudioData._id];
           return newState;
@@ -179,10 +187,10 @@ const Chatbox = ({
     onError: (err) => {
       console.error("❌ Error fetching audio data:", err);
       // Remove from loading state on error
-      setLoadingAudioData(prev => {
+      setLoadingAudioData((prev) => {
         const newState = { ...prev };
         // Find the messageId from the error context if possible
-        Object.keys(newState).forEach(id => {
+        Object.keys(newState).forEach((id) => {
           delete newState[id];
         });
         return newState;
@@ -261,8 +269,8 @@ const Chatbox = ({
         setRecordingTime((prev) => prev + 1);
       }, 1000);
     } catch (error) {
-      console.error('Error accessing microphone:', error);
-      alert('Unable to access microphone. Please check permissions.');
+      console.error("Error accessing microphone:", error);
+      alert("Unable to access microphone. Please check permissions.");
     }
   };
 
@@ -297,41 +305,45 @@ const Chatbox = ({
   };
 
   const sendAudioMessage = async () => {
-    if (!audioBlobRef || !selectedUserToChat || isSendingAudio || !socket) return;
+    if (!audioBlobRef || !selectedUserToChat || isSendingAudio || !socket)
+      return;
 
     try {
       setIsSendingAudio(true);
-      
+
       const base64Audio = await convertBlobToBase64(audioBlobRef);
-      
+
       const audioMessage = {
         sender: self.username,
         receiver: selectedUserToChat,
         audioData: base64Audio,
         duration: recordingTime,
-        fileType: 'audio/webm'
+        fileType: "audio/webm",
       };
 
-      socket.emit('sendAudioMessage', audioMessage);
-      
+      socket.emit("sendAudioMessage", audioMessage);
+
       // Add to local state
-      setAudioMessages((prev) => [...prev, {
-        _id: Date.now().toString(),
-        sender: self.username,
-        receiver: selectedUserToChat,
-        audioData: base64Audio,
-        duration: recordingTime,
-        fileType: 'audio/webm',
-        timestamp: new Date().toISOString(),
-        isSeen: false,
-        isPlayed: false
-      }]);
-      
+      setAudioMessages((prev) => [
+        ...prev,
+        {
+          _id: Date.now().toString(),
+          sender: self.username,
+          receiver: selectedUserToChat,
+          audioData: base64Audio,
+          duration: recordingTime,
+          fileType: "audio/webm",
+          timestamp: new Date().toISOString(),
+          isSeen: false,
+          isPlayed: false,
+        },
+      ]);
+
       setAudioURL("");
       setAudioBlobRef(null);
       setRecordingTime(0);
     } catch (error) {
-      console.error('Error sending audio message:', error);
+      console.error("Error sending audio message:", error);
     } finally {
       setIsSendingAudio(false);
     }
@@ -360,23 +372,28 @@ const Chatbox = ({
       console.log("⚠️ No timestamp provided");
       return "";
     }
-    
-    console.log("📅 Formatting timestamp:", timestamp, "type:", typeof timestamp);
-    
+
+    console.log(
+      "📅 Formatting timestamp:",
+      timestamp,
+      "type:",
+      typeof timestamp
+    );
+
     try {
       // Handle different timestamp formats
       let messageDate;
-      
-      if (typeof timestamp === 'string' && timestamp.includes('T')) {
+
+      if (typeof timestamp === "string" && timestamp.includes("T")) {
         // ISO string format
         messageDate = new Date(timestamp);
-      } else if (typeof timestamp === 'number') {
+      } else if (typeof timestamp === "number") {
         // Unix timestamp as number
         messageDate = new Date(timestamp);
-      } else if (typeof timestamp === 'string' && /^\d+$/.test(timestamp)) {
+      } else if (typeof timestamp === "string" && /^\d+$/.test(timestamp)) {
         // Unix timestamp as string - convert to number first
         messageDate = new Date(parseInt(timestamp, 10));
-      } else if (typeof timestamp === 'string') {
+      } else if (typeof timestamp === "string") {
         // Try parsing as ISO string or fallback to Date constructor
         messageDate = new Date(timestamp);
       } else {
@@ -392,121 +409,147 @@ const Chatbox = ({
 
       // Always show both date and time
       const dateStr = messageDate.toLocaleDateString([], {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
+        year: "numeric",
+        month: "short",
+        day: "numeric",
       });
-      
-      const timeStr = messageDate.toLocaleTimeString([], { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: true 
+
+      const timeStr = messageDate.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
       });
 
       const result = `${dateStr}, ${timeStr}`;
       console.log("✅ Formatted result:", result);
       return result;
     } catch (error) {
-      console.error("❌ Error formatting message time:", error, "timestamp:", timestamp);
+      console.error(
+        "❌ Error formatting message time:",
+        error,
+        "timestamp:",
+        timestamp
+      );
       return "";
     }
   };
 
-  const toggleAudioPlayback = useCallback(async (messageId, audioSrc) => {
-    const audio = document.getElementById(`audio-${messageId}`);
-    if (!audio) return;
+  const toggleAudioPlayback = useCallback(
+    async (messageId, audioSrc) => {
+      const audio = document.getElementById(`audio-${messageId}`);
+      if (!audio) return;
 
-    if (playingAudio === messageId) {
-      audio.pause();
-      setPlayingAudio(null);
-    } else {
-      // If audio data is not loaded, fetch it first
-      if (!audioSrc) {
-        try {
-          setLoadingAudioData(prev => ({ ...prev, [messageId]: true }));
-          await getAudioData({
-            variables: { messageId }
-          });
-          // Audio data will be updated via onCompleted callback
-          // Don't play yet, let user click again after loading
-          return;
-        } catch (error) {
-          console.error("Failed to load audio data:", error);
-          setLoadingAudioData(prev => {
-            const newState = { ...prev };
-            delete newState[messageId];
-            return newState;
-          });
-          return;
+      if (playingAudio === messageId) {
+        audio.pause();
+        setPlayingAudio(null);
+      } else {
+        // If audio data is not loaded, fetch it first
+        if (!audioSrc) {
+          try {
+            setLoadingAudioData((prev) => ({ ...prev, [messageId]: true }));
+            await getAudioData({
+              variables: { messageId },
+            });
+            // Audio data will be updated via onCompleted callback
+            // Don't play yet, let user click again after loading
+            return;
+          } catch (error) {
+            console.error("Failed to load audio data:", error);
+            setLoadingAudioData((prev) => {
+              const newState = { ...prev };
+              delete newState[messageId];
+              return newState;
+            });
+            return;
+          }
         }
-      }
 
-      if (playingAudio) {
-        const currentAudio = document.getElementById(`audio-${playingAudio}`);
-        if (currentAudio) currentAudio.pause();
-      }
-      
-      audio.play();
-      setPlayingAudio(messageId);
-    }
-  }, [playingAudio, getAudioData]);
+        if (playingAudio) {
+          const currentAudio = document.getElementById(`audio-${playingAudio}`);
+          if (currentAudio) currentAudio.pause();
+        }
 
-  const handleAudioTimeUpdate = useCallback((messageId, currentTime, duration) => {
-    // Throttle updates to prevent excessive re-renders
-    setAudioCurrentTime(prev => {
-      const prevTime = prev[messageId] || 0;
-      // Only update if the time has changed significantly (more than 0.1 seconds)
-      if (Math.abs(currentTime - prevTime) > 0.1) {
-        return {
-          ...prev,
-          [messageId]: currentTime
-        };
+        audio.play();
+        setPlayingAudio(messageId);
       }
-      return prev;
-    });
-    
-    if (duration && isFinite(duration) && duration > 0) {
-      setAudioDurations(prev => {
-        if (prev[messageId] !== duration) {
+    },
+    [playingAudio, getAudioData]
+  );
+
+  const handleAudioTimeUpdate = useCallback(
+    (messageId, currentTime, duration) => {
+      // Throttle updates to prevent excessive re-renders
+      setAudioCurrentTime((prev) => {
+        const prevTime = prev[messageId] || 0;
+        // Only update if the time has changed significantly (more than 0.1 seconds)
+        if (Math.abs(currentTime - prevTime) > 0.1) {
           return {
             ...prev,
-            [messageId]: duration
+            [messageId]: currentTime,
           };
         }
         return prev;
       });
-    }
-  }, []);
+
+      if (duration && isFinite(duration) && duration > 0) {
+        setAudioDurations((prev) => {
+          if (prev[messageId] !== duration) {
+            return {
+              ...prev,
+              [messageId]: duration,
+            };
+          }
+          return prev;
+        });
+      }
+    },
+    []
+  );
 
   const handleAudioEnded = useCallback((messageId) => {
     setPlayingAudio(null);
-    setAudioCurrentTime(prev => ({
+    setAudioCurrentTime((prev) => ({
       ...prev,
-      [messageId]: 0
+      [messageId]: 0,
     }));
   }, []);
 
   // Combine and sort all messages by timestamp - memoized to prevent re-renders
   const getAllMessages = useMemo(() => {
-    const textMessages = userMessages?.map((msg, index) => ({
-      ...msg,
-      type: 'text',
-      timestamp: msg.timestamp || (msg._id ? new Date(parseInt(msg._id.substring(0, 8), 16) * 1000).toISOString() : new Date(Date.now() + index).toISOString())
-    })) || [];
-
-    const audioMsgs = audioMessages?.map(msg => {
-      console.log("🎵 Audio message data:", msg);
-      return {
+    const textMessages =
+      userMessages?.map((msg, index) => ({
         ...msg,
-        type: 'audio'
-      };
-    }) || [];
+        type: "text",
+        timestamp:
+          msg.timestamp ||
+          (msg._id
+            ? new Date(
+                parseInt(msg._id.substring(0, 8), 16) * 1000
+              ).toISOString()
+            : new Date(Date.now() + index).toISOString()),
+      })) || [];
 
-    console.log("📊 getAllMessages - text:", textMessages.length, "audio:", audioMsgs.length, "total:", textMessages.length + audioMsgs.length);
+    const audioMsgs =
+      audioMessages?.map((msg) => {
+        console.log("🎵 Audio message data:", msg);
+        return {
+          ...msg,
+          type: "audio",
+        };
+      }) || [];
+
+    console.log(
+      "📊 getAllMessages - text:",
+      textMessages.length,
+      "audio:",
+      audioMsgs.length,
+      "total:",
+      textMessages.length + audioMsgs.length
+    );
     console.log("📊 Sample audio message:", audioMsgs[0]);
 
-    return [...textMessages, ...audioMsgs].sort((a, b) => 
-      new Date(a.timestamp) - new Date(b.timestamp)
+    return [...textMessages, ...audioMsgs].sort(
+      (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
     );
   }, [userMessages, audioMessages]);
   function handleChange(e) {
@@ -561,32 +604,57 @@ const Chatbox = ({
         hasMarkedSeenRef.current = false;
         setAudioMessages([]); // Clear previous audio messages
         setIsLoadingAudio(true);
-        
+
         await getSelectedUserChat({
           variables: { sender: self?.username, receiver: selectedUserToChat },
         });
-        
+
         // Also fetch audio messages
-        console.log("🎵 Fetching audio messages for:", self?.username, "->", selectedUserToChat);
+        console.log(
+          "🎵 Fetching audio messages for:",
+          self?.username,
+          "->",
+          selectedUserToChat
+        );
         await getAudioMessages({
           variables: { sender: self?.username, receiver: selectedUserToChat },
         });
       }
     }
     getSelectedUserChatFnc();
-  }, [self?.username, selectedUserToChat, getSelectedUserChat, getAudioMessages]);
+  }, [
+    self?.username,
+    selectedUserToChat,
+    getSelectedUserChat,
+    getAudioMessages,
+  ]);
 
   // Separate useEffect for marking messages as seen to avoid infinite loops
   useEffect(() => {
-    if (onMarkAudioMessagesAsSeen && unseenAudioCount > 0 && selectedUserToChat && self?.username && !hasMarkedSeenRef.current) {
+    if (
+      onMarkAudioMessagesAsSeen &&
+      unseenAudioCount > 0 &&
+      selectedUserToChat &&
+      self?.username &&
+      !hasMarkedSeenRef.current
+    ) {
       onMarkAudioMessagesAsSeen(selectedUserToChat, self?.username);
       hasMarkedSeenRef.current = true;
     }
-  }, [onMarkAudioMessagesAsSeen, unseenAudioCount, selectedUserToChat, self?.username]);
+  }, [
+    onMarkAudioMessagesAsSeen,
+    unseenAudioCount,
+    selectedUserToChat,
+    self?.username,
+  ]);
 
   // Debug audioMessages state
   useEffect(() => {
-    console.log("🔍 audioMessages state changed:", audioMessages.length, audioMessages);
+    console.log(
+      "🔍 audioMessages state changed:",
+      audioMessages.length,
+      audioMessages
+    );
   }, [audioMessages]);
 
   // Socket listener for incoming audio messages
@@ -594,26 +662,31 @@ const Chatbox = ({
     if (!socket) return;
 
     const handleReceiveAudioMessage = (message) => {
-      if (message.receiver === self?.username && 
-          message.sender === selectedUserToChat) {
-        setAudioMessages((prev) => [...prev, {
-          _id: message._id,
-          sender: message.sender,
-          receiver: message.receiver,
-          audioData: message.audioData,
-          duration: message.duration || 0,
-          fileType: message.fileType || 'audio/webm',
-          timestamp: message.timestamp,
-          isSeen: message.isSeen || false,
-          isPlayed: message.isPlayed || false
-        }]);
+      if (
+        message.receiver === self?.username &&
+        message.sender === selectedUserToChat
+      ) {
+        setAudioMessages((prev) => [
+          ...prev,
+          {
+            _id: message._id,
+            sender: message.sender,
+            receiver: message.receiver,
+            audioData: message.audioData,
+            duration: message.duration || 0,
+            fileType: message.fileType || "audio/webm",
+            timestamp: message.timestamp,
+            isSeen: message.isSeen || false,
+            isPlayed: message.isPlayed || false,
+          },
+        ]);
       }
     };
 
-    socket.on('receiveAudioMessage', handleReceiveAudioMessage);
+    socket.on("receiveAudioMessage", handleReceiveAudioMessage);
 
     return () => {
-      socket.off('receiveAudioMessage', handleReceiveAudioMessage);
+      socket.off("receiveAudioMessage", handleReceiveAudioMessage);
     };
   }, [socket, self?.username, selectedUserToChat]);
 
@@ -952,19 +1025,25 @@ const Chatbox = ({
 
             <div className="relative">
               <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-lg">
-                  {selectedUserToChat?.charAt(0)?.toUpperCase()}
-                </span>
+                {selectedUserData?.profilePic ? (
+                  <img
+                    className="w-full h-full object-cover rounded-full "
+                    src={selectedUserData?.profilePic}
+                  />
+                ) : (
+                  <span className="text-white font-bold text-lg">
+                    {selectedUserToChat?.charAt(0)?.toUpperCase()}
+                  </span>
+                )}
               </div>
               <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
             </div>
-            <div>
-              <h3 className="font-semibold text-gray-800 text-lg">
-                {selectedUserToChat}
-              </h3>
-              <p className="text-sm text-gray-500">
-                {onCall ? "On call" : "Online"}
-              </p>
+            <div className="flex flex-col">
+              <span className="text-black">{selectedUserData?.name}</span>
+              <span className="font-light text-gray-500 text-xs">
+                @{selectedUserToChat}
+              </span>
+              <p className="text-sm text-gray-500">{onCall && "On call"}</p>
             </div>
           </div>
 
@@ -1042,11 +1121,13 @@ const Chatbox = ({
                 </div>
               </div>
             )}
-            
+
             {getAllMessages?.map((message, idx) => {
               const isOwn = message.sender === self?.username;
               // Create a stable key for each message
-              const messageKey = message._id || `${message.type}-${idx}-${message.content || message.duration}`;
+              const messageKey =
+                message._id ||
+                `${message.type}-${idx}-${message.content || message.duration}`;
 
               return (
                 <div
@@ -1068,11 +1149,28 @@ const Chatbox = ({
                   >
                     {/* Avatar */}
                     <div className="w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-white font-semibold text-xs">
-                        {(isOwn ? self?.username : selectedUserToChat)
-                          ?.charAt(0)
-                          ?.toUpperCase()}
-                      </span>
+                      {isOwn ? (
+                        self?.profilePic?.url ? (
+                          <img
+                            className="object-cover w-full h-full rounded-full"
+                            src={self?.profilePic?.url}
+                          />
+                        ) : (
+                          <span className="text-white font-semibold text-xs">
+                            {self?.username?.charAt(0)?.toUpperCase()}
+                          </span>
+                        )
+                      ) : selectedUserData?.profilePic ? (
+                        <img
+                          className="object-cover w-full h-full rounded-full"
+                          src={selectedUserData?.profilePic}
+                        />
+                      ) : (
+                        <span className="text-white font-semibold text-xs">
+                          {" "}
+                          {selectedUserToChat?.charAt(0)?.toUpperCase()}
+                        </span>
+                      )}
                     </div>
 
                     {/* Message Bubble */}
@@ -1083,7 +1181,7 @@ const Chatbox = ({
                           : "bg-white text-gray-800 rounded-bl-md border border-gray-100"
                       }`}
                     >
-                      {message.type === 'text' ? (
+                      {message.type === "text" ? (
                         // Text Message
                         <p
                           className="text-sm font-medium leading-relaxed"
@@ -1099,41 +1197,58 @@ const Chatbox = ({
                         <div className="flex items-center space-x-3 py-2">
                           {/* Play/Pause Button */}
                           <button
-                            onClick={() => toggleAudioPlayback(message._id, message.audioData)}
+                            onClick={() =>
+                              toggleAudioPlayback(
+                                message._id,
+                                message.audioData
+                              )
+                            }
                             disabled={!message.audioData}
                             className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 ${
                               isOwn
-                                ? 'bg-blue-700 hover:bg-blue-800 disabled:bg-blue-400'
-                                : 'bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400'
-                            } ${!message.audioData ? 'cursor-not-allowed' : ''}`}
+                                ? "bg-blue-700 hover:bg-blue-800 disabled:bg-blue-400"
+                                : "bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400"
+                            } ${
+                              !message.audioData ? "cursor-not-allowed" : ""
+                            }`}
                           >
-                            {!message.audioData || loadingAudioData[message._id] ? (
+                            {!message.audioData ||
+                            loadingAudioData[message._id] ? (
                               // Loading spinner
                               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                             ) : playingAudio === message._id ? (
-                              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                              <svg
+                                className="w-4 h-4 text-white"
+                                fill="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
                               </svg>
                             ) : (
-                              <svg className="w-4 h-4 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M8 5v14l11-7z"/>
+                              <svg
+                                className="w-4 h-4 text-white ml-0.5"
+                                fill="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path d="M8 5v14l11-7z" />
                               </svg>
                             )}
                           </button>
-                          
+
                           {/* Waveform/Progress Bar */}
                           <div className="flex-1 space-y-1">
-                            {!message.audioData || loadingAudioData[message._id] ? (
+                            {!message.audioData ||
+                            loadingAudioData[message._id] ? (
                               // Loading state for waveform
                               <div className="flex items-center space-x-1">
                                 {[...Array(15)].map((_, i) => (
                                   <div
                                     key={i}
                                     className={`w-1 h-3 rounded-full animate-pulse ${
-                                      isOwn ? 'bg-blue-300' : 'bg-gray-400'
+                                      isOwn ? "bg-blue-300" : "bg-gray-400"
                                     }`}
                                     style={{
-                                      animationDelay: `${i * 50}ms`
+                                      animationDelay: `${i * 50}ms`,
                                     }}
                                   />
                                 ))}
@@ -1142,30 +1257,55 @@ const Chatbox = ({
                               <div className="flex items-center space-x-1">
                                 {[...Array(15)].map((_, i) => {
                                   // Generate consistent height based on message ID and index
-                                  const seedHeight = ((message._id?.charCodeAt(i % message._id.length) || 0) + i) % 12 + 6;
+                                  const seedHeight =
+                                    (((message._id?.charCodeAt(
+                                      i % message._id.length
+                                    ) || 0) +
+                                      i) %
+                                      12) +
+                                    6;
                                   return (
                                     <div
                                       key={i}
                                       className={`w-1 rounded-full transition-all duration-200 ${
-                                        isOwn ? 'bg-blue-200' : 'bg-gray-300'
+                                        isOwn ? "bg-blue-200" : "bg-gray-300"
                                       }`}
                                       style={{
                                         height: `${seedHeight}px`,
-                                        opacity: (audioCurrentTime[message._id] || 0) / (audioDurations[message._id] || message.duration || 1) > i / 15 ? 1 : 0.4
+                                        opacity:
+                                          (audioCurrentTime[message._id] || 0) /
+                                            (audioDurations[message._id] ||
+                                              message.duration ||
+                                              1) >
+                                          i / 15
+                                            ? 1
+                                            : 0.4,
                                       }}
                                     />
                                   );
                                 })}
                               </div>
                             )}
-                            
+
                             {/* Time Display */}
                             <div className="flex justify-between text-xs opacity-75">
                               <span>
-                                {!message.audioData || loadingAudioData[message._id] ? "..." : formatTime(audioCurrentTime[message._id] || 0)}
+                                {!message.audioData ||
+                                loadingAudioData[message._id]
+                                  ? "..."
+                                  : formatTime(
+                                      audioCurrentTime[message._id] || 0
+                                    )}
                               </span>
                               <span>
-                                {!message.audioData || loadingAudioData[message._id] ? "Loading..." : formatTime(audioDurations[message._id] || message.duration || 0)}
+                                {!message.audioData ||
+                                loadingAudioData[message._id]
+                                  ? "Loading..."
+                                  : formatTime(
+                                      audioDurations[message._id] ||
+                                        message.duration ||
+                                        0
+                                    )}
                               </span>
                             </div>
                           </div>
@@ -1174,7 +1314,13 @@ const Chatbox = ({
                           <audio
                             id={`audio-${message._id}`}
                             src={message.audioData}
-                            onTimeUpdate={(e) => handleAudioTimeUpdate(message._id, e.target.currentTime, e.target.duration)}
+                            onTimeUpdate={(e) =>
+                              handleAudioTimeUpdate(
+                                message._id,
+                                e.target.currentTime,
+                                e.target.duration
+                              )
+                            }
                             onEnded={() => handleAudioEnded(message._id)}
                             preload="metadata"
                             className="hidden"
@@ -1183,7 +1329,11 @@ const Chatbox = ({
                       )}
 
                       {/* Message Status - Show for everyone, but with different styling */}
-                      <div className={`flex items-center mt-1 gap-1 ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                      <div
+                        className={`flex items-center mt-1 gap-1 ${
+                          isOwn ? "justify-end" : "justify-start"
+                        }`}
+                      >
                         <span className="text-xs opacity-60">
                           {formatMessageTime(message.timestamp)}
                         </span>
@@ -1238,7 +1388,9 @@ const Chatbox = ({
               <div className="flex items-center space-x-3">
                 <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
                 <span className="text-red-600 font-medium">Recording...</span>
-                <span className="text-red-500 font-mono">{formatTime(recordingTime)}</span>
+                <span className="text-red-500 font-mono">
+                  {formatTime(recordingTime)}
+                </span>
               </div>
               <div className="flex items-center space-x-1">
                 {[...Array(8)].map((_, i) => (
@@ -1246,7 +1398,10 @@ const Chatbox = ({
                     key={i}
                     className="w-1 bg-red-500 rounded-full transition-all duration-150"
                     style={{
-                      height: `${Math.max(4, (audioLevel / 100) * 20 + Math.random() * 6)}px`,
+                      height: `${Math.max(
+                        4,
+                        (audioLevel / 100) * 20 + Math.random() * 6
+                      )}px`,
                       opacity: audioLevel > 10 ? 1 : 0.3,
                     }}
                   />
@@ -1272,12 +1427,20 @@ const Chatbox = ({
                   }}
                   className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white"
                 >
-                  <svg className="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z"/>
+                  <svg
+                    className="w-4 h-4 ml-0.5"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M8 5v14l11-7z" />
                   </svg>
                 </button>
-                <span className="text-blue-600 font-medium">Voice message ready</span>
-                <span className="text-blue-500 text-sm">{formatTime(recordingTime)}</span>
+                <span className="text-blue-600 font-medium">
+                  Voice message ready
+                </span>
+                <span className="text-blue-500 text-sm">
+                  {formatTime(recordingTime)}
+                </span>
               </div>
               <div className="flex items-center space-x-2">
                 <button
@@ -1353,12 +1516,12 @@ const Chatbox = ({
             </div>
 
             {/* Voice Message Button */}
-            <button 
+            <button
               onClick={recording ? stopRecording : startRecording}
               className={`action-btn !p-2 !rounded-full !transition-colors ${
-                recording 
-                  ? '!bg-red-500 hover:!bg-red-600 !text-white !animate-pulse' 
-                  : '!text-blue-500 hover:!bg-blue-50'
+                recording
+                  ? "!bg-red-500 hover:!bg-red-600 !text-white !animate-pulse"
+                  : "!text-blue-500 hover:!bg-blue-50"
               }`}
             >
               <MdOutlineKeyboardVoice size={24} />

@@ -9,6 +9,9 @@ const USER_QUERY = gql`
       _id
       username
       name
+      profilePic {
+        url
+      }
       bio
       followers {
         _id
@@ -32,6 +35,7 @@ const User = () => {
       navigate("/login", { replace: true });
     }
   }, [self?._id, navigate]);
+  console.log(data);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex justify-center w-screen items-center p-4">
@@ -42,7 +46,9 @@ const User = () => {
               <div className="w-16 h-16 border-4 border-blue-200 rounded-full animate-spin border-t-blue-500"></div>
               <div className="absolute inset-0 w-16 h-16 border-4 border-transparent rounded-full animate-ping border-t-blue-300"></div>
             </div>
-            <p className="mt-6 text-slate-600 font-medium">Loading profile...</p>
+            <p className="mt-6 text-slate-600 font-medium">
+              Loading profile...
+            </p>
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center p-12 text-center">
@@ -62,8 +68,12 @@ const User = () => {
                 />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-slate-800 mb-2">User Not Found</h2>
-            <p className="text-slate-500">The profile you're looking for doesn't exist.</p>
+            <h2 className="text-2xl font-bold text-slate-800 mb-2">
+              User Not Found
+            </h2>
+            <p className="text-slate-500">
+              The profile you're looking for doesn't exist.
+            </p>
           </div>
         ) : (
           <div className="p-8">
@@ -74,7 +84,11 @@ const User = () => {
                   <div className="w-full h-full bg-white rounded-full p-2">
                     <img
                       className="w-full h-full object-cover rounded-full"
-                      src="/images/avatar.png"
+                      src={
+                        data?.getUser?.profilePic?.url
+                          ? data?.getUser?.profilePic?.url
+                          : "/images/avatar.png"
+                      }
                       alt="Profile"
                     />
                   </div>
@@ -108,11 +122,11 @@ const User = () => {
                   {data?.getUser?.name}
                 </h1>
               </div>
-              
+
               <p className="text-slate-500 font-medium bg-slate-100 rounded-full px-4 py-2 inline-block">
                 @{data?.getUser?.username}
               </p>
-              
+
               {data?.getUser?.bio && (
                 <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-4 border border-blue-100/50 mt-4">
                   <p className="text-slate-700 font-medium leading-relaxed">
@@ -158,8 +172,16 @@ const User = () => {
                   (following) => following?._id === self?._id
                 )) ? (
                 <span className="flex items-center justify-center gap-2">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  <svg
+                    className="w-5 h-5"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                   Following
                 </span>
@@ -170,15 +192,35 @@ const User = () => {
                   (following) => following?._id === self?._id
                 ) ? (
                 <span className="flex items-center justify-center gap-2">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                    />
                   </svg>
                   Follow Back
                 </span>
               ) : (
                 <span className="flex items-center justify-center gap-2">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                    />
                   </svg>
                   Follow
                 </span>

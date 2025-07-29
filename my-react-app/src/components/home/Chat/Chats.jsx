@@ -10,6 +10,8 @@ const Chats = ({
   self,
   chats,
   setCallType,
+  setSelectedUserData,
+  selectedUserData,
   setSelectedUserToChat,
   selectedUserToChat,
   socket,
@@ -106,7 +108,6 @@ const Chats = ({
     setIsDrawerOpen(false);
   };
 
-
   // Fetch unseen document counts
   const fetchUnseenDocumentCounts = async () => {
     if (!self?.username) return;
@@ -178,7 +179,7 @@ const Chats = ({
 
   // Mark audio messages as seen when entering audio mode
   const markAudioMessagesAsSeen = async (sender, receiver) => {
-    console.log('🎵 Marking audio messages as seen:', { sender, receiver });
+    console.log("🎵 Marking audio messages as seen:", { sender, receiver });
     try {
       const response = await fetch(
         `http://localhost:3000/api/audio-messages/seen/conversation/${sender}/${receiver}`,
@@ -187,8 +188,11 @@ const Chats = ({
           credentials: "include",
         }
       );
-      
-      console.log('✅ Audio messages marked as seen, response status:', response.status);
+
+      console.log(
+        "✅ Audio messages marked as seen, response status:",
+        response.status
+      );
 
       // Update local counts - clear unseen count for this sender
       setUnseenAudioCounts((prev) => ({
@@ -200,7 +204,10 @@ const Chats = ({
       fetchUnseenAudioCounts();
 
       // Emit socket event to notify sender that receiver has seen the audio messages
-      console.log('📡 Emitting audioMessageSeenByReceiver:', { sender, receiver });
+      console.log("📡 Emitting audioMessageSeenByReceiver:", {
+        sender,
+        receiver,
+      });
       socket.emit("audioMessageSeenByReceiver", { sender, receiver });
     } catch (error) {
       console.error("Error marking audio messages as seen:", error);
@@ -241,31 +248,38 @@ const Chats = ({
     };
 
     const handleAudioMessageSeen = ({ receiver }) => {
-      console.log('🔔 Audio messages seen by receiver:', receiver);
+      console.log("🔔 Audio messages seen by receiver:", receiver);
       setUnseenAudioCounts((prev) => {
         const updated = {
           ...prev,
           [receiver]: 0,
         };
-        console.log('📊 Updated unseenAudioCounts:', updated);
+        console.log("📊 Updated unseenAudioCounts:", updated);
         return updated;
       });
-      
+
       // Also refresh from server to ensure consistency
       fetchUnseenAudioCounts();
     };
 
     const handleAudioMessageSeenBroadcast = ({ sender, receiver }) => {
-      console.log('📻 Broadcast: Audio messages seen - sender:', sender, 'receiver:', receiver, 'self:', self?.username);
+      console.log(
+        "📻 Broadcast: Audio messages seen - sender:",
+        sender,
+        "receiver:",
+        receiver,
+        "self:",
+        self?.username
+      );
       // Only handle if this user is the sender
       if (sender === self?.username) {
-        console.log('✅ This user is the sender, updating unseen counts');
+        console.log("✅ This user is the sender, updating unseen counts");
         setUnseenAudioCounts((prev) => {
           const updated = {
             ...prev,
             [receiver]: 0,
           };
-          console.log('📊 Broadcast Updated unseenAudioCounts:', updated);
+          console.log("📊 Broadcast Updated unseenAudioCounts:", updated);
           return updated;
         });
         fetchUnseenAudioCounts();
@@ -296,7 +310,6 @@ const Chats = ({
     setIsDocumentMode(true);
   };
 
-
   return (
     <div className="h-screen bg-white w-full flex overflow-hidden relative">
       {/* Desktop Layout */}
@@ -304,6 +317,8 @@ const Chats = ({
         {/* Chatlist - responsive width */}
         <div className="md:w-64 lg:w-72 xl:w-80 flex-shrink-0">
           <Chatlist
+            setSelectedUserData={setSelectedUserData}
+            selectedUserData={selectedUserData}
             setSelectedUserToChat={setSelectedUserToChat}
             selectedUserToChat={selectedUserToChat}
             self={self}
@@ -326,6 +341,7 @@ const Chats = ({
             />
           ) : (
             <Chatbox
+              selectedUserData={selectedUserData}
               userOnCall={userOnCall}
               localVideoRef={localVideoRef}
               setCallType={setCallType}
@@ -348,9 +364,7 @@ const Chats = ({
               unseenDocumentCount={
                 unseenDocumentCounts[selectedUserToChat] || 0
               }
-              unseenAudioCount={
-                unseenAudioCounts[selectedUserToChat] || 0
-              }
+              unseenAudioCount={unseenAudioCounts[selectedUserToChat] || 0}
               onMarkAudioMessagesAsSeen={markAudioMessagesAsSeen}
             />
           )}
@@ -358,10 +372,7 @@ const Chats = ({
 
         {/* Details - desktop only, responsive width */}
         <div className="hidden lg:block lg:w-64 xl:w-72 2xl:w-80 flex-shrink-0">
-          <Details
-            self={self}
-            selectedUserToChat={selectedUserToChat}
-          />
+          <Details self={self} selectedUserToChat={selectedUserToChat} />
         </div>
       </div>
 
@@ -387,6 +398,8 @@ const Chats = ({
           }}
         >
           <Chatlist
+            setSelectedUserData={setSelectedUserData}
+            selectedUserData={selectedUserData}
             setSelectedUserToChat={handleChatSelect}
             selectedUserToChat={selectedUserToChat}
             self={self}
@@ -415,7 +428,7 @@ const Chats = ({
                 <HiMenu className="w-6 h-6 text-gray-600" />
               </button>
 
-              {selectedUserToChat ? (
+              {selectedUserToChat && selectedUserData?.name ? (
                 <div className="flex items-center justify-between flex-1">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">

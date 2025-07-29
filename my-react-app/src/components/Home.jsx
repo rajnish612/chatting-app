@@ -127,6 +127,7 @@ const Home = () => {
   });
 
   const [selectedUserToChat, setSelectedUserToChat] = useState("");
+  const [selectedUserData, setSelectedUserData] = useState("");
   const [self, setSelf] = React.useState(null);
   const [onCall, setOnCall] = React.useState(false);
   const [userMessages, setUserMessages] = useState([]);
@@ -823,6 +824,8 @@ const Home = () => {
             socket={socket}
             setIdx={setIdx}
             setChats={setChats}
+            setSelectedUserData={setSelectedUserData}
+            selectedUserData={selectedUserData}
             chatsrefetch={chatsrefetch}
             chats={chats}
             setRefreshUsers={setRefreshUsers}

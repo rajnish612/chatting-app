@@ -5,6 +5,7 @@ const Chatlist = ({
   self,
   setSelectedUserToChat,
   chats,
+  setSelectedUserData,
   selectedUserToChat,
   unseenDocumentCounts = {},
   unseenAudioCounts = {},
@@ -151,7 +152,13 @@ const Chatlist = ({
               {filteredFollowings.map((chat, index) => (
                 <button
                   key={`following-${index}`}
-                  onClick={() => setSelectedUserToChat(chat.username)}
+                  onClick={() => {
+                    setSelectedUserToChat(chat?.username);
+                    setSelectedUserData({
+                      name: chat?.name,
+                      profilePic: chat?.profilePic?.url,
+                    });
+                  }}
                   className={`chat-item !w-full !p-3 md:!p-4 !flex !items-center !text-left ${
                     selectedUserToChat === chat.username ? "active" : ""
                   }`}
@@ -227,7 +234,13 @@ const Chatlist = ({
               {filteredChats.map((chat, index) => (
                 <button
                   key={`chat-${index}`}
-                  onClick={() => setSelectedUserToChat(chat.username)}
+                  onClick={() => {
+                    setSelectedUserToChat(chat.username);
+                    setSelectedUserData({
+                      name: chat?.name,
+                      profilePic: chat?.profilePic?.url,
+                    });
+                  }}
                   className={`chat-item !w-full !p-3 md:!p-4 !flex !items-center !text-left ${
                     selectedUserToChat === chat.username ? "active" : ""
                   }`}
