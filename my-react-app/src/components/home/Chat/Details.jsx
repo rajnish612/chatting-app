@@ -1,10 +1,6 @@
 import { gql, useQuery } from "@apollo/client";
 import React from "react";
-import {
-  HiInformationCircle,
-  HiUsers,
-  HiUserGroup,
-} from "react-icons/hi";
+import { HiInformationCircle, HiUsers, HiUserGroup } from "react-icons/hi";
 const GET_USER_QUERY = gql`
   query getUser($username: String!) {
     getUser(username: $username) {
@@ -12,6 +8,9 @@ const GET_USER_QUERY = gql`
       username
       name
       bio
+      profilePic {
+        url
+      }
       followers {
         _id
         username
@@ -94,15 +93,21 @@ const Details = ({ selectedUserToChat }) => {
       <div className="p-8 text-center bg-white/70 backdrop-blur-sm border-b border-slate-200/50">
         <div className="relative inline-block mb-6">
           <div className="w-32 h-32 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-2xl ring-4 ring-white/50 transition-transform hover:scale-105">
-            <span className="text-4xl font-bold text-white drop-shadow-sm">
-              {(user?.name || user?.username || selectedUserToChat).charAt(0).toUpperCase()}
-            </span>
+            {user?.profilePic?.url ? (
+              <img className="w-full h-full object-cover rounded-full" src={user?.profilePic?.url} />
+            ) : (
+              <span className="text-4xl font-bold text-white drop-shadow-sm">
+                {(user?.name || user?.username || selectedUserToChat)
+                  .charAt(0)
+                  .toUpperCase()}
+              </span>
+            )}
           </div>
           <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-gradient-to-br from-green-400 to-emerald-500 border-4 border-white rounded-full shadow-lg">
             <div className="w-full h-full rounded-full bg-green-400 animate-pulse"></div>
           </div>
         </div>
-        
+
         <div className="space-y-2 mb-6">
           <h3 className="text-2xl font-bold text-slate-800">
             {user?.name || user?.username || selectedUserToChat}
