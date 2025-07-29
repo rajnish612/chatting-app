@@ -87,6 +87,7 @@ const chatsQuery = gql`
   query {
     getChats {
       username
+      lastMessage
       unseenCount
     }
   }

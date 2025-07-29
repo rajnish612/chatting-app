@@ -43,7 +43,7 @@ const Chatlist = ({
   const filteredChats = (chats || []).filter((chat) =>
     chat?.username?.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  console.log(chats);
+  console.log("chats", chats);
 
   const filteredFollowings = followingsWithUnseen.filter((chat) =>
     chat?.username?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -180,17 +180,26 @@ const Chatlist = ({
                   {/* Unread badges */}
                   <div className="flex items-center gap-1 ml-2">
                     {chat.unseenCount > 0 && (
-                      <div className="bg-blue-500 text-white text-xs rounded-full min-w-5 h-5 px-1 flex items-center justify-center flex-shrink-0" title="Unread messages">
+                      <div
+                        className="bg-blue-500 text-white text-xs rounded-full min-w-5 h-5 px-1 flex items-center justify-center flex-shrink-0"
+                        title="Unread messages"
+                      >
                         {chat.unseenCount}
                       </div>
                     )}
                     {unseenDocumentCounts[chat.username] > 0 && (
-                      <div className="bg-purple-500 text-white text-xs rounded-full min-w-5 h-5 px-1 flex items-center justify-center flex-shrink-0" title="Unread documents">
+                      <div
+                        className="bg-purple-500 text-white text-xs rounded-full min-w-5 h-5 px-1 flex items-center justify-center flex-shrink-0"
+                        title="Unread documents"
+                      >
                         {unseenDocumentCounts[chat.username]}
                       </div>
                     )}
                     {unseenAudioCounts[chat.username] > 0 && (
-                      <div className="bg-green-500 text-white text-xs rounded-full min-w-5 h-5 px-1 flex items-center justify-center flex-shrink-0" title="Unread audio messages">
+                      <div
+                        className="bg-green-500 text-white text-xs rounded-full min-w-5 h-5 px-1 flex items-center justify-center flex-shrink-0"
+                        title="Unread audio messages"
+                      >
                         🎵
                       </div>
                     )}
@@ -242,17 +251,26 @@ const Chatlist = ({
                   {/* Unread badges */}
                   <div className="flex items-center gap-1 ml-2">
                     {chat.unseenCount > 0 && (
-                      <div className="bg-blue-500 text-white text-xs rounded-full min-w-5 h-5 px-1 flex items-center justify-center flex-shrink-0" title="Unread messages">
+                      <div
+                        className="bg-blue-500 text-white text-xs rounded-full min-w-5 h-5 px-1 flex items-center justify-center flex-shrink-0"
+                        title="Unread messages"
+                      >
                         {chat.unseenCount}
                       </div>
                     )}
                     {unseenDocumentCounts[chat.username] > 0 && (
-                      <div className="bg-purple-500 text-white text-xs rounded-full min-w-5 h-5 px-1 flex items-center justify-center flex-shrink-0" title="Unread documents">
+                      <div
+                        className="bg-purple-500 text-white text-xs rounded-full min-w-5 h-5 px-1 flex items-center justify-center flex-shrink-0"
+                        title="Unread documents"
+                      >
                         {unseenDocumentCounts[chat.username]}
                       </div>
                     )}
                     {unseenAudioCounts[chat.username] > 0 && (
-                      <div className="bg-green-500 text-white text-xs rounded-full min-w-5 h-5 px-1 flex items-center justify-center flex-shrink-0" title="Unread audio messages">
+                      <div
+                        className="bg-green-500 text-white text-xs rounded-full min-w-5 h-5 px-1 flex items-center justify-center flex-shrink-0"
+                        title="Unread audio messages"
+                      >
                         🎵
                       </div>
                     )}

@@ -288,25 +288,31 @@ const resolver = {
           Message.findOne({
             $or: [
               { sender: selfUsername, receiver: user.username },
-              { sender: user.username, receiver: selfUsername }
-            ]
-          }).sort({ _id: -1 }).lean(),
-          
+              { sender: user.username, receiver: selfUsername },
+            ],
+          })
+            .sort({ _id: -1 })
+            .lean(),
+
           // Last audio message
           AudioMessage.findOne({
             $or: [
               { sender: selfUsername, receiver: user.username },
-              { sender: user.username, receiver: selfUsername }
-            ]
-          }).sort({ timestamp: -1 }).lean(),
-          
+              { sender: user.username, receiver: selfUsername },
+            ],
+          })
+            .sort({ timestamp: -1 })
+            .lean(),
+
           // Last document
           Document.findOne({
             $or: [
               { sender: selfUsername, receiver: user.username },
-              { sender: user.username, receiver: selfUsername }
-            ]
-          }).sort({ timestamp: -1 }).lean()
+              { sender: user.username, receiver: selfUsername },
+            ],
+          })
+            .sort({ timestamp: -1 })
+            .lean(),
         ]);
 
         // Find the most recent message
@@ -315,32 +321,35 @@ const resolver = {
         let lastMessageTime = null;
         let mostRecentTime = 0;
 
-        if (lastMessages[0]) { // Text message
+        if (lastMessages[0]) {
+          // Text message
           const time = lastMessages[0]._id.getTimestamp().getTime();
           if (time > mostRecentTime) {
             mostRecentTime = time;
             lastMessage = lastMessages[0].content;
-            lastMessageType = 'text';
+            lastMessageType = "text";
             lastMessageTime = lastMessages[0]._id.getTimestamp().toISOString();
           }
         }
 
-        if (lastMessages[1]) { // Audio message
+        if (lastMessages[1]) {
+          // Audio message
           const time = new Date(lastMessages[1].timestamp).getTime();
           if (time > mostRecentTime) {
             mostRecentTime = time;
-            lastMessage = 'Voice message';
-            lastMessageType = 'audio';
+            lastMessage = "Voice message";
+            lastMessageType = "audio";
             lastMessageTime = lastMessages[1].timestamp;
           }
         }
 
-        if (lastMessages[2]) { // Document
+        if (lastMessages[2]) {
+          // Document
           const time = new Date(lastMessages[2].timestamp).getTime();
           if (time > mostRecentTime) {
             mostRecentTime = time;
             lastMessage = `📄 ${lastMessages[2].originalName}`;
-            lastMessageType = 'document';
+            lastMessageType = "document";
             lastMessageTime = lastMessages[2].timestamp;
           }
         }
@@ -352,7 +361,7 @@ const resolver = {
             unseenMessages.length > 0 ? unseenMessages[0].unseenCount : 0,
           lastMessage,
           lastMessageType,
-          lastMessageTime
+          lastMessageTime,
         });
       }
 
@@ -368,6 +377,8 @@ const resolver = {
         "DEBUG - chatUsersWithUnseen:",
         JSON.stringify(chatUsersWithUnseen, null, 2)
       );
+      console.log("chatwith unseen", chatUsersWithUnseen);
+
       return chatUsersWithUnseen;
     },
     self: async (parent, args, { req }) => {
@@ -610,7 +621,7 @@ const resolver = {
       const { sender, receiver } = args;
       const currentUser = req.session.user;
       if (!sender || !receiver) throw new Error("Messages not available");
-      
+
       const messages = await Message.find({
         $or: [
           { sender: sender, receiver: receiver },
@@ -618,7 +629,7 @@ const resolver = {
         ],
         // Filter out messages deleted for current user or deleted for everyone
         deletedForEveryone: { $ne: true },
-        deletedFor: { $ne: currentUser }
+        deletedFor: { $ne: currentUser },
       });
       return messages;
     },
@@ -639,23 +650,29 @@ const resolver = {
       const { sender, receiver, limit = 20, skip = 0 } = args;
       const currentUser = req.session.user;
       if (!sender || !receiver) throw new Error("Audio messages not available");
-      
-      console.log(`🎵 Fetching audio messages between ${sender} and ${receiver}`);
+
+      console.log(
+        `🎵 Fetching audio messages between ${sender} and ${receiver}`
+      );
       const startTime = Date.now();
-      
+
       try {
         const audioMessages = await AudioMessage.find({
           $or: [
             { sender: sender, receiver: receiver },
             { sender: receiver, receiver: sender },
-          ]
+          ],
         })
-        .sort({ timestamp: 1 })
-        .lean();
-        
+          .sort({ timestamp: 1 })
+          .lean();
+
         const endTime = Date.now();
-        console.log(`✅ Audio messages fetched in ${endTime - startTime}ms, count: ${audioMessages.length}`);
-        
+        console.log(
+          `✅ Audio messages fetched in ${endTime - startTime}ms, count: ${
+            audioMessages.length
+          }`
+        );
+
         return audioMessages;
       } catch (error) {
         console.error("❌ Error in getAudioMessages:", error);
@@ -665,17 +682,17 @@ const resolver = {
     getAudioData: async (parent, args, { req }) => {
       if (!req?.session?.user) return null;
       const { messageId } = args;
-      
+
       console.log(`🎵 Fetching audio data for message: ${messageId}`);
       const startTime = Date.now();
-      
+
       const audioMessage = await AudioMessage.findById(messageId)
         .lean()
         .maxTimeMS(5000);
-      
+
       const endTime = Date.now();
       console.log(`✅ Audio data fetched in ${endTime - startTime}ms`);
-      
+
       return audioMessage;
     },
     deleteMessage: async (parent, args, { req }) => {
@@ -683,7 +700,9 @@ const resolver = {
       const { messageId, deleteType } = args;
       const username = req.session.user;
 
-      console.log(`🗑️ Deleting message ${messageId} for ${username}, type: ${deleteType}`);
+      console.log(
+        `🗑️ Deleting message ${messageId} for ${username}, type: ${deleteType}`
+      );
 
       const message = await Message.findById(messageId);
       if (!message) throw new Error("Message not found");
@@ -696,7 +715,7 @@ const resolver = {
       if (deleteType === "forMe") {
         // Add username to deletedFor array
         await Message.findByIdAndUpdate(messageId, {
-          $addToSet: { deletedFor: username }
+          $addToSet: { deletedFor: username },
         });
         return "Message deleted for you";
       } else if (deleteType === "forEveryone") {
@@ -704,7 +723,7 @@ const resolver = {
         if (message.sender !== username) {
           throw new Error("Only sender can delete for everyone");
         }
-        
+
         const messageAge = Date.now() - message._id.getTimestamp().getTime();
         const oneHour = 60 * 60 * 1000;
         if (messageAge > oneHour) {
@@ -712,7 +731,7 @@ const resolver = {
         }
 
         await Message.findByIdAndUpdate(messageId, {
-          deletedForEveryone: true
+          deletedForEveryone: true,
         });
         return "Message deleted for everyone";
       }
@@ -724,20 +743,25 @@ const resolver = {
       const { messageId, deleteType } = args;
       const username = req.session.user;
 
-      console.log(`🗑️ Deleting audio message ${messageId} for ${username}, type: ${deleteType}`);
+      console.log(
+        `🗑️ Deleting audio message ${messageId} for ${username}, type: ${deleteType}`
+      );
 
       const audioMessage = await AudioMessage.findById(messageId);
       if (!audioMessage) throw new Error("Audio message not found");
 
       // Check if user has permission to delete
-      if (audioMessage.sender !== username && audioMessage.receiver !== username) {
+      if (
+        audioMessage.sender !== username &&
+        audioMessage.receiver !== username
+      ) {
         throw new Error("Not authorized to delete this message");
       }
 
       if (deleteType === "forMe") {
         // Add username to deletedFor array
         await AudioMessage.findByIdAndUpdate(messageId, {
-          $addToSet: { deletedFor: username }
+          $addToSet: { deletedFor: username },
         });
         return "Audio message deleted for you";
       } else if (deleteType === "forEveryone") {
@@ -745,15 +769,16 @@ const resolver = {
         if (audioMessage.sender !== username) {
           throw new Error("Only sender can delete for everyone");
         }
-        
-        const messageAge = Date.now() - new Date(audioMessage.timestamp).getTime();
+
+        const messageAge =
+          Date.now() - new Date(audioMessage.timestamp).getTime();
         const oneHour = 60 * 60 * 1000;
         if (messageAge > oneHour) {
           throw new Error("Can only delete for everyone within 1 hour");
         }
 
         await AudioMessage.findByIdAndUpdate(messageId, {
-          deletedForEveryone: true
+          deletedForEveryone: true,
         });
         return "Audio message deleted for everyone";
       }
