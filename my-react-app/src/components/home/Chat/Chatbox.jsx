@@ -145,8 +145,6 @@ const Chatbox = ({
 
   const handleMouseDown = (_id) => {
     holdTimeout.current = setTimeout(() => {
-      console.log("Mouse held for 500ms");
-      alert("Mouse held for 500ms");
       setDeleteMessageOptions((prev) => {
         return {
           ...prev,
