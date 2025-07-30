@@ -49,20 +49,6 @@ type Document {
   isSeen: Boolean!
 }
 
-type AudioMessage {
-  _id: ID!
-  sender: String!
-  receiver: String!
-  audioData: String!
-  duration: Int!
-  fileType: String!
-  fileSize: Int
-  timestamp: String!
-  isSeen: Boolean!
-  isPlayed: Boolean!
-  deletedFor: [String]
-  deletedForEveryone: Boolean
-}
 type Query {
   getChats: [chatPreview]
   getRandomUsers: [User]
@@ -93,11 +79,7 @@ type Mutation {
   follow(userId: ID!): User
   getMessages(sender: String!, receiver: String!): [Message]
   getDocuments(sender: String!, receiver: String!): [Document]
-  getAudioMessages(sender: String!, receiver: String!, limit: Int, skip: Int): [AudioMessage]
-  getAudioData(messageId: ID!): AudioMessage
-  seeAudioMessages(sender: String!, receiver: String!): [AudioMessage]
   deleteMessage(messageId: ID!, deleteType: String!): String
-  deleteAudioMessage(messageId: ID!, deleteType: String!): String
 }
 `;
 

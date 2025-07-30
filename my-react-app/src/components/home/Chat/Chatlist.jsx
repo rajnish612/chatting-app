@@ -8,7 +8,6 @@ const Chatlist = ({
   setSelectedUserData,
   selectedUserToChat,
   unseenDocumentCounts = {},
-  unseenAudioCounts = {},
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -211,14 +210,6 @@ const Chatlist = ({
                         {unseenDocumentCounts[chat.username]}
                       </div>
                     )}
-                    {unseenAudioCounts[chat.username] > 0 && (
-                      <div
-                        className="bg-green-500 text-white text-xs rounded-full min-w-5 h-5 px-1 flex items-center justify-center flex-shrink-0"
-                        title="Unread audio messages"
-                      >
-                        🎵
-                      </div>
-                    )}
                   </div>
                 </button>
               ))}
@@ -299,14 +290,6 @@ const Chatlist = ({
                         title="Unread documents"
                       >
                         {unseenDocumentCounts[chat.username]}
-                      </div>
-                    )}
-                    {unseenAudioCounts[chat.username] > 0 && (
-                      <div
-                        className="bg-green-500 text-white text-xs rounded-full min-w-5 h-5 px-1 flex items-center justify-center flex-shrink-0"
-                        title="Unread audio messages"
-                      >
-                        🎵
                       </div>
                     )}
                   </div>
