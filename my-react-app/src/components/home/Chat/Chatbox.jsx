@@ -608,9 +608,18 @@ const Chatbox = ({
         };
       }) || [];
 
-    return [...textMessages, ...audioMsgs].sort(
-      (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
-    );
+    // Sort messages by timestamp, with fallback to _id for consistent ordering
+    return [...textMessages, ...audioMsgs].sort((a, b) => {
+      const timeA = new Date(a.timestamp).getTime();
+      const timeB = new Date(b.timestamp).getTime();
+      
+      // If timestamps are the same (unlikely but possible), sort by _id
+      if (timeA === timeB) {
+        return (a._id || '').localeCompare(b._id || '');
+      }
+      
+      return timeA - timeB;
+    });
   }, [userMessages, audioMessages]);
   function handleChange(e) {
     setContent(e.target.value);
@@ -700,26 +709,52 @@ const Chatbox = ({
   // Removed socket listener for audio messages as part of voice message functionality removal
 
   const isSeenFnc = useCallback(async () => {
-    await seeMessage({
-      variables: { sender: selectedUserToChat, receiver: self?.username },
-    });
-  }, [self?.username, selectedUserToChat, seeMessage]);
+    if (selectedUserToChat && self?.username) {
+      await seeMessage({
+        variables: { sender: selectedUserToChat, receiver: self?.username },
+      });
+      
+      // Emit socket event to notify sender that receiver has seen the messages
+      if (socket) {
+        socket.emit("messageSeenByReceiver", {
+          receiver: self?.username,
+          sender: selectedUserToChat,
+        });
+      }
+    }
+  }, [self?.username, selectedUserToChat, seeMessage, socket]);
 
-  // Only mark messages as seen when user changes, not on every message update
+  // Mark messages as seen when user changes
   useEffect(() => {
     if (selectedUserToChat && self?.username) {
       isSeenFnc();
     }
   }, [selectedUserToChat, self?.username, isSeenFnc]);
 
+  // Listen for incoming messages and mark them as seen in real-time
   useEffect(() => {
-    if (selectedUserToChat && self?.username && socket) {
-      socket.emit("messageSeenByReceiver", {
-        receiver: self?.username,
-        sender: selectedUserToChat,
-      });
-    }
-  }, [selectedUserToChat, self?.username, socket]);
+    if (!socket || !selectedUserToChat || !self?.username) return;
+
+    const handleReceiveMessage = ({ sender, receiver, content }) => {
+      // If we receive a message from the currently selected user, mark it as seen immediately
+      if (sender === selectedUserToChat && receiver === self?.username) {
+        setTimeout(() => {
+          if (socket) {
+            socket.emit("messageSeenByReceiver", {
+              receiver: self?.username,
+              sender: selectedUserToChat,
+            });
+          }
+        }, 500); // Small delay to ensure message is processed
+      }
+    };
+
+    socket.on("receive", handleReceiveMessage);
+
+    return () => {
+      socket.off("receive", handleReceiveMessage);
+    };
+  }, [socket, selectedUserToChat, self?.username]);
 
   async function handleAudioCall() {
     setCallType("audio");
