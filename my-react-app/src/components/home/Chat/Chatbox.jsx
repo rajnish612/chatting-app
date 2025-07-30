@@ -110,11 +110,22 @@ const Chatbox = ({
 }) => {
   console.log("setOutGoingVideoCall:", setOutGoingVideoCall);
   const messagesEndRef = React.useRef(null);
+  const [deleteMessageId, setDeleteMessageId] = React.useState("");
   const chatContainerRef = React.useRef(null);
   const [emojiOpen, setEmojiOpen] = React.useState(false);
   const [showScrollDownArrow, setShowScrollDownArrow] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-
+  const [deleteMessage, { loading: messageDeleteLoading }] = useMutation(
+    deleteMessageQuery,
+    {
+      onCompleted: async (data) => {
+        setDeleteMessageId("");
+      },
+      onError: async (err) => {
+        setDeleteMessageId("");
+      },
+    }
+  );
   // Audio recording states
   const [recording, setRecording] = React.useState(false);
   const [audioMessages, setAudioMessages] = React.useState([]);
@@ -449,13 +460,15 @@ const Chatbox = ({
       return "";
     }
   };
-  const handleSelfMessageDelete = (_id) => {
+  const handleSelfMessageDelete = async (_id) => {
+    setDeleteMessageId(_id);
+    await deleteMessage({ variables: { messageId: _id, deleteType: "forMe" } });
     setUserMessages((prev) => {
       const filteredMessage = prev?.map((message) => {
         if (message?._id === _id) {
           return {
             ...message,
-            deletedFor: [...message.deletedFor, self?.username],
+            deletedFor: [...message?.deletedFor, self?.username],
           };
         } else {
           return {
@@ -1252,17 +1265,22 @@ const Chatbox = ({
                       >
                         {message.type === "text" ? (
                           // Text Message
-                          <p
-                            className="text-sm font-medium leading-relaxed"
-                            style={{
-                              wordBreak: "break-word",
-                              whiteSpace: "pre-wrap",
-                            }}
-                          >
-                            {isDeleted
-                              ? "This message was deleted"
-                              : message.content}
-                          </p>
+                          deleteMessageId === message?._id &&
+                          messageDeleteLoading ? (
+                            <div className="h-10 w-10 border-white animate-spin rounded-full m-auto border-b-2" />
+                          ) : (
+                            <p
+                              className="text-sm font-medium leading-relaxed"
+                              style={{
+                                wordBreak: "break-word",
+                                whiteSpace: "pre-wrap",
+                              }}
+                            >
+                              {isDeleted
+                                ? "This message was deleted"
+                                : message.content}
+                            </p>
+                          )
                         ) : (
                           // Audio Message
                           <div className="flex items-center space-x-3 py-2">
