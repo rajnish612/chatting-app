@@ -148,7 +148,20 @@ const Home = () => {
   useEffect(() => {
     const handleReceive = ({ sender, receiver, content }) => {
       console.log("content", content);
-      setUserMessages((prev) => [...prev, { sender, receiver, content }]);
+      
+      // Create a proper message object with all required fields
+      const newMessage = {
+        _id: Date.now().toString(), // Generate temporary ID
+        sender,
+        receiver,
+        content,
+        timestamp: new Date().toISOString(), // Add proper timestamp
+        isSeen: false,
+        deletedFor: [],
+        deletedForEveryone: false
+      };
+      
+      setUserMessages((prev) => [...prev, newMessage]);
       chatsrefetch().then((data) => {
         setChats(data.data.getChats);
       });
