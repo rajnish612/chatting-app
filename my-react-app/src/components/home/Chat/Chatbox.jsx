@@ -3,10 +3,11 @@ import React, { useCallback, useMemo } from "react";
 import { useEffect } from "react";
 import { useState } from "react";
 import EmojiPicker from "emoji-picker-react";
-
+import { CiUser } from "react-icons/ci";
 import { FaPhoneAlt } from "react-icons/fa";
 import { FaVideo } from "react-icons/fa";
 import { IoIosSend } from "react-icons/io";
+import { MdDeleteOutline } from "react-icons/md";
 import { MdOutlineEmojiEmotions } from "react-icons/md";
 import { useLayoutEffect } from "react";
 import { MdOutlineKeyboardVoice } from "react-icons/md";
@@ -450,7 +451,23 @@ const Chatbox = ({
       return "";
     }
   };
-
+  const handleSelfMessageDelete = (_id) => {
+    setUserMessages((prev) => {
+      const filteredMessage = prev?.map((message) => {
+        if (message?._id === _id) {
+          return {
+            ...message,
+            deletedFor: [...message.deletedFor, self?.username],
+          };
+        } else {
+          return {
+            ...message,
+          };
+        }
+      });
+      return filteredMessage;
+    });
+  };
   const toggleAudioPlayback = useCallback(
     async (messageId, audioSrc) => {
       const audio = document.getElementById(`audio-${messageId}`);
@@ -1136,7 +1153,9 @@ const Chatbox = ({
               const messageKey =
                 message._id ||
                 `${message.type}-${idx}-${message.content || message.duration}`;
-
+              const isDeleted =
+                message?.deletedForEveryone ||
+                message?.deletedFor?.includes(self?.username);
               return (
                 <div
                   key={messageKey}
@@ -1182,185 +1201,229 @@ const Chatbox = ({
                     </div>
 
                     {/* Message Bubble */}
-                    <div
-                      onMouseDown={() => handleMouseDown(message?._id)}
-                      onMouseUp={handleMouseUp}
-                      onMouseLeave={handleMouseLeave}
-                      className={`message-bubble px-4 active:scale-[1.1] py-3 cursor-pointer rounded-2xl shadow-sm ${
-                        isOwn
-                          ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-br-md"
-                          : "bg-white text-gray-800 rounded-bl-md border border-gray-100"
-                      }`}
-                    >
-                      {message.type === "text" ? (
-                        // Text Message
-                        <p
-                          className="text-sm font-medium leading-relaxed"
-                          style={{
-                            wordBreak: "break-word",
-                            whiteSpace: "pre-wrap",
-                          }}
-                        >
-                          {message.deletedForEveryone
-                            ? "This message was deleted"
-                            : message?.deletedFor?.includes(self?.username)
-                            ? "This message was deleted"
-                            : message.content}
-                        </p>
-                      ) : (
-                        // Audio Message
-                        <div className="flex items-center space-x-3 py-2">
-                          {/* Play/Pause Button */}
-                          <button
-                            onClick={() =>
-                              toggleAudioPlayback(
-                                message._id,
-                                message.audioData
-                              )
-                            }
-                            disabled={!message.audioData}
-                            className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 ${
-                              isOwn
-                                ? "bg-blue-700 hover:bg-blue-800 disabled:bg-blue-400"
-                                : "bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400"
-                            } ${
-                              !message.audioData ? "cursor-not-allowed" : ""
-                            }`}
+
+                    <div className="relative">
+                      {deleteMessageOptions._id === message?._id &&
+                        !isDeleted && (
+                          <div
+                            className={`!text-gray-700 !rounded-xl !shadow-lg 
+  !border !border-gray-200 !flex !flex-col !p-3 !bg-white 
+  !absolute ${
+    isOwn ? "!right-0  " : "!left-0 "
+  } !z-10 !bottom-full !mb-2 !min-w-48`}
                           >
-                            {!message.audioData ||
-                            loadingAudioData[message._id] ? (
-                              // Loading spinner
-                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            ) : playingAudio === message._id ? (
-                              <svg
-                                className="w-4 h-4 text-white"
-                                fill="currentColor"
-                                viewBox="0 0 24 24"
+                            {isOwn && (
+                              <button
+                                className={`!flex !items-center ${
+                                  isOwn ? "!justify-end" : "!justify-start"
+                                } !bg-transparent !text-nowrap !gap-2 !w-full 
+  !p-2 !rounded-lg hover:!bg-gray-50 !transition-colors 
+  !text-sm !font-medium`}
                               >
-                                <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-                              </svg>
-                            ) : (
-                              <svg
-                                className="w-4 h-4 text-white ml-0.5"
-                                fill="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path d="M8 5v14l11-7z" />
-                              </svg>
+                                <CiUser size={16} className="!text-blue-500" />
+                                <span>Delete For Everyone</span>
+                              </button>
                             )}
-                          </button>
-
-                          {/* Waveform/Progress Bar */}
-                          <div className="flex-1 space-y-1">
-                            {!message.audioData ||
-                            loadingAudioData[message._id] ? (
-                              // Loading state for waveform
-                              <div className="flex items-center space-x-1">
-                                {[...Array(15)].map((_, i) => (
-                                  <div
-                                    key={i}
-                                    className={`w-1 h-3 rounded-full animate-pulse ${
-                                      isOwn ? "bg-blue-300" : "bg-gray-400"
-                                    }`}
-                                    style={{
-                                      animationDelay: `${i * 50}ms`,
-                                    }}
-                                  />
-                                ))}
-                              </div>
-                            ) : (
-                              <div className="flex items-center space-x-1">
-                                {[...Array(15)].map((_, i) => {
-                                  // Generate consistent height based on message ID and index
-                                  const seedHeight =
-                                    (((message._id?.charCodeAt(
-                                      i % message._id.length
-                                    ) || 0) +
-                                      i) %
-                                      12) +
-                                    6;
-                                  return (
-                                    <div
-                                      key={i}
-                                      className={`w-1 rounded-full transition-all duration-200 ${
-                                        isOwn ? "bg-blue-200" : "bg-gray-300"
-                                      }`}
-                                      style={{
-                                        height: `${seedHeight}px`,
-                                        opacity:
-                                          (audioCurrentTime[message._id] || 0) /
-                                            (audioDurations[message._id] ||
-                                              message.duration ||
-                                              1) >
-                                          i / 15
-                                            ? 1
-                                            : 0.4,
-                                      }}
-                                    />
-                                  );
-                                })}
-                              </div>
-                            )}
-
-                            {/* Time Display */}
-                            <div className="flex justify-between text-xs opacity-75">
-                              <span>
-                                {!message.audioData ||
-                                loadingAudioData[message._id]
-                                  ? "..."
-                                  : formatTime(
-                                      audioCurrentTime[message._id] || 0
-                                    )}
-                              </span>
-                              <span>
-                                {!message.audioData ||
-                                loadingAudioData[message._id]
-                                  ? "Loading..."
-                                  : formatTime(
-                                      audioDurations[message._id] ||
-                                        message.duration ||
-                                        0
-                                    )}
-                              </span>
-                            </div>
+                            <button
+                              onClick={() =>
+                                handleSelfMessageDelete(message?._id)
+                              }
+                              className={`!flex ${
+                                isOwn ? "!justify-end" : "!justify-start"
+                              } !items-center !justify-end !bg-transparent !text-nowrap !gap-2 !w-full        
+  !p-2 !rounded-lg hover:!bg-gray-50 !transition-colors
+  !text-sm !font-medium`}
+                            >
+                              <MdDeleteOutline
+                                size={16}
+                                className="!text-red-500"
+                              />
+                              <span>Delete For Me</span>
+                            </button>
                           </div>
-
-                          {/* Hidden Audio Element */}
-                          <audio
-                            id={`audio-${message._id}`}
-                            src={message.audioData}
-                            onTimeUpdate={(e) =>
-                              handleAudioTimeUpdate(
-                                message._id,
-                                e.target.currentTime,
-                                e.target.duration
-                              )
-                            }
-                            onEnded={() => handleAudioEnded(message._id)}
-                            preload="metadata"
-                            className="hidden"
-                          />
-                        </div>
-                      )}
-
-                      {/* Message Status - Show for everyone, but with different styling */}
+                        )}
                       <div
-                        className={`flex items-center mt-1 gap-1 ${
-                          isOwn ? "justify-end" : "justify-start"
+                        onMouseDown={() => handleMouseDown(message?._id)}
+                        onMouseUp={handleMouseUp}
+                        onMouseLeave={handleMouseLeave}
+                        className={`message-bubble relative px-4 active:scale-[1.1] py-3 cursor-pointer rounded-2xl shadow-sm ${
+                          isOwn
+                            ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-br-md"
+                            : "bg-white text-gray-800 rounded-bl-md border border-gray-100"
                         }`}
                       >
-                        <span className="text-xs opacity-60">
-                          {formatMessageTime(message.timestamp)}
-                        </span>
-                        {isOwn && (
-                          <>
-                            {message.isSeen ? (
-                              <BsCheckAll className="text-blue-200" size={14} />
-                            ) : (
-                              <BsCheck className="text-blue-200" size={14} />
-                            )}
-                          </>
+                        {message.type === "text" ? (
+                          // Text Message
+                          <p
+                            className="text-sm font-medium leading-relaxed"
+                            style={{
+                              wordBreak: "break-word",
+                              whiteSpace: "pre-wrap",
+                            }}
+                          >
+                            {isDeleted
+                              ? "This message was deleted"
+                              : message.content}
+                          </p>
+                        ) : (
+                          // Audio Message
+                          <div className="flex items-center space-x-3 py-2">
+                            {/* Play/Pause Button */}
+                            <button
+                              onClick={() =>
+                                toggleAudioPlayback(
+                                  message._id,
+                                  message.audioData
+                                )
+                              }
+                              disabled={!message.audioData}
+                              className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 ${
+                                isOwn
+                                  ? "bg-blue-700 hover:bg-blue-800 disabled:bg-blue-400"
+                                  : "bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400"
+                              } ${
+                                !message.audioData ? "cursor-not-allowed" : ""
+                              }`}
+                            >
+                              {!message.audioData ||
+                              loadingAudioData[message._id] ? (
+                                // Loading spinner
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                              ) : playingAudio === message._id ? (
+                                <svg
+                                  className="w-4 h-4 text-white"
+                                  fill="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+                                </svg>
+                              ) : (
+                                <svg
+                                  className="w-4 h-4 text-white ml-0.5"
+                                  fill="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path d="M8 5v14l11-7z" />
+                                </svg>
+                              )}
+                            </button>
+
+                            {/* Waveform/Progress Bar */}
+                            <div className="flex-1 space-y-1">
+                              {!message.audioData ||
+                              loadingAudioData[message._id] ? (
+                                // Loading state for waveform
+                                <div className="flex items-center space-x-1">
+                                  {[...Array(15)].map((_, i) => (
+                                    <div
+                                      key={i}
+                                      className={`w-1 h-3 rounded-full animate-pulse ${
+                                        isOwn ? "bg-blue-300" : "bg-gray-400"
+                                      }`}
+                                      style={{
+                                        animationDelay: `${i * 50}ms`,
+                                      }}
+                                    />
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="flex items-center space-x-1">
+                                  {[...Array(15)].map((_, i) => {
+                                    // Generate consistent height based on message ID and index
+                                    const seedHeight =
+                                      (((message._id?.charCodeAt(
+                                        i % message._id.length
+                                      ) || 0) +
+                                        i) %
+                                        12) +
+                                      6;
+                                    return (
+                                      <div
+                                        key={i}
+                                        className={`w-1 rounded-full transition-all duration-200 ${
+                                          isOwn ? "bg-blue-200" : "bg-gray-300"
+                                        }`}
+                                        style={{
+                                          height: `${seedHeight}px`,
+                                          opacity:
+                                            (audioCurrentTime[message._id] ||
+                                              0) /
+                                              (audioDurations[message._id] ||
+                                                message.duration ||
+                                                1) >
+                                            i / 15
+                                              ? 1
+                                              : 0.4,
+                                        }}
+                                      />
+                                    );
+                                  })}
+                                </div>
+                              )}
+
+                              {/* Time Display */}
+                              <div className="flex justify-between text-xs opacity-75">
+                                <span>
+                                  {!message.audioData ||
+                                  loadingAudioData[message._id]
+                                    ? "..."
+                                    : formatTime(
+                                        audioCurrentTime[message._id] || 0
+                                      )}
+                                </span>
+                                <span>
+                                  {!message.audioData ||
+                                  loadingAudioData[message._id]
+                                    ? "Loading..."
+                                    : formatTime(
+                                        audioDurations[message._id] ||
+                                          message.duration ||
+                                          0
+                                      )}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Hidden Audio Element */}
+                            <audio
+                              id={`audio-${message._id}`}
+                              src={message.audioData}
+                              onTimeUpdate={(e) =>
+                                handleAudioTimeUpdate(
+                                  message._id,
+                                  e.target.currentTime,
+                                  e.target.duration
+                                )
+                              }
+                              onEnded={() => handleAudioEnded(message._id)}
+                              preload="metadata"
+                              className="hidden"
+                            />
+                          </div>
                         )}
+
+                        {/* Message Status - Show for everyone, but with different styling */}
+                        <div
+                          className={`flex items-center mt-1 gap-1 ${
+                            isOwn ? "justify-end" : "justify-start"
+                          }`}
+                        >
+                          <span className="text-xs opacity-60">
+                            {formatMessageTime(message.timestamp)}
+                          </span>
+                          {isOwn && (
+                            <>
+                              {message.isSeen ? (
+                                <BsCheckAll
+                                  className="text-blue-200"
+                                  size={14}
+                                />
+                              ) : (
+                                <BsCheck className="text-blue-200" size={14} />
+                              )}
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
