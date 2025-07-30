@@ -486,13 +486,14 @@ const Chatbox = ({
   };
   const handleSelfMessageDelete = async (_id) => {
     setDeleteMessageId(_id);
+    if (!_id) return;
     await deleteMessage({ variables: { messageId: _id, deleteType: "forMe" } });
     setUserMessages((prev) => {
       const filteredMessage = prev?.map((message) => {
         if (message?._id === _id) {
           return {
             ...message,
-            deletedFor: [...message.deletedFor, self?.username],
+            deletedFor: [...(message.deletedFor || []), self?.username],
           };
         } else {
           return {
@@ -612,12 +613,12 @@ const Chatbox = ({
     return [...textMessages, ...audioMsgs].sort((a, b) => {
       const timeA = new Date(a.timestamp).getTime();
       const timeB = new Date(b.timestamp).getTime();
-      
+
       // If timestamps are the same (unlikely but possible), sort by _id
       if (timeA === timeB) {
-        return (a._id || '').localeCompare(b._id || '');
+        return (a._id || "").localeCompare(b._id || "");
       }
-      
+
       return timeA - timeB;
     });
   }, [userMessages, audioMessages]);
@@ -646,6 +647,7 @@ const Chatbox = ({
         content: content,
       },
     });
+    console.log(res.data);
 
     if (res?.data) {
       socket.emit("message", {
@@ -696,11 +698,7 @@ const Chatbox = ({
       }
     }
     getSelectedUserChatFnc();
-  }, [
-    self?.username,
-    selectedUserToChat,
-    getSelectedUserChat,
-  ]);
+  }, [self?.username, selectedUserToChat, getSelectedUserChat]);
 
   // Removed audio message marking logic as part of voice message functionality removal
 
@@ -713,7 +711,7 @@ const Chatbox = ({
       await seeMessage({
         variables: { sender: selectedUserToChat, receiver: self?.username },
       });
-      
+
       // Emit socket event to notify sender that receiver has seen the messages
       if (socket) {
         socket.emit("messageSeenByReceiver", {
