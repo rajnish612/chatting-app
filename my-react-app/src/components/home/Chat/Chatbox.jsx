@@ -683,16 +683,7 @@ const Chatbox = ({
           variables: { sender: self?.username, receiver: selectedUserToChat },
         });
 
-        // Also fetch audio messages
-        console.log(
-          "🎵 Fetching audio messages for:",
-          self?.username,
-          "->",
-          selectedUserToChat
-        );
-        await getAudioMessages({
-          variables: { sender: self?.username, receiver: selectedUserToChat },
-        });
+        // Audio messages removed as part of voice message functionality removal
       }
     }
     getSelectedUserChatFnc();
@@ -700,69 +691,13 @@ const Chatbox = ({
     self?.username,
     selectedUserToChat,
     getSelectedUserChat,
-    getAudioMessages,
   ]);
 
-  // Separate useEffect for marking messages as seen to avoid infinite loops
-  useEffect(() => {
-    if (
-      onMarkAudioMessagesAsSeen &&
-      unseenAudioCount > 0 &&
-      selectedUserToChat &&
-      self?.username &&
-      !hasMarkedSeenRef.current
-    ) {
-      onMarkAudioMessagesAsSeen(selectedUserToChat, self?.username);
-      hasMarkedSeenRef.current = true;
-    }
-  }, [
-    onMarkAudioMessagesAsSeen,
-    unseenAudioCount,
-    selectedUserToChat,
-    self?.username,
-  ]);
+  // Removed audio message marking logic as part of voice message functionality removal
 
-  // Debug audioMessages state
-  useEffect(() => {
-    console.log(
-      "🔍 audioMessages state changed:",
-      audioMessages.length,
-      audioMessages
-    );
-  }, [audioMessages]);
+  // Removed audio messages debug logging as part of voice message functionality removal
 
-  // Socket listener for incoming audio messages
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleReceiveAudioMessage = (message) => {
-      if (
-        message.receiver === self?.username &&
-        message.sender === selectedUserToChat
-      ) {
-        setAudioMessages((prev) => [
-          ...prev,
-          {
-            _id: message._id,
-            sender: message.sender,
-            receiver: message.receiver,
-            audioData: message.audioData,
-            duration: message.duration || 0,
-            fileType: message.fileType || "audio/webm",
-            timestamp: message.timestamp,
-            isSeen: message.isSeen || false,
-            isPlayed: message.isPlayed || false,
-          },
-        ]);
-      }
-    };
-
-    socket.on("receiveAudioMessage", handleReceiveAudioMessage);
-
-    return () => {
-      socket.off("receiveAudioMessage", handleReceiveAudioMessage);
-    };
-  }, [socket, self?.username, selectedUserToChat]);
+  // Removed socket listener for audio messages as part of voice message functionality removal
 
   const isSeenFnc = useCallback(async () => {
     await seeMessage({
@@ -770,16 +705,21 @@ const Chatbox = ({
     });
   }, [self?.username, selectedUserToChat, seeMessage]);
 
+  // Only mark messages as seen when user changes, not on every message update
   useEffect(() => {
-    isSeenFnc();
-  }, [isSeenFnc, userMessages]);
+    if (selectedUserToChat && self?.username) {
+      isSeenFnc();
+    }
+  }, [selectedUserToChat, self?.username, isSeenFnc]);
 
   useEffect(() => {
-    socket.emit("messageSeenByReceiver", {
-      receiver: self?.username,
-      sender: selectedUserToChat,
-    });
-  }, [userMessages, socket, self?.username, selectedUserToChat]);
+    if (selectedUserToChat && self?.username && socket) {
+      socket.emit("messageSeenByReceiver", {
+        receiver: self?.username,
+        sender: selectedUserToChat,
+      });
+    }
+  }, [selectedUserToChat, self?.username, socket]);
 
   async function handleAudioCall() {
     setCallType("audio");
