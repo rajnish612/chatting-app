@@ -55,6 +55,8 @@ const sendMessageQuery = gql`
       content
       sender
       receiver
+      deletedFor
+      deletedForEveryone
     }
   }
 `;
