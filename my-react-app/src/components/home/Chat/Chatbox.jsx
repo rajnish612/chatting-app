@@ -138,9 +138,27 @@ const Chatbox = ({
   const timerRef = React.useRef(null);
   const hasMarkedSeenRef = React.useRef(false);
   const audioRef = React.useRef(null);
+  const holdTimeout = React.useRef(null);
 
+  const handleMouseDown = () => {
+    holdTimeout.current = setTimeout(() => {
+      console.log("Mouse held for 500ms");
+      alert("Mouse held for 500ms");
+      // Place your long-press logic here
+    }, 500); // Hold duration
+  };
+
+  const handleMouseUp = () => {
+    clearTimeout(holdTimeout.current); // Cancel if released early
+  };
+
+  const handleMouseLeave = () => {
+    clearTimeout(holdTimeout.current); // Cancel if moved away
+  };
   const [getSelectedUserChat] = useMutation(getSelectedUserChatsQuery, {
     onCompleted: async (data) => {
+      console.log("data", data.getMessages);
+
       setUserMessages(data.getMessages);
     },
     onError: (err) => {
@@ -163,7 +181,6 @@ const Chatbox = ({
       setIsLoadingAudio(false);
     },
   });
-  console.log("selectedUserData", selectedUserData);
 
   const [getAudioData] = useMutation(getAudioDataQuery, {
     onCompleted: (data) => {
@@ -369,16 +386,8 @@ const Chatbox = ({
 
   const formatMessageTime = (timestamp) => {
     if (!timestamp) {
-      console.log("⚠️ No timestamp provided");
       return "";
     }
-
-    console.log(
-      "📅 Formatting timestamp:",
-      timestamp,
-      "type:",
-      typeof timestamp
-    );
 
     try {
       // Handle different timestamp formats
@@ -421,7 +430,7 @@ const Chatbox = ({
       });
 
       const result = `${dateStr}, ${timeStr}`;
-      console.log("✅ Formatted result:", result);
+
       return result;
     } catch (error) {
       console.error(
@@ -528,6 +537,7 @@ const Chatbox = ({
               ).toISOString()
             : new Date(Date.now() + index).toISOString()),
       })) || [];
+    console.log("getAllMessages", userMessages);
 
     const audioMsgs =
       audioMessages?.map((msg) => {
@@ -537,16 +547,6 @@ const Chatbox = ({
           type: "audio",
         };
       }) || [];
-
-    console.log(
-      "📊 getAllMessages - text:",
-      textMessages.length,
-      "audio:",
-      audioMsgs.length,
-      "total:",
-      textMessages.length + audioMsgs.length
-    );
-    console.log("📊 Sample audio message:", audioMsgs[0]);
 
     return [...textMessages, ...audioMsgs].sort(
       (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
@@ -1175,7 +1175,10 @@ const Chatbox = ({
 
                     {/* Message Bubble */}
                     <div
-                      className={`message-bubble px-4 py-3 rounded-2xl shadow-sm ${
+                      onMouseDown={handleMouseDown}
+                      onMouseUp={handleMouseUp}
+                      onMouseLeave={handleMouseLeave}
+                      className={`message-bubble px-4 active:scale-[1.1] py-3 cursor-pointer rounded-2xl shadow-sm ${
                         isOwn
                           ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-br-md"
                           : "bg-white text-gray-800 rounded-bl-md border border-gray-100"
@@ -1190,7 +1193,11 @@ const Chatbox = ({
                             whiteSpace: "pre-wrap",
                           }}
                         >
-                          {message.content}
+                          {message.deletedForEveryone
+                            ? "This message was deleted"
+                            : message?.deletedFor?.includes(self?.username)
+                            ? "This message was deleted"
+                            : message.content}
                         </p>
                       ) : (
                         // Audio Message

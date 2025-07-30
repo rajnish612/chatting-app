@@ -595,8 +595,8 @@ const resolver = {
           { sender: receiver, receiver: sender },
         ],
         // Filter out messages deleted for current user or deleted for everyone
-        deletedForEveryone: { $ne: true },
-        deletedFor: { $ne: currentUser },
+        // deletedForEveryone: { $ne: true },
+        // deletedFor: { $ne: currentUser },
       });
       return messages;
     },

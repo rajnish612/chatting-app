@@ -160,7 +160,31 @@ const Home = () => {
       socket.off("receive", handleReceive);
     };
   }, [chatsrefetch, socket]);
+  console.log("home", userMessages);
 
+  useEffect(() => {
+    const handleMessageDelete = ({ _id, username }) => {
+      setUserMessages((prev) => {
+        const filteredMessage = prev.map((message) => {
+          if (message?._id === _id && message?.username === username) {
+            return {
+              ...message,
+              deletedForEveryone: true,
+            };
+          } else {
+            return {
+              ...message,
+            };
+          }
+        });
+        return filteredMessage;
+      });
+    };
+    socket.on("deleteMessage", handleMessageDelete);
+    return () => {
+      socket.off("deleteMessage", handleMessageDelete);
+    };
+  }, [socket]);
   useEffect(() => {
     socket.on("connect", () => {});
     socket.emit("join", self?.username);
