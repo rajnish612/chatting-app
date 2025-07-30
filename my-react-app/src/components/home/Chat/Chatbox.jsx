@@ -468,7 +468,7 @@ const Chatbox = ({
         if (message?._id === _id) {
           return {
             ...message,
-            deletedFor: [...message?.deletedFor, self?.username],
+            deletedFor: [...message.deletedFor, self?.username],
           };
         } else {
           return {
