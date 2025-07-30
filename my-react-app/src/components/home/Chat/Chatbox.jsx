@@ -127,7 +127,9 @@ const Chatbox = ({
   const [audioDurations, setAudioDurations] = React.useState({});
   const [isSendingAudio, setIsSendingAudio] = React.useState(false);
   const [loadingAudioData, setLoadingAudioData] = React.useState({});
-
+  const [deleteMessageOptions, setDeleteMessageOptions] = React.useState({
+    _id: "",
+  });
   // Audio recording refs
   const mediaRecorderRef = React.useRef(null);
   const streamRef = React.useRef(null);
@@ -140,10 +142,16 @@ const Chatbox = ({
   const audioRef = React.useRef(null);
   const holdTimeout = React.useRef(null);
 
-  const handleMouseDown = () => {
+  const handleMouseDown = (_id) => {
     holdTimeout.current = setTimeout(() => {
       console.log("Mouse held for 500ms");
       alert("Mouse held for 500ms");
+      setDeleteMessageOptions((prev) => {
+        return {
+          ...prev,
+          _id: _id,
+        };
+      });
       // Place your long-press logic here
     }, 500); // Hold duration
   };
@@ -1175,7 +1183,7 @@ const Chatbox = ({
 
                     {/* Message Bubble */}
                     <div
-                      onMouseDown={handleMouseDown}
+                      onMouseDown={() => handleMouseDown(message?._id)}
                       onMouseUp={handleMouseUp}
                       onMouseLeave={handleMouseLeave}
                       className={`message-bubble px-4 active:scale-[1.1] py-3 cursor-pointer rounded-2xl shadow-sm ${
