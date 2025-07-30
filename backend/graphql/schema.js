@@ -60,6 +60,7 @@ type Query {
   getBlockedUsers: [User]
 }
 type Mutation {
+  sendMessage(sender:String!,receiver:String!,content:String!):Message
   blockUser(selfId:ID!,username:String!):String
   unblockUser(userId: ID!): String
   updatePassword(currentPassword: String!, newPassword: String!): String

@@ -98,13 +98,6 @@ io.on("connection", (socket) => {
         return;
       }
 
-      let newMessage = new Message({
-        sender,
-        receiver,
-        content,
-        isSeen: false,
-      });
-      await newMessage.save();
       io.to(receiver).emit("receive", { sender, receiver, content });
     } catch (error) {
       console.error("Error saving message:", error);

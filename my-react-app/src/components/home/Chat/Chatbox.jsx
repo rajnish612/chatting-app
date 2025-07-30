@@ -20,9 +20,13 @@ import { IoDocumentText } from "react-icons/io5";
 const isSeenQuery = gql`
   mutation SeeMessages($sender: String!, $receiver: String!) {
     SeeMessages(sender: $sender, receiver: $receiver) {
+      _id
       sender
       receiver
       content
+      isSeen
+      deletedFor
+      deletedForEveryone
     }
   }
 `;
@@ -40,7 +44,20 @@ const getSelectedUserChatsQuery = gql`
     }
   }
 `;
-
+const sendMessageQuery = gql`
+  mutation sendMessage(
+    $sender: String!
+    $receiver: String!
+    $content: String!
+  ) {
+    sendMessage(sender: $sender, receiver: $receiver, content: $content) {
+      _id
+      content
+      sender
+      receiver
+    }
+  }
+`;
 const getAudioMessagesQuery = gql`
   mutation getAudioMessages($sender: String!, $receiver: String!) {
     getAudioMessages(sender: $sender, receiver: $receiver) {
@@ -153,7 +170,14 @@ const Chatbox = ({
   const hasMarkedSeenRef = React.useRef(false);
   const audioRef = React.useRef(null);
   const holdTimeout = React.useRef(null);
-
+  const [sendMessage] = useMutation(sendMessageQuery, {
+    onCompleted: async (data) => {
+      console.log("message", data);
+    },
+    onError: async (err) => {
+      console.log("message", err);
+    },
+  });
   const handleMouseDown = (_id) => {
     holdTimeout.current = setTimeout(() => {
       setDeleteMessageOptions((prev) => {
@@ -594,7 +618,7 @@ const Chatbox = ({
     setIsTyping(e.target.value.length > 0);
   }
 
-  function handleSend() {
+  async function handleSend() {
     if (!content.trim()) return;
 
     // Validate that we have the required data
@@ -606,24 +630,38 @@ const Chatbox = ({
       alert("Error: Unable to send message. Please try refreshing the page.");
       return;
     }
+    const res = await sendMessage({
+      variables: {
+        sender: self?.username,
+        receiver: selectedUserToChat,
+        content: content,
+      },
+    });
 
-    socket.emit("message", {
-      sender: self.username,
-      receiver: selectedUserToChat,
-      content: content,
-    });
-    setChats((prev) => {
-      const exists = prev.some((chat) => chat.username === selectedUserToChat);
-      if (!exists) {
-        return [...prev, { username: selectedUserToChat, unseenCount: 0 }];
-      } else {
-        return prev;
-      }
-    });
-    setUserMessages((prev) => [
-      ...prev,
-      { sender: self.username, receiver: selectedUserToChat, content: content },
-    ]);
+    if (res?.data) {
+      socket.emit("message", {
+        sender: self.username,
+        receiver: selectedUserToChat,
+        content: content,
+      });
+      setChats((prev) => {
+        const exists = prev.some(
+          (chat) => chat.username === selectedUserToChat
+        );
+        if (!exists) {
+          return [
+            ...prev,
+            {
+              username: selectedUserToChat,
+              unseenCount: 0,
+            },
+          ];
+        } else {
+          return prev;
+        }
+      });
+      setUserMessages((prev) => [...prev, { ...res.data.sendMessage }]);
+    }
 
     setContent("");
     setIsTyping(false);

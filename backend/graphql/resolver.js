@@ -274,7 +274,6 @@ const resolver = {
             .sort({ _id: -1 })
             .lean(),
 
-
           // Last document
           Document.findOne({
             $or: [
@@ -302,7 +301,6 @@ const resolver = {
             lastMessageTime = lastMessages[0]._id.getTimestamp().toISOString();
           }
         }
-
 
         if (lastMessages[2]) {
           // Document
@@ -520,6 +518,21 @@ const resolver = {
   },
 
   Mutation: {
+    sendMessage: async (_, { sender, receiver, content }) => {
+      try {
+        if (!sender || !receiver || !content) throw new Error("unable to send");
+        let newMessage = new Message({
+          sender,
+          receiver,
+          content,
+          isSeen: false,
+        });
+        await newMessage.save();
+        return newMessage;
+      } catch (err) {
+        throw new Error("unable to send");
+      }
+    },
     blockUser: async (_, args) => {
       try {
         const { selfId, username } = args;
