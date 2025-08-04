@@ -764,17 +764,24 @@ const Chatbox = ({
 
   // Mark messages as seen when new messages arrive (not when seen status changes)
   useEffect(() => {
-    if (!socket || !selectedUserToChat || !self?.username || !userMessages?.length) return;
+    if (
+      !socket ||
+      !selectedUserToChat ||
+      !self?.username ||
+      !userMessages?.length
+    )
+      return;
 
     const currentMessageCount = userMessages.length;
     const hasNewMessages = currentMessageCount > lastMessageCountRef.current;
-    
+
     // Only trigger when there are genuinely new messages (not just status updates)
     if (hasNewMessages) {
       const unseenFromSelected = userMessages.filter(
-        msg => msg.sender === selectedUserToChat && 
-               msg.receiver === self?.username && 
-               !msg.isSeen
+        (msg) =>
+          msg.sender === selectedUserToChat &&
+          msg.receiver === self?.username &&
+          !msg.isSeen
       );
 
       if (unseenFromSelected.length > 0) {
@@ -787,16 +794,19 @@ const Chatbox = ({
           if (socket && selectedUserToChat && self?.username) {
             // Mark messages as seen in the backend
             await seeMessage({
-              variables: { sender: selectedUserToChat, receiver: self?.username },
+              variables: {
+                sender: selectedUserToChat,
+                receiver: self?.username,
+              },
             });
-            
+
             // Emit socket event to notify sender
             socket.emit("messageSeenByReceiver", {
               receiver: self?.username,
               sender: selectedUserToChat,
             });
           }
-        }, 500);
+        });
       }
     }
 
