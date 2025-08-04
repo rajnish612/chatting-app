@@ -758,30 +758,50 @@ const Chatbox = ({
     }
   }, [selectedUserToChat, self?.username, isSeenFnc]);
 
-  // Listen for incoming messages and mark them as seen in real-time
-  useEffect(() => {
-    if (!socket || !selectedUserToChat || !self?.username) return;
+  // Track the last message count to prevent infinite loops
+  const lastMessageCountRef = React.useRef(0);
+  const markSeenTimeoutRef = React.useRef(null);
 
-    const handleReceiveMessage = ({ sender, receiver, content }) => {
-      // If we receive a message from the currently selected user, mark it as seen immediately
-      if (sender === selectedUserToChat && receiver === self?.username) {
-        setTimeout(() => {
-          if (socket) {
+  // Mark messages as seen when new messages arrive (not when seen status changes)
+  useEffect(() => {
+    if (!socket || !selectedUserToChat || !self?.username || !userMessages?.length) return;
+
+    const currentMessageCount = userMessages.length;
+    const hasNewMessages = currentMessageCount > lastMessageCountRef.current;
+    
+    // Only trigger when there are genuinely new messages (not just status updates)
+    if (hasNewMessages) {
+      const unseenFromSelected = userMessages.filter(
+        msg => msg.sender === selectedUserToChat && 
+               msg.receiver === self?.username && 
+               !msg.isSeen
+      );
+
+      if (unseenFromSelected.length > 0) {
+        // Clear any existing timeout
+        if (markSeenTimeoutRef.current) {
+          clearTimeout(markSeenTimeoutRef.current);
+        }
+
+        markSeenTimeoutRef.current = setTimeout(() => {
+          if (socket && selectedUserToChat && self?.username) {
             socket.emit("messageSeenByReceiver", {
               receiver: self?.username,
               sender: selectedUserToChat,
             });
           }
-        }, 500); // Small delay to ensure message is processed
+        }, 500);
       }
-    };
+    }
 
-    socket.on("receive", handleReceiveMessage);
+    lastMessageCountRef.current = currentMessageCount;
 
     return () => {
-      socket.off("receive", handleReceiveMessage);
+      if (markSeenTimeoutRef.current) {
+        clearTimeout(markSeenTimeoutRef.current);
+      }
     };
-  }, [socket, selectedUserToChat, self?.username]);
+  }, [userMessages?.length, socket, selectedUserToChat, self?.username]);
 
   async function handleAudioCall() {
     setCallType("audio");
