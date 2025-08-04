@@ -200,7 +200,7 @@ const Home = () => {
     return () => {
       socket.off("deleteMessage", handleMessageDelete);
     };
-  }, [socket, self?.username]);
+  }, [socket]);
   useEffect(() => {
     socket.on("connect", () => {});
     socket.emit("join", self?.username);
