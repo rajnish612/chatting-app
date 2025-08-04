@@ -148,7 +148,7 @@ const Home = () => {
   useEffect(() => {
     const handleReceive = ({ sender, receiver, content }) => {
       console.log("content", content);
-      
+
       // Create a proper message object with all required fields
       const newMessage = {
         _id: Date.now().toString(), // Generate temporary ID
@@ -158,9 +158,9 @@ const Home = () => {
         timestamp: new Date().toISOString(), // Add proper timestamp
         isSeen: false,
         deletedFor: [],
-        deletedForEveryone: false
+        deletedForEveryone: false,
       };
-      
+
       setUserMessages((prev) => [...prev, newMessage]);
       chatsrefetch().then((data) => {
         setChats(data.data.getChats);
@@ -177,9 +177,12 @@ const Home = () => {
 
   useEffect(() => {
     const handleMessageDelete = ({ _id, username }) => {
+      console.log("_id", _id);
+      console.log("running");
+
       setUserMessages((prev) => {
         const filteredMessage = prev.map((message) => {
-          if (message?._id === _id && message?.username === username) {
+          if (message?._id === _id && message?.sender === username) {
             return {
               ...message,
               deletedForEveryone: true,
@@ -197,7 +200,7 @@ const Home = () => {
     return () => {
       socket.off("deleteMessage", handleMessageDelete);
     };
-  }, [socket]);
+  }, [socket, self?.username]);
   useEffect(() => {
     socket.on("connect", () => {});
     socket.emit("join", self?.username);

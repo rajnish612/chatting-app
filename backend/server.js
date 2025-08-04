@@ -108,7 +108,9 @@ io.on("connection", (socket) => {
   });
 
   socket.on("deleteMessage", ({ from, to, _id }) => {
-    console.log("deleteMessage", from, to, _id);
+    console.log("To", to, "from", from, "id", _id);
+
+    io.to(to).emit("deleteMessage", { _id: _id, username: from });
   });
   socket.on("call-user", ({ from, to, offer, type }) => {
     console.log(from, to, type);

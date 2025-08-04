@@ -1,4 +1,4 @@
-import { gql, useMutation } from "@apollo/client";
+import { from, gql, useMutation } from "@apollo/client";
 import React, { useCallback, useMemo } from "react";
 import { useEffect } from "react";
 import { useState } from "react";
@@ -485,6 +485,30 @@ const Chatbox = ({
       );
       return "";
     }
+  };
+  const handleMessageDelete = async (_id) => {
+    if (!_id) return;
+    await deleteMessage({ variables: { messageId: _id, deleteType: "forEveryone" } });
+    socket.emit("deleteMessage", {
+      from: self?.username,
+      to: selectedUserToChat,
+      _id: _id,
+    });
+    setUserMessages((prev) => {
+      const filteredMessage = prev?.map((message) => {
+        if (message?._id === _id) {
+          return {
+            ...message,
+            deletedForEveryone: true,
+          };
+        } else {
+          return {
+            ...message,
+          };
+        }
+      });
+      return filteredMessage;
+    });
   };
   const handleSelfMessageDelete = async (_id) => {
     setDeleteMessageId(_id);
@@ -1238,6 +1262,9 @@ const Chatbox = ({
                           >
                             {isOwn && (
                               <button
+                                onClick={() =>
+                                  handleMessageDelete(message?._id)
+                                }
                                 className={`!flex !items-center ${
                                   isOwn ? "!justify-end" : "!justify-start"
                                 } !bg-transparent !text-nowrap !gap-2 !w-full 
