@@ -146,12 +146,12 @@ const Home = () => {
   console.log(self);
 
   useEffect(() => {
-    const handleReceive = ({ sender, receiver, content }) => {
+    const handleReceive = ({ sender, receiver, content, _id }) => {
       console.log("content", content);
 
       // Create a proper message object with all required fields
       const newMessage = {
-        _id: Date.now().toString(), // Generate temporary ID
+        _id: _id, // Generate temporary ID
         sender,
         receiver,
         content,

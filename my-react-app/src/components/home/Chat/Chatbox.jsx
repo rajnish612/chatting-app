@@ -488,7 +488,9 @@ const Chatbox = ({
   };
   const handleMessageDelete = async (_id) => {
     if (!_id) return;
-    await deleteMessage({ variables: { messageId: _id, deleteType: "forEveryone" } });
+    await deleteMessage({
+      variables: { messageId: _id, deleteType: "forEveryone" },
+    });
     socket.emit("deleteMessage", {
       from: self?.username,
       to: selectedUserToChat,
@@ -677,6 +679,7 @@ const Chatbox = ({
 
     if (res?.data) {
       socket.emit("message", {
+        _id: res.data.sendMessage._id,
         sender: self.username,
         receiver: selectedUserToChat,
         content: content,
