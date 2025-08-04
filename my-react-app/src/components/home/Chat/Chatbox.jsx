@@ -783,8 +783,14 @@ const Chatbox = ({
           clearTimeout(markSeenTimeoutRef.current);
         }
 
-        markSeenTimeoutRef.current = setTimeout(() => {
+        markSeenTimeoutRef.current = setTimeout(async () => {
           if (socket && selectedUserToChat && self?.username) {
+            // Mark messages as seen in the backend
+            await seeMessage({
+              variables: { sender: selectedUserToChat, receiver: self?.username },
+            });
+            
+            // Emit socket event to notify sender
             socket.emit("messageSeenByReceiver", {
               receiver: self?.username,
               sender: selectedUserToChat,
