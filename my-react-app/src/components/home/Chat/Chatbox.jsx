@@ -751,18 +751,15 @@ const Chatbox = ({
     }
   }, [self?.username, selectedUserToChat, seeMessage, socket]);
 
-  // Mark messages as seen when user changes
   useEffect(() => {
     if (selectedUserToChat && self?.username) {
       isSeenFnc();
     }
   }, [selectedUserToChat, self?.username, isSeenFnc]);
 
-  // Track the last message count to prevent infinite loops
   const lastMessageCountRef = React.useRef(0);
   const markSeenTimeoutRef = React.useRef(null);
 
-  // Mark messages as seen when new messages arrive (not when seen status changes)
   useEffect(() => {
     if (
       !socket ||
@@ -775,7 +772,6 @@ const Chatbox = ({
     const currentMessageCount = userMessages.length;
     const hasNewMessages = currentMessageCount > lastMessageCountRef.current;
 
-    // Only trigger when there are genuinely new messages (not just status updates)
     if (hasNewMessages) {
       const unseenFromSelected = userMessages.filter(
         (msg) =>
@@ -785,14 +781,12 @@ const Chatbox = ({
       );
 
       if (unseenFromSelected.length > 0) {
-        // Clear any existing timeout
         if (markSeenTimeoutRef.current) {
           clearTimeout(markSeenTimeoutRef.current);
         }
 
         markSeenTimeoutRef.current = setTimeout(async () => {
           if (socket && selectedUserToChat && self?.username) {
-            // Mark messages as seen in the backend
             await seeMessage({
               variables: {
                 sender: selectedUserToChat,
@@ -800,7 +794,6 @@ const Chatbox = ({
               },
             });
 
-            // Emit socket event to notify sender
             socket.emit("messageSeenByReceiver", {
               receiver: self?.username,
               sender: selectedUserToChat,
