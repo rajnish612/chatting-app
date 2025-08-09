@@ -691,7 +691,6 @@ const Chatbox = ({
         type: type,
       },
     });
-    console.log(res.data);
 
     if (res?.data) {
       socket.emit("message", {

@@ -16,7 +16,7 @@ export const upload = async (audioBuffer) => {
       },
       (error, result) => {
         if (error) return reject(error);
-        console.log(result.public_id, result.secure_url);
+        
 
         return resolve({ public_id: result.public_id, url: result.secure_url });
       }
