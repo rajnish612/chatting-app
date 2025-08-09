@@ -404,16 +404,16 @@ const Chatbox = ({
 
       const result = await response.json();
 
-      socket.emit("message", {
-        _id: result._id,
-        sender: self.username,
-        receiver: selectedUserToChat,
-        content: "Audio message",
-        type: "audio",
-        audio: result.audio,
-      });
+      // socket.emit("message", {
+      //   _id: result._id,
+      //   sender: self.username,
+      //   receiver: selectedUserToChat,
+      //   content: "Audio message",
+      //   type: "audio",
+      //   audio: result.audio,
+      // });
 
-      setUserMessages((prev) => [...prev, result]);
+      // setUserMessages((prev) => [...prev, result]);
 
       setAudioURL("");
       setAudioBlobRef(null);

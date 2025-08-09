@@ -19,6 +19,7 @@ import typeDefs from "./graphql/schema.js";
 import resolver from "./graphql/resolver.js";
 import { upload } from "./lib/Uploader.js";
 import UploadRouter from "./routes/Upload.js";
+import audioRouter from "./routes/audioMessages.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
@@ -172,6 +173,7 @@ app.use("/api/auth", Authrouter);
 app.use("/api/users", Homerouter);
 app.use("/api/documents", Documentsrouter);
 app.use("/api/upload", UploadRouter);
+app.use("/api/audio", audioRouter);
 
 // Serve uploaded files
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
