@@ -41,6 +41,7 @@ const getSelectedUserChatsQuery = gql`
       isSeen
       deletedFor
       deletedForEveryone
+      type
     }
   }
 `;
@@ -49,14 +50,21 @@ const sendMessageQuery = gql`
     $sender: String!
     $receiver: String!
     $content: String!
+    $type: String!
   ) {
-    sendMessage(sender: $sender, receiver: $receiver, content: $content) {
+    sendMessage(
+      sender: $sender
+      receiver: $receiver
+      content: $content
+      type: $type
+    ) {
       _id
       content
       sender
       receiver
       deletedFor
       deletedForEveryone
+      type
     }
   }
 `;
@@ -611,13 +619,14 @@ const Chatbox = ({
       [messageId]: 0,
     }));
   }, []);
+  console.log("userMessages", userMessages);
 
   // Combine and sort all messages by timestamp - memoized to prevent re-renders
   const getAllMessages = useMemo(() => {
     const textMessages =
       userMessages?.map((msg, index) => ({
         ...msg,
-        type: "text",
+       
         timestamp:
           msg.timestamp ||
           (msg._id
@@ -656,7 +665,9 @@ const Chatbox = ({
     setIsTyping(e.target.value.length > 0);
   }
 
-  async function handleSend() {
+  async function handleSend(type) {
+    console.log("type frontend", type);
+
     if (!content.trim()) return;
 
     // Validate that we have the required data
@@ -673,6 +684,7 @@ const Chatbox = ({
         sender: self?.username,
         receiver: selectedUserToChat,
         content: content,
+        type: type,
       },
     });
     console.log(res.data);
@@ -683,6 +695,7 @@ const Chatbox = ({
         sender: self.username,
         receiver: selectedUserToChat,
         content: content,
+        type: type,
       });
       setChats((prev) => {
         const exists = prev.some(
@@ -963,7 +976,7 @@ const Chatbox = ({
   const handleKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      handleSend("text");
     }
   };
 
@@ -1695,7 +1708,7 @@ const Chatbox = ({
 
             {/* Send Button */}
             <button
-              onClick={handleSend}
+              onClick={() => handleSend("text")}
               disabled={!content.trim() || !self?.username}
               className={`action-btn !p-3 !rounded-full !shadow-lg !transition-all !duration-200 ${
                 content.trim() && self?.username

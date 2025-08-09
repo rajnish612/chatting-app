@@ -29,6 +29,7 @@ type Message {
   receiver: String!
   isSeen: Boolean!
   content: String!
+  type:String
   timestamp: String!
   deletedFor: [String]
   deletedForEveryone: Boolean
@@ -60,7 +61,7 @@ type Query {
   getBlockedUsers: [User]
 }
 type Mutation {
-  sendMessage(sender:String!,receiver:String!,content:String!):Message
+  sendMessage(sender:String!,receiver:String!,content:String!,type:String!):Message
   blockUser(selfId:ID!,username:String!):String
   unblockUser(userId: ID!): String
   updatePassword(currentPassword: String!, newPassword: String!): String

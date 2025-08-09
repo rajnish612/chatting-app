@@ -86,7 +86,7 @@ io.on("connection", (socket) => {
     socket.join(id);
   });
 
-  socket.on("message", async ({ sender, receiver, content, _id }) => {
+  socket.on("message", async ({ sender, receiver, content, _id, type }) => {
     try {
       // Validate required fields
       if (!sender || !receiver || !content) {
@@ -94,11 +94,12 @@ io.on("connection", (socket) => {
           sender,
           receiver,
           content: content ? "provided" : "missing",
+          type: type,
         });
         return;
       }
 
-      io.to(receiver).emit("receive", { sender, receiver, content, _id });
+      io.to(receiver).emit("receive", { sender, receiver, content, _id, type });
     } catch (error) {
       console.error("Error saving message:", error);
     }

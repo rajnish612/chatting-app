@@ -146,17 +146,15 @@ const Home = () => {
   console.log(self);
 
   useEffect(() => {
-    const handleReceive = ({ sender, receiver, content, _id }) => {
-      console.log("content", content);
-
-      // Create a proper message object with all required fields
+    const handleReceive = ({ sender, receiver, content, _id, type }) => {
       const newMessage = {
-        _id: _id, // Generate temporary ID
+        _id: _id,
         sender,
         receiver,
         content,
-        timestamp: new Date().toISOString(), // Add proper timestamp
+        timestamp: new Date().toISOString(),
         isSeen: false,
+        type,
         deletedFor: [],
         deletedForEveryone: false,
       };

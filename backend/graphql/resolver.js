@@ -518,13 +518,16 @@ const resolver = {
   },
 
   Mutation: {
-    sendMessage: async (_, { sender, receiver, content }) => {
+    sendMessage: async (_, { sender, receiver, content, type }) => {
       try {
+        console.log("type", type);
+
         if (!sender || !receiver || !content) throw new Error("unable to send");
         let newMessage = new Message({
           sender,
           receiver,
           content,
+          type,
           isSeen: false,
         });
         await newMessage.save();
