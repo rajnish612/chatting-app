@@ -626,7 +626,7 @@ const Chatbox = ({
     const textMessages =
       userMessages?.map((msg, index) => ({
         ...msg,
-       
+
         timestamp:
           msg.timestamp ||
           (msg._id
@@ -664,10 +664,14 @@ const Chatbox = ({
     // Simulate typing indicator
     setIsTyping(e.target.value.length > 0);
   }
-
+  // async function handleSendAudioMessage() {
+  //   try {
+  //     const res = await fetch(import.meta.VITE_API_URL+"/")
+  //   } catch (err) {
+  //     console.log(err);
+  //   }
+  // }
   async function handleSend(type) {
-    console.log("type frontend", type);
-
     if (!content.trim()) return;
 
     // Validate that we have the required data
@@ -1339,6 +1343,7 @@ const Chatbox = ({
                           </div>
                         )}
                       <div
+                        style={{ opacity: isDeleted ? 0.6 : 1 }}
                         onMouseDown={() => handleMouseDown(message?._id)}
                         onMouseUp={handleMouseUp}
                         onMouseLeave={handleMouseLeave}
