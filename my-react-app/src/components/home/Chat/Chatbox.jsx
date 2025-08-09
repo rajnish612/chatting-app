@@ -180,14 +180,17 @@ const Chatbox = ({
   const hasMarkedSeenRef = React.useRef(false);
   const audioRef = React.useRef(null);
   const holdTimeout = React.useRef(null);
-  const [sendMessage] = useMutation(sendMessageQuery, {
-    onCompleted: async (data) => {
-      console.log("message", data);
-    },
-    onError: async (err) => {
-      console.log("message", err);
-    },
-  });
+  const [sendMessage, { loading: sendMessageLoading }] = useMutation(
+    sendMessageQuery,
+    {
+      onCompleted: async (data) => {
+        console.log("message", data);
+      },
+      onError: async (err) => {
+        console.log("message", err);
+      },
+    }
+  );
   const handleMouseDown = (_id) => {
     holdTimeout.current = setTimeout(() => {
       setDeleteMessageOptions((prev) => {
@@ -1712,6 +1715,7 @@ const Chatbox = ({
 
             {/* Send Button */}
             <button
+              style={{ opacity: sendMessageLoading ? 0.7 : 1}}
               onClick={() => handleSend("text")}
               disabled={!content.trim() || !self?.username}
               className={`action-btn !p-3 !rounded-full !shadow-lg !transition-all !duration-200 ${
@@ -1720,7 +1724,11 @@ const Chatbox = ({
                   : "!bg-gray-300 !text-gray-500 !cursor-not-allowed"
               }`}
             >
-              <IoIosSend size={20} />
+              {sendMessageLoading ? (
+                <div className="h-5 w-5 border-b-2 border-white rounded-full" />
+              ) : (
+                <IoIosSend size={20} />
+              )}
             </button>
           </div>
         </div>
