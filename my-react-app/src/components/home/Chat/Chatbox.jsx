@@ -623,7 +623,7 @@ const Chatbox = ({
 
   // Combine and sort all messages by timestamp - memoized to prevent re-renders
   const getAllMessages = useMemo(() => {
-    const textMessages =
+    const Messages =
       userMessages?.map((msg, index) => ({
         ...msg,
 
@@ -637,17 +637,17 @@ const Chatbox = ({
       })) || [];
     console.log("getAllMessages", userMessages);
 
-    const audioMsgs =
-      audioMessages?.map((msg) => {
-        console.log("🎵 Audio message data:", msg);
-        return {
-          ...msg,
-          type: "audio",
-        };
-      }) || [];
+    // const audioMsgs =
+    //   audioMessages?.map((msg) => {
+    //     console.log("🎵 Audio message data:", msg);
+    //     return {
+    //       ...msg,
+    //       type: "audio",
+    //     };
+    //   }) || [];
 
     // Sort messages by timestamp, with fallback to _id for consistent ordering
-    return [...textMessages, ...audioMsgs].sort((a, b) => {
+    return [...Messages].sort((a, b) => {
       const timeA = new Date(a.timestamp).getTime();
       const timeB = new Date(b.timestamp).getTime();
 
