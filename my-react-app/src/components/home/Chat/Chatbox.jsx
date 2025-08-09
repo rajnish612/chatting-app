@@ -383,39 +383,44 @@ const Chatbox = ({
     try {
       setIsSendingAudio(true);
 
-      const base64Audio = await convertBlobToBase64(audioBlobRef);
+      const formData = new FormData();
+      formData.append("audio", audioBlobRef);
+      formData.append("sender", self.username);
+      formData.append("receiver", selectedUserToChat);
+      formData.append("duration", recordingTime.toString());
+      formData.append("type", "audio");
 
-      const audioMessage = {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/audio`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to send audio message");
+      }
+
+      const result = await response.json();
+
+      socket.emit("message", {
+        _id: result._id,
         sender: self.username,
         receiver: selectedUserToChat,
-        audioData: base64Audio,
-        duration: recordingTime,
-        fileType: "audio/webm",
-      };
+        content: "Audio message",
+        type: "audio",
+        audio: result.audio,
+      });
 
-      socket.emit("sendAudioMessage", audioMessage);
-
-      // Add to local state
-      setAudioMessages((prev) => [
-        ...prev,
-        {
-          _id: Date.now().toString(),
-          sender: self.username,
-          receiver: selectedUserToChat,
-          audioData: base64Audio,
-          duration: recordingTime,
-          fileType: "audio/webm",
-          timestamp: new Date().toISOString(),
-          isSeen: false,
-          isPlayed: false,
-        },
-      ]);
+      setUserMessages((prev) => [...prev, result]);
 
       setAudioURL("");
       setAudioBlobRef(null);
       setRecordingTime(0);
     } catch (error) {
       console.error("Error sending audio message:", error);
+      alert("Failed to send audio message. Please try again.");
     } finally {
       setIsSendingAudio(false);
     }
@@ -1715,7 +1720,7 @@ const Chatbox = ({
 
             {/* Send Button */}
             <button
-              style={{ opacity: sendMessageLoading ? 0.7 : 1}}
+              style={{ opacity: sendMessageLoading ? 0.7 : 1 }}
               onClick={() => handleSend("text")}
               disabled={!content.trim() || !self?.username}
               className={`action-btn !p-3 !rounded-full !shadow-lg !transition-all !duration-200 ${
