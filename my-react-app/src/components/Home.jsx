@@ -289,12 +289,25 @@ const Home = () => {
   useEffect(() => {
     if (peerConnection.current) {
       peerConnection.current.ontrack = (event) => {
-        if (remoteVideoRef.current) {
-          remoteVideoRef.current.srcObject = event.streams[0];
+        const remoteStream = event.streams[0];
+        
+        if (callType === "video" && remoteVideoRef.current) {
+          // Video call - assign to video element
+          remoteVideoRef.current.srcObject = remoteStream;
+        } else if (callType === "audio") {
+          // Audio call - create and play audio element
+          const remoteAudio = document.createElement('audio');
+          remoteAudio.srcObject = remoteStream;
+          remoteAudio.autoplay = true;
+          remoteAudio.style.display = 'none';
+          document.body.appendChild(remoteAudio);
+          
+          // Store reference to remove later
+          window.remoteAudioElement = remoteAudio;
         }
       };
     }
-  }, [peerConnection.current]);
+  }, [peerConnection.current, callType]);
   socket.on("call-answered", async ({ from, answer }) => {
     setOnCall(true);
     console.log("from answer", from);
@@ -341,6 +354,13 @@ const Home = () => {
     setIncomingCall(null);
     setShowOutgoingCallModal(false);
     setShowIncomingCallModal(false);
+    
+    // Clean up remote audio element for audio calls
+    if (window.remoteAudioElement) {
+      document.body.removeChild(window.remoteAudioElement);
+      window.remoteAudioElement = null;
+    }
+    
     destroyPeerConnection(peerConnection);
   }, []);
 
