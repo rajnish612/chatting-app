@@ -40,7 +40,7 @@ const io = new Server(server, {
       process.env.CLIENT_URL,
       "http://192.168.1.6:5173",
       "http://192.168.1.6:5174",
-      "https://chatting-app-six-omega.vercel.app/",
+      "https://chatting-app-six-omega.vercel.app",
     ],
     methods: ["GET", "POST"],
     credentials: true,
