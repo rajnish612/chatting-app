@@ -347,14 +347,13 @@ const resolver = {
       return chatUsersWithUnseen;
     },
     self: async (parent, args, { req }) => {
-      if (!req?.session?.user) return null;
-      console.log(
-        "Self query - session user:",
-        req?.session?.user,
-        typeof req?.session?.user
-      );
-
       try {
+        if (!req?.session?.user) throw new Error("Unauthorized");
+        console.log(
+          "Self query - session user:",
+          req?.session?.user,
+          typeof req?.session?.user
+        );
         let user = await User.findOne({
           username: req?.session?.user,
         });
@@ -422,8 +421,9 @@ const resolver = {
 
         return result;
       } catch (error) {
-        console.error("Error in self query:", error);
-        return null;
+        console.log(error);
+
+        throw new Error("Unauthorized");
       }
     },
     getAllMessages: async (parent, args, { req }) => {

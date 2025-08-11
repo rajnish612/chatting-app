@@ -17,6 +17,7 @@ import { gql, useQuery } from "@apollo/client";
 import { useState } from "react";
 import useSocket from "../../hooks/Socket";
 import FollowersAndFollowings from "./FollowersAndFollowings";
+import { useNavigate, useNavigation } from "react-router-dom";
 
 const DrawerItems = [
   {
@@ -118,10 +119,17 @@ const Home = () => {
   const { socket } = useSocket();
   const peerConnection = React.useRef(null);
   let [chats, setChats] = useState([{}]);
-
+  const navigation = useNavigate();
   const { loading, refetch: selfRefetch } = useQuery(selfQuery, {
     onCompleted: async (data) => {
+      console.log("self data", data);
+
       setSelf(data?.self);
+    },
+    onError: async (err) => {
+      console.log("error of login", err);
+
+      navigation("/login");
     },
   });
 
@@ -290,18 +298,18 @@ const Home = () => {
     if (peerConnection.current) {
       peerConnection.current.ontrack = (event) => {
         const remoteStream = event.streams[0];
-        
+
         if (callType === "video" && remoteVideoRef.current) {
           // Video call - assign to video element
           remoteVideoRef.current.srcObject = remoteStream;
         } else if (callType === "audio") {
           // Audio call - create and play audio element
-          const remoteAudio = document.createElement('audio');
+          const remoteAudio = document.createElement("audio");
           remoteAudio.srcObject = remoteStream;
           remoteAudio.autoplay = true;
-          remoteAudio.style.display = 'none';
+          remoteAudio.style.display = "none";
           document.body.appendChild(remoteAudio);
-          
+
           // Store reference to remove later
           window.remoteAudioElement = remoteAudio;
         }
@@ -354,13 +362,13 @@ const Home = () => {
     setIncomingCall(null);
     setShowOutgoingCallModal(false);
     setShowIncomingCallModal(false);
-    
+
     // Clean up remote audio element for audio calls
     if (window.remoteAudioElement) {
       document.body.removeChild(window.remoteAudioElement);
       window.remoteAudioElement = null;
     }
-    
+
     destroyPeerConnection(peerConnection);
   }, []);
 
