@@ -403,18 +403,23 @@ const Chatbox = ({
       }
 
       const result = await response.json();
-      console.log("result", result);
 
-      socket.emit("message", {
+      const audio = {
         _id: result._id,
         sender: self.username,
         receiver: selectedUserToChat,
-        content: result?.audio?.url,
+        content: result.content,
         type: "audio",
         duration: recordingTime.toString(),
-      });
+      };
 
-      // setUserMessages((prev) => [...prev, result]);
+      socket.emit("message", {
+        ...audio,
+      });
+      console.log("result is", result);
+      console.log("audio is", audio);
+
+      setUserMessages((prev) => [...prev, audio]);
 
       setAudioURL("");
       setAudioBlobRef(null);
@@ -552,43 +557,26 @@ const Chatbox = ({
   const toggleAudioPlayback = useCallback(
     async (messageId, audioSrc) => {
       const audio = document.getElementById(`audio-${messageId}`);
-      if (!audio) return;
+      if (!audio || !audioSrc) return;
 
       if (playingAudio === messageId) {
         audio.pause();
         setPlayingAudio(null);
       } else {
-        // If audio data is not loaded, fetch it first
-        if (!audioSrc) {
-          try {
-            setLoadingAudioData((prev) => ({ ...prev, [messageId]: true }));
-            await getAudioData({
-              variables: { messageId },
-            });
-            // Audio data will be updated via onCompleted callback
-            // Don't play yet, let user click again after loading
-            return;
-          } catch (error) {
-            console.error("Failed to load audio data:", error);
-            setLoadingAudioData((prev) => {
-              const newState = { ...prev };
-              delete newState[messageId];
-              return newState;
-            });
-            return;
-          }
-        }
-
         if (playingAudio) {
           const currentAudio = document.getElementById(`audio-${playingAudio}`);
           if (currentAudio) currentAudio.pause();
         }
 
-        audio.play();
-        setPlayingAudio(messageId);
+        try {
+          audio.play();
+          setPlayingAudio(messageId);
+        } catch (error) {
+          console.error("Failed to play audio:", error);
+        }
       }
     },
-    [playingAudio, getAudioData]
+    [playingAudio]
   );
 
   const handleAudioTimeUpdate = useCallback(
@@ -644,7 +632,6 @@ const Chatbox = ({
               ).toISOString()
             : new Date(Date.now() + index).toISOString()),
       })) || [];
-    console.log("getAllMessages", userMessages);
 
     // const audioMsgs =
     //   audioMessages?.map((msg) => {
@@ -668,6 +655,8 @@ const Chatbox = ({
       return timeA - timeB;
     });
   }, [userMessages, audioMessages]);
+  console.log("get All messages", getAllMessages);
+
   function handleChange(e) {
     setContent(e.target.value);
     // Simulate typing indicator
@@ -1379,7 +1368,7 @@ const Chatbox = ({
                                 : message.content}
                             </p>
                           )
-                        ) : (
+                        ) : message.type === "audio" ? (
                           // Audio Message
                           <div className="flex items-center space-x-3 py-2">
                             {/* Play/Pause Button */}
@@ -1387,23 +1376,19 @@ const Chatbox = ({
                               onClick={() =>
                                 toggleAudioPlayback(
                                   message._id,
-                                  message.audioData
+                                  message.content // Using content field which contains the audio URL
                                 )
                               }
-                              disabled={!message.audioData}
+                              disabled={!message.content}
                               className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 ${
                                 isOwn
-                                  ? "bg-blue-700 hover:bg-blue-800 disabled:bg-blue-400"
-                                  : "bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400"
+                                  ? "!bg-blue-700 hover:!bg-blue-800 disabled:!bg-red-400"
+                                  : "!bg-gray-600 hover:!bg-gray-700 disabled:!bg-gray-400"
                               } ${
-                                !message.audioData ? "cursor-not-allowed" : ""
+                                !message.content ? "cursor-not-allowed" : ""
                               }`}
                             >
-                              {!message.audioData ||
-                              loadingAudioData[message._id] ? (
-                                // Loading spinner
-                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                              ) : playingAudio === message._id ? (
+                              {playingAudio === message._id ? (
                                 <svg
                                   className="w-4 h-4 text-white"
                                   fill="currentColor"
@@ -1424,76 +1409,51 @@ const Chatbox = ({
 
                             {/* Waveform/Progress Bar */}
                             <div className="flex-1 space-y-1">
-                              {!message.audioData ||
-                              loadingAudioData[message._id] ? (
-                                // Loading state for waveform
-                                <div className="flex items-center space-x-1">
-                                  {[...Array(15)].map((_, i) => (
+                              <div className="flex items-center space-x-1">
+                                {[...Array(15)].map((_, i) => {
+                                  // Generate consistent height based on message ID and index
+                                  const seedHeight =
+                                    (((message._id?.charCodeAt(
+                                      i % message._id.length
+                                    ) || 0) +
+                                      i) %
+                                      12) +
+                                    6;
+                                  return (
                                     <div
                                       key={i}
-                                      className={`w-1 h-3 rounded-full animate-pulse ${
-                                        isOwn ? "bg-blue-300" : "bg-gray-400"
+                                      className={`w-1 rounded-full transition-all duration-200 ${
+                                        isOwn ? "bg-blue-200" : "bg-gray-300"
                                       }`}
                                       style={{
-                                        animationDelay: `${i * 50}ms`,
+                                        height: `${seedHeight}px`,
+                                        opacity:
+                                          (audioCurrentTime[message._id] || 0) /
+                                            (audioDurations[message._id] ||
+                                              message.duration ||
+                                              1) >
+                                          i / 15
+                                            ? 1
+                                            : 0.4,
                                       }}
                                     />
-                                  ))}
-                                </div>
-                              ) : (
-                                <div className="flex items-center space-x-1">
-                                  {[...Array(15)].map((_, i) => {
-                                    // Generate consistent height based on message ID and index
-                                    const seedHeight =
-                                      (((message._id?.charCodeAt(
-                                        i % message._id.length
-                                      ) || 0) +
-                                        i) %
-                                        12) +
-                                      6;
-                                    return (
-                                      <div
-                                        key={i}
-                                        className={`w-1 rounded-full transition-all duration-200 ${
-                                          isOwn ? "bg-blue-200" : "bg-gray-300"
-                                        }`}
-                                        style={{
-                                          height: `${seedHeight}px`,
-                                          opacity:
-                                            (audioCurrentTime[message._id] ||
-                                              0) /
-                                              (audioDurations[message._id] ||
-                                                message.duration ||
-                                                1) >
-                                            i / 15
-                                              ? 1
-                                              : 0.4,
-                                        }}
-                                      />
-                                    );
-                                  })}
-                                </div>
-                              )}
+                                  );
+                                })}
+                              </div>
 
                               {/* Time Display */}
                               <div className="flex justify-between text-xs opacity-75">
                                 <span>
-                                  {!message.audioData ||
-                                  loadingAudioData[message._id]
-                                    ? "..."
-                                    : formatTime(
-                                        audioCurrentTime[message._id] || 0
-                                      )}
+                                  {formatTime(
+                                    audioCurrentTime[message._id] || 0
+                                  )}
                                 </span>
                                 <span>
-                                  {!message.audioData ||
-                                  loadingAudioData[message._id]
-                                    ? "Loading..."
-                                    : formatTime(
-                                        audioDurations[message._id] ||
-                                          message.duration ||
-                                          0
-                                      )}
+                                  {formatTime(
+                                    audioDurations[message._id] ||
+                                      parseInt(message.duration) ||
+                                      0
+                                  )}
                                 </span>
                               </div>
                             </div>
@@ -1501,7 +1461,7 @@ const Chatbox = ({
                             {/* Hidden Audio Element */}
                             <audio
                               id={`audio-${message._id}`}
-                              src={message.audioData}
+                              src={message.content} // Using content field which contains the audio URL
                               onTimeUpdate={(e) =>
                                 handleAudioTimeUpdate(
                                   message._id,
@@ -1509,10 +1469,24 @@ const Chatbox = ({
                                   e.target.duration
                                 )
                               }
+                              onLoadedMetadata={(e) => {
+                                // Set duration when metadata loads
+                                if (e.target.duration && isFinite(e.target.duration)) {
+                                  setAudioDurations((prev) => ({
+                                    ...prev,
+                                    [message._id]: e.target.duration,
+                                  }));
+                                }
+                              }}
                               onEnded={() => handleAudioEnded(message._id)}
                               preload="metadata"
                               className="hidden"
                             />
+                          </div>
+                        ) : (
+                          // Other message types
+                          <div className="text-sm text-gray-500 italic">
+                            Unsupported message type
                           </div>
                         )}
 

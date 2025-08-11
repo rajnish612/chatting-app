@@ -22,10 +22,11 @@ router.route("/").post(async (req, res) => {
       duration: duration,
       type: type,
     });
+    console.log(audioMessage);
 
     res.json({
       success: true,
-      ...audioMessage,
+      ...audioMessage.toObject(), // Convert Mongoose document to plain object
     });
   } catch (error) {
     console.error("Audio upload error:", error);
