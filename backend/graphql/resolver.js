@@ -601,10 +601,10 @@ const resolver = {
     },
     getMessages: async (parent, args, { req }) => {
       if (!req?.session?.user) return null;
-      const { sender, receiver } = args;
+      const { sender, receiver, page = 1, limit = 5 } = args;
       const currentUser = req.session.user;
       if (!sender || !receiver) throw new Error("Messages not available");
-
+      const skip = (page - 1) * limit;
       const messages = await Message.find({
         $or: [
           { sender: sender, receiver: receiver },
@@ -613,7 +613,10 @@ const resolver = {
         // Filter out messages deleted for current user or deleted for everyone
         // deletedForEveryone: { $ne: true },
         // deletedFor: { $ne: currentUser },
-      });
+      })
+        .sort({ timestamp: -1 })
+        .skip(skip)
+        .limit(limit);
       return messages;
     },
     getDocuments: async (parent, args, { req }) => {

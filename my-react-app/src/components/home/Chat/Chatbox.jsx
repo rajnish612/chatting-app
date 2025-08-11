@@ -32,8 +32,8 @@ const isSeenQuery = gql`
 `;
 
 const getSelectedUserChatsQuery = gql`
-  mutation getMessages($sender: String!, $receiver: String!) {
-    getMessages(sender: $sender, receiver: $receiver) {
+  mutation getMessages($sender: String!, $receiver: String!, $page: Int, $limit: Int) {
+    getMessages(sender: $sender, receiver: $receiver, page: $page, limit: $limit) {
       _id
       sender
       receiver
@@ -42,6 +42,7 @@ const getSelectedUserChatsQuery = gql`
       deletedFor
       deletedForEveryone
       type
+      timestamp
     }
   }
 `;
@@ -169,6 +170,10 @@ const Chatbox = ({
   const [deleteMessageOptions, setDeleteMessageOptions] = React.useState({
     _id: "",
   });
+  // Pagination states
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const [hasMoreMessages, setHasMoreMessages] = React.useState(true);
+  const [loadingMore, setLoadingMore] = React.useState(false);
   // Audio recording refs
   const mediaRecorderRef = React.useRef(null);
   const streamRef = React.useRef(null);
@@ -212,12 +217,24 @@ const Chatbox = ({
   };
   const [getSelectedUserChat] = useMutation(getSelectedUserChatsQuery, {
     onCompleted: async (data) => {
-      console.log("data", data.getMessages);
-
-      setUserMessages(data.getMessages);
+      const messages = data.getMessages || [];
+      console.log("Fetched messages:", messages);
+      
+      if (currentPage === 1) {
+        // First page - replace all messages
+        setUserMessages(messages.reverse()); // Reverse to show chronologically
+      } else {
+        // Additional pages - prepend to existing messages
+        setUserMessages(prev => [...messages.reverse(), ...prev]);
+      }
+      
+      // Check if we have more messages (if less than limit, we've reached the end)
+      setHasMoreMessages(messages.length === 5); // 5 is your backend limit
+      setLoadingMore(false);
     },
     onError: (err) => {
       console.log("error is", err);
+      setLoadingMore(false);
     },
   });
 
@@ -616,6 +633,41 @@ const Chatbox = ({
       [messageId]: 0,
     }));
   }, []);
+
+  // Load more messages when scrolling to top
+  const loadMoreMessages = useCallback(async () => {
+    if (loadingMore || !hasMoreMessages || !self?.username || !selectedUserToChat) return;
+    
+    setLoadingMore(true);
+    const nextPage = currentPage + 1;
+    setCurrentPage(nextPage);
+    
+    await getSelectedUserChat({
+      variables: { 
+        sender: self?.username, 
+        receiver: selectedUserToChat,
+        page: nextPage,
+        limit: 5
+      },
+    });
+  }, [loadingMore, hasMoreMessages, currentPage, self?.username, selectedUserToChat, getSelectedUserChat]);
+
+  // Handle scroll events
+  const handleScroll = useCallback(() => {
+    const container = chatContainerRef.current;
+    if (!container) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    const isAtBottom = scrollHeight - scrollTop <= clientHeight + 10;
+    const isAtTop = scrollTop <= 10;
+
+    setShowScrollDownArrow(!isAtBottom);
+
+    // Load more messages when near the top
+    if (isAtTop && hasMoreMessages && !loadingMore) {
+      loadMoreMessages();
+    }
+  }, [hasMoreMessages, loadingMore, loadMoreMessages]);
   console.log("userMessages", userMessages);
 
   // Combine and sort all messages by timestamp - memoized to prevent re-renders
@@ -732,9 +784,19 @@ const Chatbox = ({
         hasMarkedSeenRef.current = false;
         setAudioMessages([]); // Clear previous audio messages
         setIsLoadingAudio(true);
+        
+        // Reset pagination states
+        setCurrentPage(1);
+        setHasMoreMessages(true);
+        setLoadingMore(false);
 
         await getSelectedUserChat({
-          variables: { sender: self?.username, receiver: selectedUserToChat },
+          variables: { 
+            sender: self?.username, 
+            receiver: selectedUserToChat,
+            page: 1,
+            limit: 5
+          },
         });
 
         // Audio messages removed as part of voice message functionality removal
@@ -1222,15 +1284,19 @@ const Chatbox = ({
 
           <div
             ref={chatContainerRef}
-            onScroll={() => {
-              const container = chatContainerRef.current;
-              const isAtBottom =
-                container.scrollHeight - container.scrollTop <=
-                container.clientHeight + 10;
-              setShowScrollDownArrow(!isAtBottom);
-            }}
+            onScroll={handleScroll}
             className="chat-scroll h-full overflow-y-auto px-4 py-6 space-y-4"
           >
+            {/* Loading more messages indicator */}
+            {loadingMore && (
+              <div className="flex justify-center items-center py-4">
+                <div className="flex items-center space-x-2 text-gray-500">
+                  <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+                  <span className="text-sm">Loading more messages...</span>
+                </div>
+              </div>
+            )}
+
             {getAllMessages?.map((message, idx) => {
               const isOwn = message.sender === self?.username;
               // Create a stable key for each message

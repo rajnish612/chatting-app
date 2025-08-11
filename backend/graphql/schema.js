@@ -79,7 +79,7 @@ type Mutation {
   verifyRegistrationOTP(email: String!, otp: String!): String
   register(email: String!, password: String!, username: String!, name: String, bio: String): String
   follow(userId: ID!): User
-  getMessages(sender: String!, receiver: String!): [Message]
+  getMessages(sender: String!, receiver: String!,page: Int, limit: Int): [Message]
   getDocuments(sender: String!, receiver: String!): [Document]
   deleteMessage(messageId: ID!, deleteType: String!): String
 }
