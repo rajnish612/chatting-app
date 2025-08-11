@@ -403,15 +403,16 @@ const Chatbox = ({
       }
 
       const result = await response.json();
+      console.log("result", result);
 
-      // socket.emit("message", {
-      //   _id: result._id,
-      //   sender: self.username,
-      //   receiver: selectedUserToChat,
-      //   content: "Audio message",
-      //   type: "audio",
-      //   audio: result.audio,
-      // });
+      socket.emit("message", {
+        _id: result._id,
+        sender: self.username,
+        receiver: selectedUserToChat,
+        content: result?.audio?.url,
+        type: "audio",
+        duration: recordingTime.toString(),
+      });
 
       // setUserMessages((prev) => [...prev, result]);
 
