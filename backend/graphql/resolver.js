@@ -601,7 +601,7 @@ const resolver = {
     },
     getMessages: async (parent, args, { req }) => {
       if (!req?.session?.user) return null;
-      const { sender, receiver, page = 1, limit = 5 } = args;
+      const { sender, receiver, page = 1, limit = 20 } = args;
       const currentUser = req.session.user;
       if (!sender || !receiver) throw new Error("Messages not available");
       const skip = (page - 1) * limit;

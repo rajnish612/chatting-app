@@ -229,7 +229,7 @@ const Chatbox = ({
       }
       
       // Check if we have more messages (if less than limit, we've reached the end)
-      setHasMoreMessages(messages.length === 5); // 5 is your backend limit
+      setHasMoreMessages(messages.length === 20); // 20 is your backend limit
       setLoadingMore(false);
     },
     onError: (err) => {
@@ -647,7 +647,7 @@ const Chatbox = ({
         sender: self?.username, 
         receiver: selectedUserToChat,
         page: nextPage,
-        limit: 5
+        limit: 20
       },
     });
   }, [loadingMore, hasMoreMessages, currentPage, self?.username, selectedUserToChat, getSelectedUserChat]);
@@ -795,7 +795,7 @@ const Chatbox = ({
             sender: self?.username, 
             receiver: selectedUserToChat,
             page: 1,
-            limit: 5
+            limit: 20
           },
         });
 
