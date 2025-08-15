@@ -40,4 +40,38 @@ router.route("/").post(async (req, res) => {
       .json({ message: "unable to upload", success: false });
   }
 });
+router.route("/chat/image").post(async (req, res) => {
+  try {
+    if (
+      !req.files ||
+      !req.files.image ||
+      !req.body.sender ||
+      !req.body.receiver
+    ) {
+      return res.status(400).send("unable to send");
+    }
+    const { image } = req.files;
+    if (!image)
+      return res
+        .status(400)
+        .json({ message: "Unable to send", success: false });
+    const { public_id, url } = await upload(image);
+    if (!public_id || !url)
+      return res
+        .status(400)
+        .json({ message: "unable to send", success: false });
+    const imageMessage = await Message.create({
+      image: { public_id, url },
+      sender: sender,
+      receiver: receiver,
+      content: url,
+
+      type: "image",
+    });
+
+    return res.status(200).json({ success: true, ...imageMessage.toObject() });
+  } catch (err) {
+    return res.status(400).json({ message: "unable to sendF", success: false });
+  }
+});
 export default router;

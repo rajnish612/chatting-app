@@ -12,6 +12,10 @@ const messageSchema = new mongoose.Schema({
     public_id: { type: String },
     url: { type: String },
   },
+  image: {
+    public_id: { type: String },
+    url: { type: String },
+  },
   duration: { type: String },
 });
 const Message = mongoose.model("Message", messageSchema);
