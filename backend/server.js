@@ -76,9 +76,9 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.NODE_ENV === "production",
       httpOnly: true,
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 1000 * 60 * 60 * 24 * 365 * 10,
     },
   })
@@ -89,24 +89,34 @@ io.on("connection", (socket) => {
     socket.join(id);
   });
 
-  socket.on("message", async ({ sender, receiver, content, _id, type }) => {
-    try {
-      // Validate required fields
-      if (!sender || !receiver || !content) {
-        console.error("Message validation failed: missing required fields", {
+  socket.on(
+    "message",
+    async ({ sender, receiver, content, _id, type, image }) => {
+      try {
+        // Validate required fields
+        if (!sender || !receiver || !content) {
+          console.error("Message validation failed: missing required fields", {
+            sender,
+            receiver,
+            content: content ? "provided" : "missing",
+            type: type,
+          });
+          return;
+        }
+
+        io.to(receiver).emit("receive", {
           sender,
           receiver,
-          content: content ? "provided" : "missing",
-          type: type,
+          content,
+          _id,
+          type,
+          image,
         });
-        return;
+      } catch (error) {
+        console.error("Error saving message:", error);
       }
-
-      io.to(receiver).emit("receive", { sender, receiver, content, _id, type });
-    } catch (error) {
-      console.error("Error saving message:", error);
     }
-  });
+  );
   socket.on("messageSeenByReceiver", async ({ sender, receiver }) => {
     io.to(sender).emit("messageSeen", { receiver });
   });

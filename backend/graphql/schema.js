@@ -28,6 +28,7 @@ type Message {
   sender: String!
   receiver: String!
   isSeen: Boolean!
+  image: ProfilePic
   content: String!
   type:String
   timestamp: String!

@@ -154,7 +154,7 @@ const Home = () => {
   console.log(self);
 
   useEffect(() => {
-    const handleReceive = ({ sender, receiver, content, _id, type }) => {
+    const handleReceive = ({ sender, receiver, content, _id, type, image }) => {
       const newMessage = {
         _id: _id,
         sender,
@@ -162,6 +162,7 @@ const Home = () => {
         content,
         timestamp: new Date().toISOString(),
         isSeen: false,
+        image: image,
         type,
         deletedFor: [],
         deletedForEveryone: false,

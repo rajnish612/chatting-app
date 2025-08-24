@@ -1,7 +1,7 @@
 import express from "express";
 import { upload } from "../lib/Uploader.js";
 import User from "../models/User.js";
-
+import Message from "../models/messages.js";
 const router = express.Router();
 
 router.route("/").post(async (req, res) => {
@@ -62,15 +62,17 @@ router.route("/chat/image").post(async (req, res) => {
         .json({ message: "unable to send", success: false });
     const imageMessage = await Message.create({
       image: { public_id, url },
-      sender: sender,
-      receiver: receiver,
+      sender: req.body.sender,
+      receiver: req.body.receiver,
       content: url,
 
       type: "image",
     });
 
-    return res.status(200).json({ success: true, ...imageMessage.toObject() });
+    return res.status(200).json({ success: true, message: imageMessage });
   } catch (err) {
+    console.log(err.message);
+
     return res.status(400).json({ message: "unable to sendF", success: false });
   }
 });

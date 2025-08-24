@@ -13,6 +13,7 @@ import { useLayoutEffect } from "react";
 import { MdOutlineKeyboardVoice } from "react-icons/md";
 import { IoArrowDown } from "react-icons/io5";
 import { BsCheckAll, BsCheck } from "react-icons/bs";
+import { RiImageAddLine } from "react-icons/ri";
 import { IoArrowBack } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import { IoDocumentText } from "react-icons/io5";
@@ -32,14 +33,27 @@ const isSeenQuery = gql`
 `;
 
 const getSelectedUserChatsQuery = gql`
-  mutation getMessages($sender: String!, $receiver: String!, $page: Int, $limit: Int) {
-    getMessages(sender: $sender, receiver: $receiver, page: $page, limit: $limit) {
+  mutation getMessages(
+    $sender: String!
+    $receiver: String!
+    $page: Int
+    $limit: Int
+  ) {
+    getMessages(
+      sender: $sender
+      receiver: $receiver
+      page: $page
+      limit: $limit
+    ) {
       _id
       sender
       receiver
       content
       isSeen
       deletedFor
+      image {
+        url
+      }
       deletedForEveryone
       type
       timestamp
@@ -185,6 +199,7 @@ const Chatbox = ({
   const hasMarkedSeenRef = React.useRef(false);
   const audioRef = React.useRef(null);
   const holdTimeout = React.useRef(null);
+
   const [sendMessage, { loading: sendMessageLoading }] = useMutation(
     sendMessageQuery,
     {
@@ -196,6 +211,7 @@ const Chatbox = ({
       },
     }
   );
+  const [sendMessageLoading1, setSendMessageLoading1] = useState(false);
   const handleMouseDown = (_id) => {
     holdTimeout.current = setTimeout(() => {
       setDeleteMessageOptions((prev) => {
@@ -219,15 +235,15 @@ const Chatbox = ({
     onCompleted: async (data) => {
       const messages = data.getMessages || [];
       console.log("Fetched messages:", messages);
-      
+
       if (currentPage === 1) {
         // First page - replace all messages
         setUserMessages(messages.reverse()); // Reverse to show chronologically
       } else {
         // Additional pages - prepend to existing messages
-        setUserMessages(prev => [...messages.reverse(), ...prev]);
+        setUserMessages((prev) => [...messages.reverse(), ...prev]);
       }
-      
+
       // Check if we have more messages (if less than limit, we've reached the end)
       setHasMoreMessages(messages.length === 20); // 20 is your backend limit
       setLoadingMore(false);
@@ -636,21 +652,34 @@ const Chatbox = ({
 
   // Load more messages when scrolling to top
   const loadMoreMessages = useCallback(async () => {
-    if (loadingMore || !hasMoreMessages || !self?.username || !selectedUserToChat) return;
-    
+    if (
+      loadingMore ||
+      !hasMoreMessages ||
+      !self?.username ||
+      !selectedUserToChat
+    )
+      return;
+
     setLoadingMore(true);
     const nextPage = currentPage + 1;
     setCurrentPage(nextPage);
-    
+
     await getSelectedUserChat({
-      variables: { 
-        sender: self?.username, 
+      variables: {
+        sender: self?.username,
         receiver: selectedUserToChat,
         page: nextPage,
-        limit: 20
+        limit: 20,
       },
     });
-  }, [loadingMore, hasMoreMessages, currentPage, self?.username, selectedUserToChat, getSelectedUserChat]);
+  }, [
+    loadingMore,
+    hasMoreMessages,
+    currentPage,
+    self?.username,
+    selectedUserToChat,
+    getSelectedUserChat,
+  ]);
 
   // Handle scroll events
   const handleScroll = useCallback(() => {
@@ -776,7 +805,46 @@ const Chatbox = ({
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+  const handleChooseImage = async (e) => {
+    console.log(self);
 
+    if (e.target.files[0] && e.target.files[0].type.startsWith("image")) {
+      console.log("file is ", e.target.files[0]);
+      const fileReader = new FileReader();
+      fileReader.readAsDataURL(e.target.files[0]);
+      fileReader.onload = (e) => {
+        console.log("result is ", e.target.result);
+      };
+      const formData = new FormData();
+      formData.append("image", e.target.files[0]);
+      formData.append("receiver", selectedUserToChat);
+      formData.append("sender", self.username);
+      setSendMessageLoading1(true);
+      try {
+        const res = await fetch(
+          import.meta.env.VITE_API_URL + "/api/upload/chat/image",
+          {
+            method: "POST",
+
+            body: formData,
+          }
+        );
+        const data = await res.json();
+        if (data.success) {
+          setUserMessages((prev) => {
+            return [...prev, data.message];
+          });
+          socket.emit("message", {
+            ...data.message,
+          });
+        }
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        setSendMessageLoading1(false);
+      }
+    }
+  };
   useEffect(() => {
     async function getSelectedUserChatFnc() {
       if (self?.username && selectedUserToChat) {
@@ -784,32 +852,24 @@ const Chatbox = ({
         hasMarkedSeenRef.current = false;
         setAudioMessages([]); // Clear previous audio messages
         setIsLoadingAudio(true);
-        
+
         // Reset pagination states
         setCurrentPage(1);
         setHasMoreMessages(true);
         setLoadingMore(false);
 
         await getSelectedUserChat({
-          variables: { 
-            sender: self?.username, 
+          variables: {
+            sender: self?.username,
             receiver: selectedUserToChat,
             page: 1,
-            limit: 20
+            limit: 20,
           },
         });
-
-        // Audio messages removed as part of voice message functionality removal
       }
     }
     getSelectedUserChatFnc();
   }, [self?.username, selectedUserToChat, getSelectedUserChat]);
-
-  // Removed audio message marking logic as part of voice message functionality removal
-
-  // Removed audio messages debug logging as part of voice message functionality removal
-
-  // Removed socket listener for audio messages as part of voice message functionality removal
 
   const isSeenFnc = useCallback(async () => {
     if (selectedUserToChat && self?.username) {
@@ -817,7 +877,6 @@ const Chatbox = ({
         variables: { sender: selectedUserToChat, receiver: self?.username },
       });
 
-      // Emit socket event to notify sender that receiver has seen the messages
       if (socket) {
         socket.emit("messageSeenByReceiver", {
           receiver: self?.username,
@@ -1547,8 +1606,19 @@ const Chatbox = ({
                               />
                             </div>
                           )
-                        ) : (
+                        ) : message.type === "image" ? (
                           // Other message types
+                          isDeleted ? (
+                            <span>This message was deleted</span>
+                          ) : (
+                            <div className="text-sm h-60 w-70 text-gray-500 italic">
+                              <img
+                                src={message?.image?.url}
+                                className="rounded-md h-full object-cover w-full"
+                              />
+                            </div>
+                          )
+                        ) : (
                           <div className="text-sm text-gray-500 italic">
                             Unsupported message type
                           </div>
@@ -1720,6 +1790,21 @@ const Chatbox = ({
                 />
               </div>
             </div>
+            <div className="relative">
+              <input
+                onChange={handleChooseImage}
+                type="file"
+                className="bg-black  hidden"
+                id="chooseImage"
+                accept="image/*"
+              />
+
+              <button className="action-btn !p-2 !text-blue-500 hover:!bg-blue-50 !rounded-full !transition-colors">
+                <label htmlFor="chooseImage">
+                  <RiImageAddLine size={24} />
+                </label>
+              </button>
+            </div>
 
             {/* Text Input */}
             <div className="flex-1 min-h-0">
@@ -1746,6 +1831,7 @@ const Chatbox = ({
             </div>
 
             {/* Voice Message Button */}
+
             <button
               onClick={recording ? stopRecording : startRecording}
               className={`action-btn !p-2 !rounded-full !transition-colors ${
@@ -1761,14 +1847,19 @@ const Chatbox = ({
             <button
               style={{ opacity: sendMessageLoading ? 0.7 : 1 }}
               onClick={() => handleSend("text")}
-              disabled={!content.trim() || !self?.username}
+              disabled={
+                !content.trim() ||
+                !self?.username ||
+                sendMessageLoading ||
+                sendMessageLoading1
+              }
               className={`action-btn !p-3 !rounded-full !shadow-lg !transition-all !duration-200 ${
                 content.trim() && self?.username
                   ? "!bg-blue-500 hover:!bg-blue-600 !text-white"
                   : "!bg-gray-300 !text-gray-500 !cursor-not-allowed"
               }`}
             >
-              {sendMessageLoading ? (
+              {sendMessageLoading || sendMessageLoading1 ? (
                 <div className="h-5 w-5 border-b-2 border-white rounded-full" />
               ) : (
                 <IoIosSend size={20} />
